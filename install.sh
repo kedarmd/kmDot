@@ -8,8 +8,10 @@ KMDOT_CONFIG_DIR="$HOME/.config/kmdot"
 if [ ! -f $KMDOT_CONFIG_DIR ]; then
   mkdir "$KMDOT_CONFIG_DIR"
   cp -r ./config/* "$KMDOT_CONFIG_DIR"
-  # Sync Nvim
+  # Sync all configs locally with default settings
   ./sync/nvim.sh
+  # ./sync/rofi.sh
+  ./sync/wezterm.sh
 fi
 
 
