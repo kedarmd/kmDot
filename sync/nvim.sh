@@ -13,7 +13,7 @@ fi
 echo "INFO: NVIM config already exists"
 
 NVIM_SOURCE=$(readlink "$NVIM_CONFIG_DIR")
-if [ "NVIM_SOURCE" != "$KMDOT_NVIM_CONFIG_DIR" ]; then
+if [ "$NVIM_SOURCE" != "$KMDOT_NVIM_CONFIG_DIR" ]; then
    echo "WARNING: Current symlink doesn't point to kmDot nvim. Reconfiguring..."
    rm -f "$NVIM_CONFIG_DIR"
    ln -sf "$KMDOT_NVIM_CONFIG_DIR" "$NVIM_CONFIG_DIR"
