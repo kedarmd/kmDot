@@ -12,6 +12,7 @@ if [ ! -f $KMDOT_CONFIG_DIR ]; then
   ./sync/nvim.sh
   # ./sync/rofi.sh
   ./sync/wezterm.sh
+  ./sync/starship.sh
 fi
 
 
