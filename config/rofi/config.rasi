@@ -1,0 +1,7 @@
+configuration {
+    modi: "drun";
+    show-icons: true;
+    terminal: "wezterm"; 
+}
+
+@theme "theme.rasi"
