@@ -3,11 +3,12 @@
 # Exit on Error
 set -e
 
+# --- 1. Define the directory where this script is located ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+
 THEME="$1"
 
-echo "$THEME"
-
-./hooks/nvim.sh $THEME
-./hooks/wezterm.sh $THEME
-./hooks/starship.sh $THEME
-
+# --- 2. Use the absolute path for sourcing the hook scripts ---
+. "$SCRIPT_DIR/hooks/nvim.sh" "$THEME"
+. "$SCRIPT_DIR/hooks/wezterm.sh" "$THEME"
+. "$SCRIPT_DIR/hooks/starship.sh" "$THEME"

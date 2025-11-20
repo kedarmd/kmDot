@@ -19,4 +19,4 @@ cat "$COLORSCHEME_FILE" > "$CONFIG_FILE"
 
 # Reload wezterm config
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-"$SCRIPT_DIR/../utils/reload-wezterm-config.sh"
+"$SCRIPT_DIR/utils/reload-wezterm-config.sh"

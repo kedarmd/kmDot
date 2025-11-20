@@ -16,4 +16,4 @@ fi
 cat "$COLORSCHEME_FILE" > "$CONFIG_FILE"
 
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-"$SCRIPT_DIR/../utils/change-nvim-theme-live.sh" "$THEME"
+"$SCRIPT_DIR/utils/change-nvim-theme-live.sh" "$THEME"
