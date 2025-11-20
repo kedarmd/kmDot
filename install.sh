@@ -13,6 +13,10 @@ if [ ! -f $KMDOT_CONFIG_DIR ]; then
   # ./sync/rofi.sh
   ./sync/wezterm.sh
   ./sync/starship.sh
+
+  # Copy all themes
+  mkdir "$KMDOT_CONFIG_DIR/themes"
+  cp -r ./themes/* "$KMDOT_CONFIG_DIR/themes"
 fi
 
 
