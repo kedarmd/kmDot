@@ -1,0 +1,60 @@
+{
+  "layer": "top",
+  "position": "top",
+
+  "modules-left": ["hyprland/workspaces"],
+  "modules-center": ["clock"],
+  "modules-right": ["network", "custom/power", "battery"],
+
+  "hyprland/workspaces": {
+    "format": "{id}",
+    "active-only": false,
+    "all-outputs": true,
+    "on-click": "activate",
+    "sort-by": "number",
+    "persistent-workspaces": {
+      "*": [1, 2, 3, 4, 5]
+    }
+  },
+
+  "clock": {
+    "format": "{:%a %d/%m - %I:%M %p}",
+    "tooltip-format": "{:%A, %d %B %Y\n%I:%M:%S %p}",
+    "interval": 1
+  },
+
+  "battery": {
+    "format": "{icon} {capacity}%",
+    "format-charging": "  {capacity}%",
+    "format-plugged": "  {capacity}%",
+    "format-alt": "{time} {capacity}%",
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "icons": [
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "interval": 15
+  },
+
+  "custom/power": {
+    "exec": "/home/kedarmd/.config/waybar/scripts/power_profile.sh",
+    "return-type": "json",
+    "interval": 5,
+    "on-click": "/home/kedarmd/.config/waybar/scripts/power_profile.sh next"
+  },
+
+  "network": {
+    "format-wifi": "  {essid}",
+    "format-ethernet": "󰈁  {ifname}",
+    "format-disconnected": "󰖪  Disconnected",
+    "tooltip-format": "{ifname} via {gwaddr}\n{ipaddr}/{cidr}",
+    "interval": 5
+  }
+}
+

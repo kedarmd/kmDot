@@ -1,0 +1,193 @@
+/* -----------------------
+ * Catppuccin Mocha Variables
+ * ----------------------- */
+@define-color base      #1e1e2e;
+@define-color mantle    #181825;
+@define-color crust     #11111b;
+@define-color surface0  #313244;
+@define-color surface1  #45475a;
+@define-color text      #cdd6f4;
+@define-color subtext0  #a6adc8;
+@define-color blue      #89b4fa;
+@define-color lavender  #b4befe;
+@define-color mauve     #cba6f7;
+@define-color red       #f38ba8;
+@define-color peach     #fab387;
+@define-color green     #a6e3a1;
+@define-color yellow    #f9e2af;
+
+/* Catppuccin-specific extras already seen in your file */
+@define-color darktext  #1e1e2e;
+@define-color muted     #626880;
+
+/* ---------------------------------------------------- */
+
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+  font-size: 13px;
+  color: @text; /* text */
+}
+
+window#waybar {
+  background: transparent; /* fully transparent bar */
+  color: @text;
+  border-bottom: none;
+}
+
+.modules-left > widget,
+.modules-center > widget,
+.modules-right > widget {
+  margin: 0 4px;
+}
+
+/* General module padding */
+#clock,
+#battery,
+#network,
+#workspaces {
+  padding: 0 6px;
+}
+
+/* -----------------------
+ * Workspaces
+ * --------------------- */
+
+#workspaces {
+  margin: 0 10px;
+  background: transparent;
+}
+
+#workspaces button {
+  padding: 2px 8px;
+  margin: 0 2px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: @surface0;
+  color: @subtext0;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+#workspaces button:hover {
+  background: @surface1;
+  color: @text;
+}
+
+#workspaces button.empty {
+  background: @surface0;
+  color: @muted;
+  opacity: 0.6;
+}
+
+#workspaces button.persistent {
+  border-color: @surface1;        /* subtle outline */
+}
+
+#workspaces button.urgent {
+  background: @red;
+  color: @darktext;
+  border-color: @peach;
+}
+
+#workspaces button.active {
+  background: @blue;
+  color: @base;               /* base */
+  border-color: @lavender;
+  font-weight: 600;
+}
+#workspaces button.active * {
+  color: @base;
+}
+
+
+/* -----------------------
+ * Clock
+ * --------------------- */
+
+#clock {
+  padding: 0 10px;
+  border-radius: 9999px;
+  background: @surface0;
+  color: @text;
+  font-weight: 500;
+}
+
+#clock:hover {
+  background: @surface1;
+}
+
+/* -----------------------
+ * Battery
+ * --------------------- */
+
+#battery {
+  padding: 0 8px;
+  margin-right: 6px;
+  border-radius: 9999px;
+  background: @surface0;
+}
+
+#battery.charging,
+#battery.plugged {
+  background: @green;
+  color: @darktext;
+}
+
+#battery.critical {
+  background: @red;
+  color: @darktext;
+}
+
+/* -----------------------
+ * Network
+ * --------------------- */
+
+#network {
+  padding: 0 8px;
+  margin-right: 4px;
+  border-radius: 9999px;
+  background: @surface0;
+}
+
+#network.disconnected {
+  background: @surface1;
+  color: @red; /* red-ish text for attention */
+}
+
+/* Optional: small spacing between right-side modules */
+.modules-right > widget:not(:last-child) {
+  margin-right: 4px;
+}
+
+/* -----------------------
+ * Power profile chip (custom/power)
+ * --------------------- */
+
+#custom-power {
+  padding: 0 8px;
+  margin-right: 4px;
+  border-radius: 9999px;
+  background: @surface0;
+  color: @text;
+  font-weight: 500;
+}
+
+/* Different colors per mode (class comes from script) */
+#custom-power.performance {
+  background: @peach;
+  color: @darktext;
+}
+
+#custom-power.balanced {
+  background: @blue;
+  color: @darktext;
+}
+
+#custom-power.battery {
+  background: @green;
+  color: @darktext;
+}
+
