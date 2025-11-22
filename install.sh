@@ -10,7 +10,7 @@ if [ ! -f $KMDOT_CONFIG_DIR ]; then
   cp -r ./config/* "$KMDOT_CONFIG_DIR"
   # Sync all configs locally with default settings
   ./sync/nvim.sh
-  # ./sync/rofi.sh
+  ./sync/rofi.sh
   ./sync/wezterm.sh
   ./sync/starship.sh
 
