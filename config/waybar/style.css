@@ -1,15 +1,17 @@
 @import "colors.css";
 
-/* ---------------------------------------------------- */
+/* Catppuccin Mocha palette
+ * (colors moved to colors.css)
+ */
 
 * {
   font-family: "JetBrainsMono Nerd Font", monospace;
   font-size: 13px;
-  color: @text; /* text */
+  color: @text;
 }
 
 window#waybar {
-  background: transparent; /* fully transparent bar */
+  background: transparent;
   color: @text;
   border-bottom: none;
 }
@@ -42,8 +44,8 @@ window#waybar {
   margin: 0 2px;
   border-radius: 9999px;
   border: 1px solid transparent;
-  background: @surface0;
-  color: @subtext0;
+  background: @secondary;
+  color: @text_alt;
   transition:
     background 0.15s ease,
     color 0.15s ease,
@@ -52,36 +54,36 @@ window#waybar {
 }
 
 #workspaces button:hover {
-  background: @surface1;
+  background: @secondary_alt;
   color: @text;
 }
 
 #workspaces button.empty {
-  background: @surface0;
+  background: @secondary;
   color: @muted;
   opacity: 0.6;
 }
 
 #workspaces button.persistent {
-  border-color: @surface1;        /* subtle outline */
+  border-color: @secondary_alt;
 }
 
 #workspaces button.urgent {
-  background: @red;
-  color: @darktext;
-  border-color: @peach;
+  background: @error;
+  color: @base;
+  border-color: @warning;
 }
 
 #workspaces button.active {
-  background: @blue;
-  color: @base;               /* base */
-  border-color: @lavender;
+  background: @primary;
+  color: @base;
+  border-color: @primary_alt;
   font-weight: 600;
 }
+
 #workspaces button.active * {
   color: @base;
 }
-
 
 /* -----------------------
  * Clock
@@ -90,13 +92,13 @@ window#waybar {
 #clock {
   padding: 0 10px;
   border-radius: 9999px;
-  background: @surface0;
+  background: @secondary;
   color: @text;
   font-weight: 500;
 }
 
 #clock:hover {
-  background: @surface1;
+  background: @secondary_alt;
 }
 
 /* -----------------------
@@ -107,18 +109,18 @@ window#waybar {
   padding: 0 8px;
   margin-right: 6px;
   border-radius: 9999px;
-  background: @surface0;
+  background: @secondary;
 }
 
 #battery.charging,
 #battery.plugged {
-  background: @green;
-  color: @darktext;
+  background: @success;
+  color: @base;
 }
 
 #battery.critical {
-  background: @red;
-  color: @darktext;
+  background: @error;
+  color: @base;
 }
 
 /* -----------------------
@@ -129,12 +131,12 @@ window#waybar {
   padding: 0 8px;
   margin-right: 4px;
   border-radius: 9999px;
-  background: @surface0;
+  background: @secondary;
 }
 
 #network.disconnected {
-  background: @surface1;
-  color: @red; /* red-ish text for attention */
+  background: @secondary_alt;
+  color: @error;
 }
 
 /* Optional: small spacing between right-side modules */
@@ -150,24 +152,22 @@ window#waybar {
   padding: 0 8px;
   margin-right: 4px;
   border-radius: 9999px;
-  background: @surface0;
+  background: @secondary;
   color: @text;
   font-weight: 500;
 }
 
-/* Different colors per mode (class comes from script) */
 #custom-power.performance {
-  background: @peach;
-  color: @darktext;
+  background: @warning;
+  color: @base;
 }
 
 #custom-power.balanced {
-  background: @blue;
-  color: @darktext;
+  background: @primary;
+  color: @base;
 }
 
 #custom-power.battery {
-  background: @green;
-  color: @darktext;
+  background: @success;
+  color: @base;
 }
-
