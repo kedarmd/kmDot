@@ -1,0 +1,15 @@
+/* -----------------------
+ * Catppuccin Mocha Variables
+ * ----------------------- */
+@define-color primary       #89b4fa;  /* was blue */
+@define-color primary_alt   #b4befe;  /* was lavender */
+@define-color secondary     #313244;  /* was surface0 */
+@define-color secondary_alt #45475a;  /* was surface1 */
+@define-color text          #cdd6f4;
+@define-color text_alt      #a6adc8;  /* subtext0 */
+@define-color error         #f38ba8;  /* red */
+@define-color warning       #fab387;  /* peach */
+@define-color success       #a6e3a1;  /* green */
+@define-color highlight     #cba6f7;  /* mauve */
+@define-color base          #1e1e2e;  /* original base */
+@define-color muted         #626880;  /* used for empty workspace text */
