@@ -1,6 +1,6 @@
 # Theme and Font
 
-theme = "catppuccin-mocha"
+theme = "Catppuccin Mocha"
 font-family = "JetBrainsMono Nerd Font"
 
 # To hide the top bar
