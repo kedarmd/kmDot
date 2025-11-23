@@ -43,12 +43,13 @@
   },
 
   "custom/power": {
-    "exec": "/home/kedarmd/.config/waybar/scripts/power_profile.sh",
+    "exec": "~/.config/waybar/scripts/power_profile_status.sh",
     "return-type": "json",
     "interval": 5,
-    "on-click": "/home/kedarmd/.config/waybar/scripts/power_profile.sh next"
+    "on-click": "~/.config/waybar/scripts/power_profile_toggle.sh",
+    "tooltip": true
   },
-
+  
   "network": {
     "format-wifi": "  {essid}",
     "format-ethernet": "󰈁  {ifname}",
