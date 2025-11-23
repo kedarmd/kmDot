@@ -36,7 +36,9 @@ window#waybar {
 
 #workspaces {
   margin: 0 10px;
-  background: transparent;
+  padding: 4px 8px;
+  background: @secondary;
+  border-radius: 9999px;
 }
 
 #workspaces button {
@@ -89,7 +91,7 @@ window#waybar {
  * Clock
  * --------------------- */
 
-#clock {
+#custom-clock {
   padding: 0 10px;
   border-radius: 9999px;
   background: @secondary;
@@ -97,7 +99,7 @@ window#waybar {
   font-weight: 500;
 }
 
-#clock:hover {
+#custom-clock:hover {
   background: @secondary_alt;
 }
 
@@ -171,4 +173,31 @@ window#waybar {
   background: @success;
   color: @base;
 }
+
+/* -----------------------
+ * Bluetooth
+ * --------------------- */
+
+#bluetooth {
+  padding: 0 8px;
+  margin-right: 4px;
+  border-radius: 9999px;
+  background: @secondary;
+  color: @text;
+  font-weight: 500;
+}
+
+/* When at least one device is connected */
+#bluetooth.connected {
+  background: @primary;
+  color: @base;
+}
+
+/* When Bluetooth is off/disabled */
+#bluetooth.disabled,
+#bluetooth.off {
+  background: @secondary_alt;
+  color: @muted;
+}
+
 
