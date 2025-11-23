@@ -10,5 +10,6 @@ THEME="$1"
 
 # --- 2. Use the absolute path for sourcing the hook scripts ---
 . "$SCRIPT_DIR/hooks/nvim.sh" "$THEME"
-. "$SCRIPT_DIR/hooks/wezterm.sh" "$THEME"
+# . "$SCRIPT_DIR/hooks/wezterm.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/starship.sh" "$THEME"
+. "$SCRIPT_DIR/hooks/rofi.sh" "$THEME"
