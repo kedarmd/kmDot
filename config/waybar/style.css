@@ -39,15 +39,15 @@ window#waybar {
   padding: 4px 8px;
   background: @secondary;
   border-radius: 9999px;
+  border: 1px solid @primary;
 }
 
 #workspaces button {
-  padding: 2px 8px;
-  margin: 0 2px;
+  padding: 0px 4px;
+  margin: 0 1px;
   border-radius: 9999px;
-  border: 1px solid transparent;
   background: @secondary;
-  color: @text_alt;
+  color: @muted;
   transition:
     background 0.15s ease,
     color 0.15s ease,
@@ -57,18 +57,19 @@ window#waybar {
 
 #workspaces button:hover {
   background: @secondary_alt;
+  border: 1px solid transparent;
   color: @text;
 }
 
 #workspaces button.empty {
   background: @secondary;
   color: @muted;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
-#workspaces button.persistent {
-  border-color: @secondary_alt;
-}
+/* #workspaces button.persistent { */
+/*   border-color: @secondary_alt; */
+/* } */
 
 #workspaces button.urgent {
   background: @error;
@@ -79,8 +80,8 @@ window#waybar {
 #workspaces button.active {
   background: @primary;
   color: @base;
-  border-color: @primary_alt;
-  font-weight: 600;
+  font-weight: 700;
+  /* border: 1px solid @primary_alt; */
 }
 
 #workspaces button.active * {
@@ -95,7 +96,8 @@ window#waybar {
   padding: 0 10px;
   border-radius: 9999px;
   background: @secondary;
-  color: @text;
+  color: @primary_alt;
+  border: 1px solid @primary_alt;
   font-weight: 500;
 }
 
@@ -112,17 +114,19 @@ window#waybar {
   margin-right: 6px;
   border-radius: 9999px;
   background: @secondary;
+  border: 1px solid @text;
+  min-width: 65px;        /* <<< keeps width fixed */
 }
 
 #battery.charging,
 #battery.plugged {
-  background: @success;
-  color: @base;
+  border: 1px solid @success;
+  color: @success;
 }
 
 #battery.critical {
-  background: @error;
-  color: @base;
+  border: 1px solid @error;
+  color: @error;
 }
 
 /* -----------------------
@@ -134,13 +138,18 @@ window#waybar {
   margin-right: 4px;
   border-radius: 9999px;
   background: @secondary;
+  border: 1px solid @success;
+  color: @success;
 }
 
 #network.disconnected {
   background: @secondary_alt;
+  border: 1px solid @error;
   color: @error;
 }
-
+#network:hover {
+  background: @secondary_alt;
+}
 /* Optional: small spacing between right-side modules */
 .modules-right > widget:not(:last-child) {
   margin-right: 4px;
@@ -154,25 +163,38 @@ window#waybar {
   padding: 0 8px;
   margin-right: 4px;
   border-radius: 9999px;
+  border: 1px solid @secondary;
   background: @secondary;
   color: @text;
   font-weight: 500;
+  min-width: 65px;        /* <<< keeps width fixed */
 }
 
 #custom-power.performance {
-  background: @warning;
-  color: @base;
+  border: 1px solid @warning;
+  color: @warning;
+}
+#custom-power.performance:hover {
+    background: @secondary_alt;
 }
 
 #custom-power.balanced {
-  background: @primary;
-  color: @base;
+  border: 1px solid @primary;
+  color: @primary;
+}
+#custom-power.balanced:hover {
+    background: @secondary_alt;
 }
 
+
 #custom-power.battery {
-  background: @success;
-  color: @base;
+  border: 1px solid @success;
+  color: @success;
 }
+#custom-power.battery:hover {
+    background: @secondary_alt;
+}
+
 
 /* -----------------------
  * Bluetooth
@@ -183,21 +205,50 @@ window#waybar {
   margin-right: 4px;
   border-radius: 9999px;
   background: @secondary;
-  color: @text;
+  color: @primary;
+  border: 1px solid @primary;
+  min-width: 65px;        /* <<< keeps width fixed */
   font-weight: 500;
+}
+#bluetooth:hover {
+  background: @secondary_alt;
 }
 
 /* When at least one device is connected */
 #bluetooth.connected {
-  background: @primary;
-  color: @base;
+  /* color: @; */
 }
 
 /* When Bluetooth is off/disabled */
 #bluetooth.disabled,
 #bluetooth.off {
+  border: 1px solid @muted;
   background: @secondary_alt;
   color: @muted;
 }
 
+/* -----------------------
+ * Audio (pulseaudio)
+ * --------------------- */
+
+#pulseaudio {
+  padding: 0 8px;
+  margin-right: 4px;
+  border-radius: 9999px;
+  background: @secondary;
+  border: 1px solid @primary_alt;
+  color: @primary_alt;
+  font-weight: 500;
+  min-width: 65px;        /* <<< keeps width fixed */
+}
+
+#pulseaudio:hover {
+  background: @secondary_alt;
+}
+
+#pulseaudio.muted {
+  border: 1px solid @muted;
+  background: @secondary_alt;
+  color: @muted;
+}
 
