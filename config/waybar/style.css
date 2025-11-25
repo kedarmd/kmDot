@@ -114,7 +114,8 @@ window#waybar {
   margin-right: 6px;
   border-radius: 9999px;
   background: @secondary;
-  border: 1px solid @text;
+  border: 1px solid @text_alt;
+  color: @text_alt;
   min-width: 65px;        /* <<< keeps width fixed */
 }
 
