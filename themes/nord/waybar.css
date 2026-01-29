@@ -1,0 +1,33 @@
+/* -----------------------
+ * Nord Theme – Waybar Colors
+ * Palette reference:
+ * nord0      #2e3440 (Polar Night)
+ * nord1      #3b4252 (Polar Night)
+ * nord2      #434c5e (Polar Night)
+ * nord3      #4c566a (Polar Night)
+ * nord4      #d8dee9 (Snow Storm)
+ * nord5      #e5e9f0 (Snow Storm)
+ * nord6      #eceff4 (Snow Storm)
+ * nord7      #8fbcbb (Frost)
+ * nord8      #88c0d0 (Frost)
+ * nord9      #81a1c1 (Frost)
+ * nord10     #5e81ac (Frost)
+ * nord11     #bf616a (Aurora - Red)
+ * nord12     #d08770 (Aurora - Orange)
+ * nord13     #ebcb8b (Aurora - Yellow)
+ * nord14     #a3be8c (Aurora - Green)
+ * nord15     #b48ead (Aurora - Purple)
+ * ----------------------- */
+
+@define-color primary       #88c0d0; /* nord8 - frost blue */
+@define-color primary_alt   #81a1c1; /* nord9 - frost blue alt */
+@define-color secondary     #2e3440; /* nord0 - dark background */
+@define-color secondary_alt #3b4252; /* nord1 - lighter background */
+@define-color text          #d8dee9; /* nord4 - light text */
+@define-color text_alt      #a3be8c; /* nord14 - muted text */
+@define-color error         #bf616a; /* nord11 - red */
+@define-color warning       #ebcb8b; /* nord13 - yellow */
+@define-color success       #a3be8c; /* nord14 - green */
+@define-color highlight     #8fbcbb; /* nord7 - frost green */
+@define-color base          #2e3440; /* nord0 - base background */
+@define-color muted         #4c566a; /* nord3 - dim text */
