@@ -5,6 +5,16 @@ set -e
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 KMDOT_CONFIG_DIR="$HOME/.config/kmdot"
 
+if ! command -v gum &>/dev/null; then
+  echo "Error: gum is not installed."
+  echo ""
+  echo "Install it with:"
+  echo "  sudo pacman -S gum"
+  echo ""
+  echo "Or visit: https://github.com/charmbracelet/gum"
+  exit 1
+fi
+
 echo '
 ██╗                   ██████╗              ██╗     
 ██║                   ██╔══██╗             ██║     
@@ -26,26 +36,18 @@ APPS=(
   "waybar"
 )
 
-echo "Available apps to install:"
-echo ""
-for i in "${!APPS[@]}"; do
-  echo "  $((i+1))) ${APPS[$i]}"
-done
-echo ""
-echo "Enter numbers separated by space (e.g., 1 3 5) or 'all' for everything: "
-read -r selection
-
-if [ "$selection" = "all" ]; then
-  SELECTED=("${APPS[@]}")
-else
-  SELECTED=()
-  for num in $selection; do
-    idx=$((num-1))
-    if [ "$idx" -ge 0 ] && [ "$idx" -lt "${#APPS[@]}" ]; then
-      SELECTED+=("${APPS[$idx]}")
-    fi
-  done
-fi
+SELECTED=()
+while IFS= read -r app; do
+  [ -n "$app" ] && SELECTED+=("$app")
+done < <(
+  gum choose \
+    --header="Select apps to install:" \
+    --unselected-prefix="[ ] " \
+    --selected-prefix="[x] " \
+    --no-limit \
+    --height=12 \
+    "${APPS[@]}"
+)
 
 if [ ${#SELECTED[@]} -eq 0 ]; then
   echo "No apps selected. Exiting."
@@ -62,6 +64,4 @@ for app in "${SELECTED[@]}"; do
 done
 
 echo ""
-echo "All done! 🎉"
-
-
+echo "All done!"
