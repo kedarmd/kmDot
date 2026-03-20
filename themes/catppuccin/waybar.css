@@ -1,15 +1,15 @@
-/* ---------------------------
- * Catppuccin Mocha Variables
- * --------------------------- */
-@define-color base          #1e1e2e;  /* base */
-@define-color surface       #313244;  /* surface0 */
-@define-color surface_alt   #45475a;  /* surface1 */
+/* -------------------------------------
+ * Catppuccin Mocha Variables (Contrast)
+ * ------------------------------------- */
+@define-color base          #11111b;  /* crust */
+@define-color surface       #181825;  /* mantle */
+@define-color surface_alt   #313244;  /* surface0 */
 @define-color text          #cdd6f4;  /* text */
-@define-color text_alt      #a6adc8;  /* subtext0 */
+@define-color text_alt      #bac2de;  /* subtext1 */
 @define-color muted         #6c7086;  /* overlay0 */
-@define-color border        #585b70;  /* surface2 */
-@define-color primary       #89b4fa;  /* blue */
-@define-color primary_alt   #b4befe;  /* lavender */
+@define-color border        #45475a;  /* surface1 */
+@define-color primary       #b4befe;  /* lavender */
+@define-color primary_alt   #89b4fa;  /* blue */
 @define-color accent        #94e2d5;  /* teal */
 @define-color success       #a6e3a1;  /* green */
 @define-color warning       #f9e2af;  /* yellow */
