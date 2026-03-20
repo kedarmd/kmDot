@@ -22,6 +22,7 @@ window#waybar {
   padding: 4px 4px;
   background: @secondary;
   border-radius: 20px;
+  border: 1px solid @primary;
 }
 
 #workspaces button {
@@ -53,6 +54,7 @@ window#waybar {
   border-radius: 20px;
   margin-top: 6px;
   padding: 0 10px;
+  border: 1px solid @primary;
 }
 
 .modules-right {
@@ -61,6 +63,7 @@ window#waybar {
   padding: 0px 10px;
   background: @secondary;
   border-radius: 20px;
+  border: 1px solid @primary;
 }
 
 #network {
