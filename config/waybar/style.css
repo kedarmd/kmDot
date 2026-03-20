@@ -11,6 +11,18 @@ window#waybar {
   border: none;
 }
 
+tooltip {
+  background: @base;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+tooltip label {
+  color: @text;
+}
+
 /* Shared group containers */
 #workspaces,
 #custom-clock,
