@@ -2,7 +2,7 @@
   "layer": "top",
   "position": "top",
 
-  "modules-left": ["custom/logo", "hyprland/workspaces"],
+  "modules-left": ["hyprland/workspaces"],
   "modules-center": ["custom/clock"],
   "modules-right": ["network", "bluetooth", "pulseaudio", "custom/power", "battery"],
 
@@ -33,7 +33,7 @@
       "warning": 30,
       "critical": 15
     },
-    "icons": [
+    "format-icons": [
       "",
       "",
       "",
@@ -62,7 +62,7 @@
 
   "bluetooth": {
     "format": " {status}",
-    "format-connected": " {num_connections}",
+    "format-connected": " {device_alias}",
     "format-device-preference": [
       "headphones",
       "earbuds",
@@ -75,7 +75,7 @@
 
   "pulseaudio": {
     "format": "{icon} {volume}%",
-    "format-muted": " {volume}%",
+    "format-muted": " {volume}%",
     "tooltip-format": "Volume: {volume}%",
     "scroll-step": 2,
     "on-click": "pamixer -t",

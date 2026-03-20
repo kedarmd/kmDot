@@ -7,249 +7,164 @@
 * {
   font-family: "JetBrainsMono Nerd Font", monospace;
   font-size: 13px;
-  color: @text;
 }
 
 window#waybar {
   background: transparent;
-  color: @text;
   border-bottom: none;
+  color: @text;
+  margin-bottom: 0;
 }
-
-.modules-left > widget,
-.modules-center > widget,
-.modules-right > widget {
-  margin: 0 4px;
-}
-
-/* General module padding */
-#clock,
-#battery,
-#network,
-#workspaces {
-  padding: 0 6px;
-}
-
-/* -----------------------
- * Workspaces
- * --------------------- */
 
 #workspaces {
-  margin: 0 10px;
-  padding: 4px 8px;
+  margin-top: 6px;
+  margin-left: 10px;
+  padding: 4px 4px;
   background: @secondary;
-  border-radius: 9999px;
-  border: 1px solid @primary;
+  border-radius: 20px;
 }
 
 #workspaces button {
-  padding: 0px 4px;
-  margin: 0 1px;
-  border-radius: 9999px;
-  background: @secondary;
-  color: @muted;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease,
-    opacity 0.15s ease;
-}
-
-#workspaces button:hover {
-  background: @secondary_alt;
-  border: 1px solid transparent;
+  background: @base;
   color: @text;
+  margin: 0 4px;
+  border-radius: 20px;
+  border: none;
+  transition: all 300ms ease-in-out;
 }
 
 #workspaces button.empty {
-  background: @secondary;
+  background: @secondary_alt;
   color: @muted;
-  opacity: 0.5;
 }
 
-/* #workspaces button.persistent { */
-/*   border-color: @secondary_alt; */
-/* } */
-
 #workspaces button.urgent {
-  background: @error;
+  background: @urgent;
   color: @base;
-  border-color: @warning;
 }
 
 #workspaces button.active {
   background: @primary;
   color: @base;
-  font-weight: 700;
-  /* border: 1px solid @primary_alt; */
 }
-
-#workspaces button.active * {
-  color: @base;
-}
-
-/* -----------------------
- * Clock
- * --------------------- */
 
 #custom-clock {
+  background: @base;
+  border-radius: 20px;
+  margin-top: 6px;
   padding: 0 10px;
-  border-radius: 9999px;
+}
+
+.modules-right {
+  margin-top: 6px;
+  margin-right: 10px;
+  padding: 0px 10px;
   background: @secondary;
-  color: @primary_alt;
-  border: 1px solid @primary_alt;
-  font-weight: 500;
+  border-radius: 20px;
 }
-
-#custom-clock:hover {
-  background: @secondary_alt;
-}
-
-/* -----------------------
- * Battery
- * --------------------- */
-
-#battery {
-  padding: 0 8px;
-  margin-right: 6px;
-  border-radius: 9999px;
-  background: @secondary;
-  border: 1px solid @text_alt;
-  color: @text_alt;
-  min-width: 65px;        /* <<< keeps width fixed */
-}
-
-#battery.charging,
-#battery.plugged {
-  border: 1px solid @success;
-  color: @success;
-}
-
-#battery.critical {
-  border: 1px solid @error;
-  color: @error;
-}
-
-/* -----------------------
- * Network
- * --------------------- */
 
 #network {
-  padding: 0 8px;
+  background: @base;
+  border-radius: 20px;
+  margin: 6px 0px;
+  padding: 0 10px;
+  color: @primary;
   margin-right: 4px;
-  border-radius: 9999px;
-  background: @secondary;
-  border: 1px solid @success;
-  color: @success;
+}
+
+#network.disabled {
+  color: @muted;
+  background: @secondary_alt;
 }
 
 #network.disconnected {
-  background: @secondary_alt;
-  border: 1px solid @error;
-  color: @error;
+  color: @text_alt;
 }
-#network:hover {
-  background: @secondary_alt;
-}
-/* Optional: small spacing between right-side modules */
-.modules-right > widget:not(:last-child) {
+
+
+#bluetooth{
+  background: @base;
+  border-radius: 20px;
+  margin: 6px 0px;
+  padding: 0 10px;
   margin-right: 4px;
-}
-
-/* -----------------------
- * Power profile chip (custom/power)
- * --------------------- */
-
-#custom-power {
-  padding: 0 8px;
-  margin-right: 4px;
-  border-radius: 9999px;
-  border: 1px solid @secondary;
-  background: @secondary;
-  color: @text;
-  font-weight: 500;
-  min-width: 65px;        /* <<< keeps width fixed */
-}
-
-#custom-power.performance {
-  border: 1px solid @warning;
-  color: @warning;
-}
-#custom-power.performance:hover {
-    background: @secondary_alt;
-}
-
-#custom-power.balanced {
-  border: 1px solid @primary;
   color: @primary;
 }
-#custom-power.balanced:hover {
-    background: @secondary_alt;
-}
 
-
-#custom-power.battery {
-  border: 1px solid @success;
-  color: @success;
-}
-#custom-power.battery:hover {
-    background: @secondary_alt;
-}
-
-
-/* -----------------------
- * Bluetooth
- * --------------------- */
-
-#bluetooth {
-  padding: 0 8px;
-  margin-right: 4px;
-  border-radius: 9999px;
-  background: @secondary;
-  color: @primary;
-  border: 1px solid @primary;
-  min-width: 65px;        /* <<< keeps width fixed */
-  font-weight: 500;
-}
-#bluetooth:hover {
-  background: @secondary_alt;
-}
-
-/* When at least one device is connected */
-#bluetooth.connected {
-  /* color: @; */
-}
-
-/* When Bluetooth is off/disabled */
-#bluetooth.disabled,
-#bluetooth.off {
-  border: 1px solid @muted;
+#bluetooth.disabled {
   background: @secondary_alt;
   color: @muted;
 }
 
-/* -----------------------
- * Audio (pulseaudio)
- * --------------------- */
-
-#pulseaudio {
-  padding: 0 8px;
-  margin-right: 4px;
-  border-radius: 9999px;
-  background: @secondary;
-  border: 1px solid @primary_alt;
-  color: @primary_alt;
-  font-weight: 500;
-  min-width: 65px;        /* <<< keeps width fixed */
+#bluetooth.off {
+  background: @secondary_alt;
+  color: @muted;
 }
 
-#pulseaudio:hover {
-  background: @secondary_alt;
+#bluetooth.off {
+  color: @primary;
+}
+
+#pulseaudio {
+  background: @base;
+  color: @text;
+  border-radius: 20px;
+  margin: 6px 0px;
+  padding: 0 15px;
+  margin-right: 4px;
+}
+
+#pulseaudio.bluetooth {
+  background: @secondary;
+  color: @primary;
 }
 
 #pulseaudio.muted {
-  border: 1px solid @muted;
   background: @secondary_alt;
   color: @muted;
+}
+
+#custom-power {
+  background: @base;
+  color: @text;
+  border-radius: 20px;
+  margin: 6px 0px;
+  padding: 0 15px;
+  margin-right: 4px;
+}
+
+#custom-power.performance {
+  color: @error;
+}
+
+#custom-power.balanced {
+  color: @primary;
+}
+
+#custom-power.battery {
+  color: @success;
+}
+
+#battery {
+  background: @base;
+  color: @text;
+  border-radius: 20px;
+  margin: 6px 0px;
+  padding: 0 15px;
+}
+
+#battery.warning {
+  background: @secondary_alt;
+  color: @warning;
+}
+
+#battery.critical {
+  background: @secondary_alt;
+  color: @error;
+}
+
+#battery.charging {
+  background: @base;
+  color: @success;
 }
 
