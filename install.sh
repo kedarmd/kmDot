@@ -34,6 +34,7 @@ APPS=(
   "rofi"
   "starship"
   "waybar"
+  "theme-switcher"
 )
 
 SELECTED=()
