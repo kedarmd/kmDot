@@ -55,12 +55,13 @@ tooltip label {
   padding: 4px 10px;
   border-radius: 14px;
   border: 1px solid transparent;
-  transition: all 200ms ease;
+  transition: all 300ms ease;
 }
 
 #workspaces button.empty {
   background: @surface;
   color: @muted;
+  border-color: @surface_alt;
 }
 
 #workspaces button.urgent {
@@ -71,10 +72,6 @@ tooltip label {
 #workspaces button.active {
   background: @primary;
   color: @base;
-}
-
-#workspaces button:hover {
-  background: @surface_alt;
 }
 
 /* Clock */
