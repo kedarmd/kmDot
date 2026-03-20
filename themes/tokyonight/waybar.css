@@ -1,15 +1,17 @@
-/* -----------------------
- * TokyoNight Moon Variables
- * ----------------------- */
-@define-color primary       #7aa2f7;  /* blue */
-@define-color primary_alt   #bb9af7;  /* purple */
-@define-color secondary     #1f2335;  /* bg / surface0 */
-@define-color secondary_alt #2a2f45;  /* bg_highlight / surface1 */
+/* ---------------------------
+ * TokyoNight Night Variables
+ * --------------------------- */
+@define-color base          #1a1b26;  /* bg */
+@define-color surface       #1f2335;  /* bg_dark */
+@define-color surface_alt   #292e42;  /* bg_highlight */
 @define-color text          #c0caf5;  /* fg */
 @define-color text_alt      #a9b1d6;  /* fg_dark */
-@define-color error         #f7768e;  /* red */
-@define-color warning       #e0af68;  /* yellow */
+@define-color muted         #565f89;  /* comment */
+@define-color border        #3b4261;  /* fg_gutter */
+@define-color primary       #7aa2f7;  /* blue */
+@define-color primary_alt   #bb9af7;  /* purple */
+@define-color accent        #7dcfff;  /* cyan */
 @define-color success       #9ece6a;  /* green */
-@define-color highlight     #bb9af7;  /* purple accent */
-@define-color base          #1a1b26;  /* base background */
-@define-color muted         #565f89;  /* comment / dim text */
+@define-color warning       #e0af68;  /* yellow */
+@define-color error         #f7768e;  /* red */
+@define-color urgent        #f7768e;  /* red */
