@@ -1,87 +1,17 @@
-/* --------------------------------
- * Everforest (inspired) Variables
- * -------------------------------- */
-@define-color primary         #83a66a;  /* soft green */
-@define-color primary_alt     #a7c080;  /* lighter green */
-@define-color secondary       #2b3330;  /* background / surface */
-@define-color secondary_alt   #32403c;  /* surface highlight */
-@define-color text            #d8e0c6;  /* foreground */
-@define-color text_alt        #bfc9b0;  /* muted foreground */
-@define-color error           #e67e80;  /* red */
-@define-color warning         #d6a95f;  /* yellow / amber */
-@define-color success         #83a66a;  /* green */
-@define-color highlight       #a7c080;  /* accent */
-@define-color base            #232a28;  /* base background */
-@define-color muted           #6f7b73;  /* comment / dim text */
-
-/* Example styles for waybar modules (adjust to taste) */
-
-* {
-  font-family: "JetBrains Mono", "Fira Code", monospace;
-  color: @text;
-}
-
-/* bar background and separators */
-#waybar {
-  background: @secondary;
-  color: @text;
-  border-bottom: 1px solid @secondary_alt;
-}
-
-/* module containers */
-#waybar .left,
-#waybar .center,
-#waybar .right {
-  background: transparent;
-}
-
-/* active item */
-.module .button,
-.module .label {
-  color: @text;
-  padding: 6px 10px;
-}
-
-.module .button:hover,
-.module .label:hover {
-  background: @secondary_alt;
-  color: @text;
-  border-radius: 6px;
-}
-
-/* urgency / error */
-.module.error {
-  background: @error;
-  color: @base;
-}
-
-/* success / ok state */
-.module.success {
-  background: @success;
-  color: @base;
-}
-
-/* highlighted element (e.g., active workspace) */
-.module.active {
-  background: @primary;
-  color: @base;
-  border-radius: 6px;
-}
-
-/* muted / dim text */
-.module.muted {
-  color: @muted;
-  background: transparent;
-}
-
-/* battery / progress bars */
-.progress {
-  background: linear-gradient(90deg, @primary_alt 0%, @primary 100%);
-  border-radius: 4px;
-}
-
-/* clock / separators */
-.separator {
-  color: @text_alt;
-  padding: 0 6px;
-}
+/* ------------------------------
+ * Everforest Dark Hard Variables
+ * ------------------------------ */
+@define-color base          #272E33;  /* bg0 */
+@define-color surface       #2E383C;  /* bg1 */
+@define-color surface_alt   #374145;  /* bg2 */
+@define-color text          #D3C6AA;  /* fg */
+@define-color text_alt      #9DA9A0;  /* grey2 */
+@define-color muted         #7A8478;  /* grey0 */
+@define-color border        #495156;  /* bg4 */
+@define-color primary       #7FBBB3;  /* blue */
+@define-color primary_alt   #D699B6;  /* purple */
+@define-color accent        #83C092;  /* aqua */
+@define-color success       #A7C080;  /* green */
+@define-color warning       #DBBC7F;  /* yellow */
+@define-color error         #E67E80;  /* red */
+@define-color urgent        #E67E80;  /* red */
