@@ -15,5 +15,11 @@ fi
 
 cat "$COLORSCHEME_FILE" > "$CONFIG_FILE"
 
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-"$SCRIPT_DIR/utils/change-nvim-theme-live.sh" "$THEME"
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+THEME_SWITCHER_DIR="$(cd "$HOOK_DIR/.." && pwd -P)"
+UTIL_SCRIPT="$THEME_SWITCHER_DIR/utils/change-nvim-theme-live.sh"
+if [ ! -x "$UTIL_SCRIPT" ]; then
+  echo "ERROR: Missing executable $UTIL_SCRIPT"
+  exit 1
+fi
+"$UTIL_SCRIPT" "$THEME"
