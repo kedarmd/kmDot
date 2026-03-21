@@ -25,4 +25,7 @@ find "$WALLPAPERS_DEST" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" 
 echo "Copying wallpapers for theme '$THEME'..."
 cp -v "$WALLPAPERS_SOURCE"/* "$WALLPAPERS_DEST/" 2>/dev/null || true
 
+# Apply new wallpapaer on theme change
+~/.config/hypr/scripts/cycle_wallpapers.sh
+
 echo "Wallpapers updated successfully!"
