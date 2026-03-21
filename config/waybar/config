@@ -75,7 +75,7 @@
 
   "pulseaudio": {
     "format": "{icon} {volume}%",
-    "format-muted": " Muted",
+    "format-muted": "󰝟 Muted",
     "tooltip-format": "Volume: {volume}%",
     "scroll-step": 2,
     "on-click": "pamixer -t",
