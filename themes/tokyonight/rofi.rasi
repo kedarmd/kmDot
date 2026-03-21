@@ -2,14 +2,13 @@
   font: "JetBrainsMono Nerd Font 12";
 
   background: #1a1b26;
-  background-alt: #1f2335;
+  background-alt: #292e42;
   foreground: #c0caf5;
   selected: #7aa2f7;
   selected-foreground: #1a1b26;
-  background-secondary: #3d59a1;
 
-  border-color: #414868;
-  separatorcolor: #414868;
+  border-color: #3b4261;
+  separatorcolor: #3b4261;
 
   border-radius: 6px;
   padding: 8px;
@@ -42,8 +41,8 @@ inputbar {
 
 prompt {
   padding: 8px;
-  text-color: @foreground;
-  background-color: @background-secondary; 
+  text-color: @selected-foreground;
+  background-color: @selected;
 }
 
 entry {
@@ -62,17 +61,17 @@ listview {
 element {
   padding: 6px;
   text-color: @foreground;
-  background-color: @background-alt;
+  background-color: @background;
   border-radius: 4px;
 }
 
 element-icon {
-  background-color: @background-alt;
+  background-color: @background;
   padding: 6px;
 }
 
 element-text {
-  background-color: @background-alt;
+  background-color: @background;
   text-color: @foreground;
 }
 
@@ -89,4 +88,3 @@ element-text selected {
   background-color: @selected;
   text-color: @selected-foreground;
 }
-

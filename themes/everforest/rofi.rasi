@@ -1,16 +1,15 @@
 * {
   font: "JetBrainsMono Nerd Font 12";
 
-  /* Everforest-inspired palette */
-  background: #2b3330;
-  background-alt: #32403c;
-  foreground: #d8e0c6;
-  selected: #83a66a;
-  selected-foreground: #1e201c;
-  background-secondary: #a7c080;
+  /* Everforest Dark Hard palette (Waybar-aligned) */
+  background: #1E2326;
+  background-alt: #2E383C;
+  foreground: #D3C6AA;
+  selected: #7FBBB3;
+  selected-foreground: #1E2326;
 
-  border-color: #4a584f;
-  separatorcolor: #4a584f;
+  border-color: #414B50;
+  separatorcolor: #414B50;
 
   border-radius: 6px;
   padding: 8px;
@@ -44,7 +43,7 @@ inputbar {
 prompt {
   padding: 8px;
   text-color: @selected-foreground;
-  background-color: @background-secondary;
+  background-color: @selected;
 }
 
 entry {
@@ -63,17 +62,17 @@ listview {
 element {
   padding: 6px;
   text-color: @foreground;
-  background-color: @background-alt;
+  background-color: @background;
   border-radius: 4px;
 }
 
 element-icon {
-  background-color: @background-alt;
+  background-color: @background;
   padding: 6px;
 }
 
 element-text {
-  background-color: @background-alt;
+  background-color: @background;
   text-color: @foreground;
 }
 
