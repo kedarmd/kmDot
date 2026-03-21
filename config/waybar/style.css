@@ -30,12 +30,8 @@ tooltip label {
   background: @surface;
   border: 1px solid @border;
   border-radius: 18px;
-  margin-top: 6px;
+  margin: 4px 6 0 6px;
   padding: 4px 8px;
-}
-
-#workspaces {
-  margin-left: 10px;
 }
 
 #custom-clock {
@@ -43,7 +39,6 @@ tooltip label {
 }
 
 .modules-right {
-  margin-right: 10px;
   padding: 4px 10px;
 }
 
@@ -59,9 +54,8 @@ tooltip label {
 }
 
 #workspaces button.empty {
-  background: @surface;
   color: @muted;
-  border-color: @surface_alt;
+  opacity: 0.4;
 }
 
 #workspaces button.urgent {
@@ -72,6 +66,7 @@ tooltip label {
 #workspaces button.active {
   background: @primary;
   color: @base;
+  opacity: 1;
 }
 
 /* Clock */
