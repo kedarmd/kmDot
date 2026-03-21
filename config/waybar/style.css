@@ -93,8 +93,7 @@ tooltip label {
 
 #network.disabled,
 #network.disconnected {
-  background: @surface;
-  color: @muted;
+  opacity: 0.4;
 }
 
 #bluetooth {
@@ -103,8 +102,7 @@ tooltip label {
 
 #bluetooth.disabled,
 #bluetooth.off {
-  background: @surface;
-  color: @muted;
+  opacity: 0.4;
 }
 
 #pulseaudio {
@@ -116,8 +114,7 @@ tooltip label {
 }
 
 #pulseaudio.muted {
-  background: @surface;
-  color: @muted;
+  opacity: 0.4;
 }
 
 #custom-power {
