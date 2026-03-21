@@ -41,7 +41,7 @@ for theme in "${themes[@]}"; do
   theme_from_display["$display"]="$theme"
 done
 
-choice=$(printf '%s\n' "${display_choices[@]}" | rofi -dmenu -normal-window -i -p "Themes" -theme-str 'element-icon { width: 0px; padding: 0px; margin: 0px; } element-icon selected { width: 0px; padding: 0px; margin: 0px; }')
+choice=$(printf '%s\n' "${display_choices[@]}" | rofi -dmenu -no-show-icons -normal-window -i -p "Themes")
 
 [ -z "$choice" ] && exit 0
 
