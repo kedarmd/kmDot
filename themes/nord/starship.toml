@@ -1,15 +1,15 @@
 format = """
-$os$username(bg:#5e81ac fg:#2e3440)\
-[](bg:#81a1c1 fg:#5e81ac)\
+$os$username(bg:#434C5E fg:#D8DEE9)\
+[](bg:#81A1C1 fg:#434C5E)\
 $directory\
-[](bg:#88c0d0 fg:#81a1c1)\
+[](bg:#8FBCBB fg:#81A1C1)\
 $git_branch$git_status\
-[](bg:#779F9E  fg:#88c0d0)\
+[](bg:#88C0D0  fg:#8FBCBB)\
 $deno\
 $golang\
 $lua\
 $nodejs\
-[ ](fg:#779F9E)\
+[ ](fg:#88C0D0)\
 """
 
 # GIT
@@ -18,10 +18,10 @@ $nodejs\
 [git_branch]
 format = "[ $symbol$branch(:$remote_branch) ]($style)"
 symbol = "󰘬 "
-style = "fg:#2e3440 bg:#88c0d0"
+style = "fg:#2E3440 bg:#8FBCBB"
 
 [git_status]
-style = "fg:#2e3440 bg:#88c0d0"
+style = "fg:#2E3440 bg:#8FBCBB"
 format = '[($all_status$ahead_behind )]($style)'
 
 # LANGUAGES
@@ -30,34 +30,34 @@ format = '[($all_status$ahead_behind )]($style)'
 [lua]
 symbol = '󰢱 '
 format = '[ $symbol($version )]($style)'
-style = "fg:#2e3440 bg:#779F9E"
+style = "fg:#2E3440 bg:#88C0D0"
 
 [golang]
 symbol = '󰟓 '
 format = '[ $symbol($version )]($style)'
-style = "fg:#2e3440 bg:#779F9E"
+style = "fg:#2E3440 bg:#88C0D0"
 
 [deno]
 symbol = 'Deno '
 format = '[ $symbol($version )]($style)'
-style = "fg:#2e3440 bg:#779F9E"
+style = "fg:#2E3440 bg:#88C0D0"
 
 [nodejs]
 symbol = '󰎙 '
 format = "[ $symbol($version )]($style)"
-style = "fg:#2e3440 bg:#779F9E"
+style = "fg:#2E3440 bg:#88C0D0"
 
 # MISC
 # ====
 
 [hostname]
 ssh_only = false
-style = "fg:#2e3440 bg:#5e81ac"
+style = "fg:#D8DEE9 bg:#434C5E"
 format = "[$ssh_symbol$hostname ]($style)"
 ssh_symbol = " "
 
 [os]
-style = "fg:#2e3440 bg:#5e81ac"
+style = "fg:#D8DEE9 bg:#434C5E"
 disabled = false
 
 [os.symbols]
@@ -74,26 +74,25 @@ disabled = false
 [username]
 show_always = true
 format = '[$user ]($style)'
-style_user = "fg:#2e3440 bg:#5e81ac"
+style_user = "fg:#D8DEE9 bg:#434C5E"
 
 [directory]
-style = "fg:#2e3440 bg:#81a1c1"
+style = "fg:#2E3440 bg:#81A1C1"
 read_only = " "
 format = "[ 󰉋 $path ]($style)[$read_only]($read_only_style)"
-read_only_style = "fg:#2e3440 bold bg:#81a1c1"
+read_only_style = "fg:#2E3440 bold bg:#81A1C1"
 
 [sudo]
 disabled = false
 symbol = " "
-style = "fg:#2e3440 bg:#d9dee9"
+style = "fg:#D8DEE9 bg:#434C5E"
 format = "[ $symbol]($style)"
 
 [cmd_duration]
 format = "[ 󰔚 $duration ]($style)"
-style = "fg:#2e3440 bg:#d9dee9"
+style = "fg:#D8DEE9 bg:#434C5E"
 
 [character]
 success_symbol = "[ 󱞩](bold green)"
 error_symbol = "[ 󱞩](bold red)"
 vimcmd_symbol = "[  󱞩](bold green)"
-
