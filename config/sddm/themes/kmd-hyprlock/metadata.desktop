@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=kmd-hyprlock
+Description=Minimal Hyprlock-inspired theme
+Author=kmd
+Type=sddm-theme
+Version=0.1
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=kmd-hyprlock
+Theme-API=2.0
+QtVersion=6
