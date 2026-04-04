@@ -52,9 +52,9 @@
   },
   
   "network": {
-    "format-wifi": "  {essid}",
-    "format-ethernet": "󰈁  {ifname}",
-    "format-disconnected": "󰖪  Disconnected",
+    "format-wifi": " {essid}",
+    "format-ethernet": "󰈁 {ifname}",
+    "format-disconnected": "󰖪 Disconnected",
     "tooltip-format": "{ifname} via {gwaddr}\n{ipaddr}/{cidr}",
     "interval": 5,
     "on-click": "~/.config/kmdot/rofi/menu/wifi.sh"

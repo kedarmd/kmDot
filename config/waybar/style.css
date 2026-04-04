@@ -30,8 +30,8 @@ tooltip label {
   background: @surface;
   border: 1px solid @border;
   border-radius: 10px;
-  margin: 4px 6 0 6px;
-  padding: 4px 8px;
+  margin: 4px 6px 0 6px;
+  padding: 4px 4px;
 }
 
 #custom-clock {
@@ -88,6 +88,7 @@ tooltip label {
 
 #network {
   color: @accent;
+  margin-left: 0;
 }
 
 #network.disabled,
@@ -134,6 +135,7 @@ tooltip label {
 
 #battery {
   color: @text;
+  margin-right: 0; 
 }
 
 #battery.warning {
