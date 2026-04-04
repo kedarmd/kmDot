@@ -42,6 +42,24 @@ Use the filename or pattern to execute individual tests:
 
 ---
 
+## 1.6 Dotfiles Workflow
+
+### 1.6.1 Sync Model (Required)
+- Source of truth is this repo: `config/`, `theme-switcher/`, `themes/`, `sync/`.
+- Do not write directly to `~/.config/*` or `~/.tmux.conf`.
+- Always use `sync/*.sh` to copy into `~/.config/kmdot` and create symlinks.
+
+### 1.6.2 Installer
+- `install.sh` runs the per-app sync scripts.
+- Add new apps to `install.sh` and create a matching `sync/<app>.sh`.
+
+### 1.6.3 Theme System
+- Themes live in `themes/<theme>/`.
+- Theme switching is done by `theme-switcher/main.sh <theme>`.
+- Hooks update app configs and reload where relevant.
+
+---
+
 ## 2. Code Style Guidelines
 
 ### 2.1 Imports
@@ -107,6 +125,30 @@ end
 ```lua
 print(vim.inspect(variable))
 ```
+
+---
+
+## 4. App-Specific Notes
+
+### 4.1 Tmux
+- Modular config under `config/tmux/conf.d/`.
+- Runtime theme colors are written to `~/.config/kmdot/tmux/colors.conf`.
+- Layout is in `config/tmux/theme.conf`.
+- Prefix is `C-s`; window indices renumber automatically.
+- TPM is used for plugins; install separately.
+
+### 4.2 Theme Switcher
+- Hooks live in `theme-switcher/hooks/`.
+- `theme-switcher/hooks/starship.sh` enforces `right_format = ""` and disables battery.
+- `theme-switcher/hooks/waybar.sh` restarts waybar with output silenced.
+
+### 4.3 Hyprland Wallpapers
+- Wallpaper cycling: `config/hyprland/scripts/cycle_wallpapers.sh`.
+- Script exits early if hyprpaper is not running.
+
+### 4.4 Locale and Nerd Fonts
+- Tmux requires UTF-8 locale for Nerd Font glyphs.
+- Recommended: `LANG=en_IN.UTF-8` and `LC_ALL=en_IN.UTF-8`.
 
 ---
 
