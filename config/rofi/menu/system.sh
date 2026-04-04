@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-shutdown="  Shutdown"
-restart="  Restart"
-suspend="  Suspend"
+lock="  Lock"
 logout="  Logout"
-options="$shutdown\n$restart\n$suspend\n$logout"
+restart="  Restart"
+shutdown="  Shutdown"
+suspend="  Suspend"
+options="$lock\n$logout\n$restart\n$shutdown\n$suspend"
 
 choice=$(echo -e "$options" | rofi -dmenu -no-show-icons -normal-window -i -p "System Menu")
 
@@ -17,6 +18,9 @@ case "$choice" in
     ;;
   "$suspend")
     systemctl suspend
+    ;;
+  "$lock")
+    hyprlock
     ;;
   "$logout")
     hyprctl dispatch exit
