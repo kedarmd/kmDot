@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
 
-WALLPAPERS_DIR="$HOME/Pictures"
-CACHE_FILE="$HOME/.cache/hyprpaper_wallpaper_index"
+THEMES_DIR="$HOME/.config/kmdot/themes"
+CACHE_THEME_FILE="$HOME/.cache/kmdot_theme"
+THEME="${1:-$(cat "$CACHE_THEME_FILE" 2>/dev/null)}"
+
+if [ -z "$THEME" ] && [ -d "$THEMES_DIR" ]; then
+  THEME="$(ls -1 "$THEMES_DIR" 2>/dev/null | head -n 1)"
+fi
+
+WALLPAPERS_DIR="$THEMES_DIR/$THEME/wallpapers"
+if [ ! -d "$WALLPAPERS_DIR" ]; then
+  WALLPAPERS_DIR="$HOME/Pictures"
+fi
+
+CACHE_FILE="$HOME/.cache/hyprpaper_wallpaper_index_${THEME:-default}"
+CACHE_WALLPAPER_FILE="$HOME/.cache/hyprpaper_wallpaper_${THEME:-default}"
 
 # Collect wallpapers (non-random, sorted)
 mapfile -t FILES < <(find "$WALLPAPERS_DIR" -maxdepth 1 -type f \
@@ -23,18 +36,16 @@ echo "$INDEX" > "$CACHE_FILE"
 
 WALLPAPER="${FILES[$INDEX]}"
 
-# Get all monitor names
-MONITORS=$(hyprctl monitors -j | jq -r '.[].name')
+mkdir -p "$(dirname "$CACHE_WALLPAPER_FILE")"
+echo "$WALLPAPER" > "$CACHE_WALLPAPER_FILE"
 
-# Ensure hyprpaper is running before issuing commands
-if ! hyprctl hyprpaper list >/dev/null 2>&1; then
-  exit 0
+if ! pgrep -x awww-daemon >/dev/null 2>&1; then
+  nohup awww-daemon >/dev/null 2>&1 &
+  sleep 0.2
 fi
 
-# Reset and apply wallpaper via hyprpaper
-hyprctl hyprpaper unload all > /dev/null 2>&1
-hyprctl hyprpaper preload "$WALLPAPER"
-
-for MON in $MONITORS; do
-  hyprctl hyprpaper wallpaper "$MON,$WALLPAPER"
-done
+awww img "$WALLPAPER" \
+  --transition-type grow \
+  --transition-duration 1 \
+  --transition-fps 60 \
+  >/dev/null 2>&1
