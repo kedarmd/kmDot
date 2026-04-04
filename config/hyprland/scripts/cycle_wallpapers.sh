@@ -26,6 +26,11 @@ WALLPAPER="${FILES[$INDEX]}"
 # Get all monitor names
 MONITORS=$(hyprctl monitors -j | jq -r '.[].name')
 
+# Ensure hyprpaper is running before issuing commands
+if ! hyprctl hyprpaper list >/dev/null 2>&1; then
+  exit 0
+fi
+
 # Reset and apply wallpaper via hyprpaper
 hyprctl hyprpaper unload all > /dev/null 2>&1
 hyprctl hyprpaper preload "$WALLPAPER"
@@ -33,4 +38,3 @@ hyprctl hyprpaper preload "$WALLPAPER"
 for MON in $MONITORS; do
   hyprctl hyprpaper wallpaper "$MON,$WALLPAPER"
 done
-

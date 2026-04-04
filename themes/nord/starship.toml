@@ -12,6 +12,8 @@ $nodejs\
 [ ](fg:#88C0D0)\
 """
 
+right_format = ""
+
 # GIT
 # ===
 
@@ -96,3 +98,6 @@ style = "fg:#D8DEE9 bg:#434C5E"
 success_symbol = "[ 󱞩](bold green)"
 error_symbol = "[ 󱞩](bold red)"
 vimcmd_symbol = "[  󱞩](bold green)"
+
+[battery]
+disabled = true

@@ -14,3 +14,18 @@ if [ ! -f "$THEME_FILE" ]; then
 fi
 
 cat "$THEME_FILE" > "$CONFIG_FILE"
+
+if ! grep -q "^right_format" "$CONFIG_FILE"; then
+  {
+    echo
+    echo "right_format = \"\""
+  } >> "$CONFIG_FILE"
+fi
+
+if ! grep -q "^\[battery\]" "$CONFIG_FILE"; then
+  {
+    echo
+    echo "[battery]"
+    echo "disabled = true"
+  } >> "$CONFIG_FILE"
+fi

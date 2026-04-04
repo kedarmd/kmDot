@@ -36,6 +36,7 @@ APPS=(
   "starship"
   "waybar"
   "theme-switcher"
+  "tmux"
   "xdg-desktop-portal"
 )
 

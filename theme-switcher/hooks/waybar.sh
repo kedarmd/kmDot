@@ -16,6 +16,6 @@ fi
 cat "$COLORSCHEME_FILE" > "$CONFIG_FILE"
 
 # Reload waybar to apply the new theme
-pkill waybar && waybar &
+pkill waybar && waybar >/dev/null 2>&1 &
 
 echo "✓ Waybar theme updated to: $THEME"
