@@ -1,6 +1,6 @@
-import QtQuick 2.0
+import QtQuick 2.15
+import QtQuick.Controls 2.15
 import SddmComponents 2.0
-import Qt5Compat.GraphicalEffects 1.0
 
 Rectangle {
   id: root
@@ -10,263 +10,189 @@ Rectangle {
   LayoutMirroring.enabled: Qt.locale().textDirection == Qt.RightToLeft
   LayoutMirroring.childrenInherit: true
 
-  property color surfaceColor: config.surface ? config.surface : "#1f2335"
-  property color surfaceAltColor: config.surfaceAlt ? config.surfaceAlt : "#292e42"
-  property color borderColor: config.border ? config.border : "#3b4261"
-  property color textColor: config.text ? config.text : "#c0caf5"
-  property color mutedColor: config.muted ? config.muted : "#a9b1d6"
-  property color accentColor: config.accent ? config.accent : "#88c0d0"
-  property color accentAltColor: config.accentAlt ? config.accentAlt : "#81a1c1"
-  property color errorColor: config.error ? config.error : "#bf616a"
-
+  property color textColor: config.text ? config.text : "#ffffff"
+  
   TextConstants { id: textConstants }
 
-  Item {
-    id: backgroundLayer
+  // 1. Background Image (Full Screen)
+  Image {
+    id: bgImage
     anchors.fill: parent
-
-    Rectangle {
-      anchors.fill: parent
-      color: "#0b111a"
-
-      Image {
-        id: bgImage
-        anchors.fill: parent
-        source: Qt.resolvedUrl(config.background)
-        fillMode: Image.PreserveAspectCrop
-
-        onStatusChanged: {
-          if (status === Image.Error) {
-            visible = false
-          }
-        }
-      }
-
-      Rectangle {
-        anchors.fill: parent
-        color: "#0b111a"
-        opacity: 0.25
-      }
-    }
-
-    Rectangle {
-      anchors.fill: parent
-      gradient: Gradient {
-        GradientStop { position: 0.0; color: "#0b111a" }
-        GradientStop { position: 0.55; color: "transparent" }
-        GradientStop { position: 1.0; color: "#0b111a" }
-      }
-      opacity: 0.35
-    }
+    source: Qt.resolvedUrl(config.background)
+    fillMode: Image.PreserveAspectCrop
   }
 
-  Connections {
-    target: sddm
 
-    function onLoginFailed() {
-      password.text = ""
-      statusText.color = errorColor
-      statusText.text = textConstants.loginFailed
-    }
-
-    function onLoginSucceeded() {
-      statusText.color = accentColor
-      statusText.text = textConstants.loginSucceeded
-    }
-
-    function onInformationMessage(message) {
-      statusText.color = errorColor
-      statusText.text = message
-    }
-  }
-
+  // Optional: A very subtle global dark gradient at the bottom to ensure white text is readable
   Rectangle {
-    id: card
+    anchors.bottom: parent.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    height: 150
+    gradient: Gradient {
+      GradientStop { position: 0.0; color: "transparent" }
+      GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.4) }
+    }
+  }
+
+  // Top Right Status Bar (Placeholder for Clock)
+  Text {
+    anchors.top: parent.top
+    anchors.right: parent.right
+    anchors.margins: 20
+    color: textColor
+    font.pixelSize: 13
+    font.weight: Font.Medium
+    text: Qt.formatDateTime(new Date(), "ddd h:mm A") 
+  }
+
+  // 2. Central Login Area (Floating)
+  Column {
+    id: mainColumn
     anchors.centerIn: parent
-    width: 380
-    height: mainColumn.implicitHeight + 40
-    radius: 14
-    clip: true
-    color: "transparent"
-    border.width: 2
-    border.color: "#c0caf5"
+    anchors.verticalCenterOffset: -40 // Shift up slightly like macOS
+    spacing: 20
 
-    ShaderEffectSource {
-      id: blurSource
-      anchors.fill: parent
-      sourceItem: backgroundLayer
-      sourceRect: Qt.rect(card.x, card.y, card.width, card.height)
-      live: true
-      hideSource: false
-      visible: false
-    }
-
-    FastBlur {
-      anchors.fill: parent
-      source: blurSource
-      radius: 22
-    }
-
+    // Profile Avatar
     Rectangle {
-      anchors.fill: parent
-      color: Qt.rgba(surfaceColor.r, surfaceColor.g, surfaceColor.b, 0.28)
+      width: 100
+      height: 100
+      radius: 50
+      anchors.horizontalCenter: parent.horizontalCenter
+      color: Qt.rgba(1, 1, 1, 0.2)
+      border.color: Qt.rgba(1, 1, 1, 0.4)
+      border.width: 1
+      
+      Text {
+        anchors.centerIn: parent
+        text: (userModel.lastUser && userModel.lastUser.length > 0)
+          ? userModel.lastUser.charAt(0).toUpperCase()
+          : "K"
+        font.pixelSize: 42
+        font.weight: Font.Medium
+        color: textColor
+      }
     }
 
-    Column {
-      id: mainColumn
-      anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.top: parent.top
-      anchors.leftMargin: 20
-      anchors.rightMargin: 20
-      anchors.topMargin: 20
-      spacing: 8
+    // Username
+    Text {
+      text: userModel.lastUser || "Guest"
+      color: textColor
+      font.pixelSize: 22
+      font.weight: Font.Bold
+      horizontalAlignment: Text.AlignHCenter
+      anchors.horizontalCenter: parent.horizontalCenter
+      style: Text.Raised
+      styleColor: Qt.rgba(0, 0, 0, 0.5)
+    }
 
-      Text {
-        text: "Welcome"
+    // Password Input Row (Pill shape + Question Mark)
+    Row {
+      anchors.horizontalCenter: parent.horizontalCenter
+      spacing: 10
+
+      TextField {
+        id: password
+        width: 180
+        height: 32
+        leftPadding: 12
+        rightPadding: 12
+        placeholderText: "Enter Password"
+        echoMode: TextInput.Password // Masks the text with dots
         color: textColor
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 18
-        horizontalAlignment: Text.AlignHCenter
-        width: parent.width
-      }
+        font.pixelSize: 14
+        
+        // This styles the placeholder text specifically
+        placeholderTextColor: Qt.rgba(1, 1, 1, 0.6) 
 
-      Text {
-        id: statusText
-        text: textConstants.prompt
-        color: mutedColor
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 11
-        horizontalAlignment: Text.AlignHCenter
-        width: parent.width
-      }
-
-      Column {
-        width: parent.width
-        spacing: 6
-
-        Text {
-          text: textConstants.userName
-          color: "#e6edf6"
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 12
+        // This creates the pill shape background
+        background: Rectangle {
+          radius: 16
+          color: Qt.rgba(1, 1, 1, 0.25)
+          border.color: "transparent"
         }
 
-        TextBox {
-          id: username
-          width: parent.width
-          height: 34
-          text: userModel.lastUser
-          color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.65)
-          textColor: "#e6edf6"
-          borderColor: borderColor
-          focusColor: accentColor
-          hoverColor: accentAltColor
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 14
-          KeyNavigation.tab: password
-        }
-      }
-
-      Column {
-        width: parent.width
-        spacing: 6
-
-        Text {
-          text: textConstants.password
-          color: "#e6edf6"
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 12
-        }
-
-        PasswordBox {
-          id: password
-          width: parent.width
-          height: 34
-          color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.65)
-          textColor: "#e6edf6"
-          borderColor: borderColor
-          focusColor: accentColor
-          hoverColor: accentAltColor
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 14
-          KeyNavigation.tab: loginButton
-
-          Keys.onPressed: function (event) {
-            if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-              loginButton.clicked()
-              event.accepted = true
-            }
+        Keys.onPressed: function (event) {
+          if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            sddm.login(userModel.lastUser, password.text, sessionModel.lastIndex)
           }
         }
       }
+    }
+  }
 
-      Row {
-        spacing: 10
-        width: parent.width
-        height: 38
+  // 3. Bottom Power Actions
+  Row {
+    id: powerRow
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    anchors.bottomMargin: 60
+    anchors.rightMargin: 60
+    spacing: 40
 
-        Button {
-          id: loginButton
-          width: parent.width
-          height: 38
-          text: textConstants.login
-          color: accentColor
-          textColor: "#0b111a"
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 14
-
-          onClicked: {
-            sddm.login(username.text, password.text, sessionModel.lastIndex)
-          }
-        }
-      }
-
-      Row {
-        spacing: 10
-        width: parent.width
-        height: 34
-
-        Button {
-          width: (parent.width - spacing) / 2
-          height: 34
-          text: textConstants.reboot
-          color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.8)
-          textColor: textColor
-          borderColor:  "#e6edf6"
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 12
-          onClicked: sddm.reboot()
-        }
-
-        Button {
-          width: (parent.width - spacing) / 2
-          height: 34
-          text: textConstants.shutdown
-          color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.8)
-          textColor: textColor
-          borderColor:  "#e6edf6"
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 12
+    // Shut Down
+    Column {
+      spacing: 8
+      Rectangle {
+        width: 44; height: 44; radius: 22
+        anchors.horizontalCenter: parent.horizontalCenter
+        color: powerMouseArea1.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+        border.color: Qt.rgba(1, 1, 1, 0.6); border.width: 1.5
+        
+        Text { anchors.centerIn: parent; text: "⏻"; color: textColor; font.pixelSize: 20 }
+        
+        MouseArea {
+          id: powerMouseArea1
+          anchors.fill: parent
+          hoverEnabled: true
           onClicked: sddm.powerOff()
         }
       }
+      Text { text: "Shut Down"; color: textColor; font.pixelSize: 12; font.weight: Font.Medium; anchors.horizontalCenter: parent.horizontalCenter; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
     }
 
-    Rectangle {
-      anchors.fill: parent
-      radius: 14
-      color: "transparent"
-      border.width: 2
-      border.color: "#c0caf5"
+    // Restart
+    Column {
+      spacing: 8
+      Rectangle {
+        width: 44; height: 44; radius: 22
+        anchors.horizontalCenter: parent.horizontalCenter
+        color: powerMouseArea2.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+        border.color: Qt.rgba(1, 1, 1, 0.6); border.width: 1.5
+        
+        Text { anchors.centerIn: parent; text: "⟳"; color: textColor; font.pixelSize: 24; anchors.verticalCenterOffset: -2 }
+        
+        MouseArea {
+          id: powerMouseArea2
+          anchors.fill: parent
+          hoverEnabled: true
+          onClicked: sddm.reboot()
+        }
+      }
+      Text { text: "Restart"; color: textColor; font.pixelSize: 12; font.weight: Font.Medium; anchors.horizontalCenter: parent.horizontalCenter; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
+    }
+
+    // Sleep
+    Column {
+      spacing: 8
+      Rectangle {
+        width: 44; height: 44; radius: 22
+        anchors.horizontalCenter: parent.horizontalCenter
+        color: powerMouseArea3.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
+        border.color: Qt.rgba(1, 1, 1, 0.6); border.width: 1.5
+        
+        Text { anchors.centerIn: parent; text: "☾"; color: textColor; font.pixelSize: 20; anchors.verticalCenterOffset: -1 }
+        
+        MouseArea {
+          id: powerMouseArea3
+          anchors.fill: parent
+          hoverEnabled: true
+          onClicked: sddm.suspend()
+        }
+      }
+      Text { text: "Sleep"; color: textColor; font.pixelSize: 12; font.weight: Font.Medium; anchors.horizontalCenter: parent.horizontalCenter; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
     }
   }
 
-  Component.onCompleted: {
-    if (username.text === "") {
-      username.focus = true
-    } else {
-      password.focus = true
-    }
-  }
+  Component.onCompleted: password.focus = true
 }
