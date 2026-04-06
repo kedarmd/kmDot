@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import SddmComponents 2.0
+import Qt5Compat.GraphicalEffects 1.0
 
 Rectangle {
   id: root
@@ -20,38 +21,43 @@ Rectangle {
 
   TextConstants { id: textConstants }
 
-  Rectangle {
+  Item {
+    id: backgroundLayer
     anchors.fill: parent
-    color: "#0b111a"
 
-    Image {
-      id: bgImage
+    Rectangle {
       anchors.fill: parent
-      source: Qt.resolvedUrl(config.background)
-      fillMode: Image.PreserveAspectCrop
+      color: "#0b111a"
 
-      onStatusChanged: {
-        if (status === Image.Error) {
-          visible = false
+      Image {
+        id: bgImage
+        anchors.fill: parent
+        source: Qt.resolvedUrl(config.background)
+        fillMode: Image.PreserveAspectCrop
+
+        onStatusChanged: {
+          if (status === Image.Error) {
+            visible = false
+          }
         }
+      }
+
+      Rectangle {
+        anchors.fill: parent
+        color: "#0b111a"
+        opacity: 0.25
       }
     }
 
     Rectangle {
       anchors.fill: parent
-      color: "#0b111a"
-      opacity: 0.25
+      gradient: Gradient {
+        GradientStop { position: 0.0; color: "#0b111a" }
+        GradientStop { position: 0.55; color: "transparent" }
+        GradientStop { position: 1.0; color: "#0b111a" }
+      }
+      opacity: 0.35
     }
-  }
-
-  Rectangle {
-    anchors.fill: parent
-    gradient: Gradient {
-      GradientStop { position: 0.0; color: "#0b111a" }
-      GradientStop { position: 0.55; color: "transparent" }
-      GradientStop { position: 1.0; color: "#0b111a" }
-    }
-    opacity: 0.35
   }
 
   Connections {
@@ -76,20 +82,45 @@ Rectangle {
 
   Rectangle {
     id: card
-    anchors.verticalCenter: parent.verticalCenter
-    anchors.right: parent.right
-    anchors.rightMargin: 120
+    anchors.centerIn: parent
     width: 380
-    height: 320
+    height: mainColumn.implicitHeight + 40
     radius: 14
-    color: Qt.rgba(surfaceColor.r, surfaceColor.g, surfaceColor.b, 0.78)
-    border.width: 1
-    border.color: accentColor
+    clip: true
+    color: "transparent"
+    border.width: 2
+    border.color: "#c0caf5"
+
+    ShaderEffectSource {
+      id: blurSource
+      anchors.fill: parent
+      sourceItem: backgroundLayer
+      sourceRect: Qt.rect(card.x, card.y, card.width, card.height)
+      live: true
+      hideSource: false
+      visible: false
+    }
+
+    FastBlur {
+      anchors.fill: parent
+      source: blurSource
+      radius: 22
+    }
+
+    Rectangle {
+      anchors.fill: parent
+      color: Qt.rgba(surfaceColor.r, surfaceColor.g, surfaceColor.b, 0.28)
+    }
 
     Column {
-      anchors.fill: parent
-      anchors.margins: 24
-      spacing: 10
+      id: mainColumn
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.leftMargin: 20
+      anchors.rightMargin: 20
+      anchors.topMargin: 20
+      spacing: 8
 
       Text {
         text: "Welcome"
@@ -116,7 +147,7 @@ Rectangle {
 
         Text {
           text: textConstants.userName
-          color: textColor
+          color: "#e6edf6"
           font.family: "JetBrainsMono Nerd Font"
           font.pixelSize: 12
         }
@@ -126,8 +157,8 @@ Rectangle {
           width: parent.width
           height: 34
           text: userModel.lastUser
-          color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.85)
-          textColor: textColor
+          color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.65)
+          textColor: "#e6edf6"
           borderColor: borderColor
           focusColor: accentColor
           hoverColor: accentAltColor
@@ -143,7 +174,7 @@ Rectangle {
 
         Text {
           text: textConstants.password
-          color: textColor
+          color: "#e6edf6"
           font.family: "JetBrainsMono Nerd Font"
           font.pixelSize: 12
         }
@@ -152,8 +183,8 @@ Rectangle {
           id: password
           width: parent.width
           height: 34
-          color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.85)
-          textColor: textColor
+          color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.65)
+          textColor: "#e6edf6"
           borderColor: borderColor
           focusColor: accentColor
           hoverColor: accentAltColor
@@ -173,6 +204,7 @@ Rectangle {
       Row {
         spacing: 10
         width: parent.width
+        height: 38
 
         Button {
           id: loginButton
@@ -181,7 +213,6 @@ Rectangle {
           text: textConstants.login
           color: accentColor
           textColor: "#0b111a"
-          borderColor: accentColor
           font.family: "JetBrainsMono Nerd Font"
           font.pixelSize: 14
 
@@ -194,6 +225,7 @@ Rectangle {
       Row {
         spacing: 10
         width: parent.width
+        height: 34
 
         Button {
           width: (parent.width - spacing) / 2
@@ -201,7 +233,7 @@ Rectangle {
           text: textConstants.reboot
           color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.8)
           textColor: textColor
-          borderColor: borderColor
+          borderColor:  "#e6edf6"
           font.family: "JetBrainsMono Nerd Font"
           font.pixelSize: 12
           onClicked: sddm.reboot()
@@ -213,12 +245,20 @@ Rectangle {
           text: textConstants.shutdown
           color: Qt.rgba(surfaceAltColor.r, surfaceAltColor.g, surfaceAltColor.b, 0.8)
           textColor: textColor
-          borderColor: borderColor
+          borderColor:  "#e6edf6"
           font.family: "JetBrainsMono Nerd Font"
           font.pixelSize: 12
           onClicked: sddm.powerOff()
         }
       }
+    }
+
+    Rectangle {
+      anchors.fill: parent
+      radius: 14
+      color: "transparent"
+      border.width: 2
+      border.color: "#c0caf5"
     }
   }
 
