@@ -1,0 +1,110 @@
+/* --------------------
+ * OneDark Variables
+ * -------------------- */
+@define-color base          #282C34;  /* black/background */
+@define-color surface       #2C323C;  /* cursor_grey */
+@define-color surface_alt   #3E4452;  /* visual_grey */
+@define-color text          #ABB2BF;  /* foreground */
+@define-color text_alt      #5C6370;  /* comment_grey */
+@define-color muted         #5C6370;  /* comment_grey */
+@define-color border        #4B5263;  /* gutter_fg_grey */
+@define-color primary       #61AFEF;  /* blue */
+@define-color primary_alt   #56B6C2;  /* cyan */
+@define-color accent        #56B6C2;  /* cyan */
+@define-color success       #98C379;  /* green */
+@define-color warning       #E5C07B;  /* yellow */
+@define-color error         #E06C75;  /* red */
+@define-color urgent        #E06C75;  /* red */
+
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+  font-size: 13px;
+}
+
+#control-center {
+  background: @base;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.notification-row {
+  margin: 6px;
+}
+
+.notification,
+#control-center .notification {
+  background: @surface;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.notification.low {
+  border-color: @muted;
+}
+
+.notification.critical {
+  border-color: @error;
+}
+
+.summary {
+  color: @text;
+  font-weight: 600;
+}
+
+.body {
+  color: @text_alt;
+}
+
+.time,
+.app-name {
+  color: @muted;
+}
+
+.close-button {
+  background: @surface_alt;
+  color: @text_alt;
+  border: 1px solid @border;
+  border-radius: 10px;
+}
+
+.close-button:hover {
+  background: @primary;
+  color: @base;
+  border-color: @primary;
+}
+
+.notification-action {
+  background: @surface_alt;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.notification-action:hover {
+  background: @primary;
+  color: @base;
+  border-color: @primary;
+}
+
+.dnd {
+  background: @surface_alt;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.switch {
+  background: @surface;
+  border-radius: 12px;
+  border: 1px solid @border;
+}
+
+.switch:checked {
+  background: @primary;
+}

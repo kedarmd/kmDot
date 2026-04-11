@@ -1,0 +1,110 @@
+/* ------------------------------
+ * Everforest Dark Hard Variables
+ * ------------------------------ */
+@define-color base          #1E2326;  /* bg_dim */
+@define-color surface       #272E33;  /* bg0 */
+@define-color surface_alt   #2E383C;  /* bg1 */
+@define-color text          #D3C6AA;  /* fg */
+@define-color text_alt      #9DA9A0;  /* grey2 */
+@define-color muted         #7A8478;  /* grey0 */
+@define-color border        #414B50;  /* bg3 */
+@define-color primary       #7FBBB3;  /* blue */
+@define-color primary_alt   #D699B6;  /* purple */
+@define-color accent        #83C092;  /* aqua */
+@define-color success       #A7C080;  /* green */
+@define-color warning       #DBBC7F;  /* yellow */
+@define-color error         #E67E80;  /* red */
+@define-color urgent        #E67E80;  /* red */
+
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+  font-size: 13px;
+}
+
+#control-center {
+  background: @base;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.notification-row {
+  margin: 6px;
+}
+
+.notification,
+#control-center .notification {
+  background: @surface;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.notification.low {
+  border-color: @muted;
+}
+
+.notification.critical {
+  border-color: @error;
+}
+
+.summary {
+  color: @text;
+  font-weight: 600;
+}
+
+.body {
+  color: @text_alt;
+}
+
+.time,
+.app-name {
+  color: @muted;
+}
+
+.close-button {
+  background: @surface_alt;
+  color: @text_alt;
+  border: 1px solid @border;
+  border-radius: 10px;
+}
+
+.close-button:hover {
+  background: @primary;
+  color: @base;
+  border-color: @primary;
+}
+
+.notification-action {
+  background: @surface_alt;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.notification-action:hover {
+  background: @primary;
+  color: @base;
+  border-color: @primary;
+}
+
+.dnd {
+  background: @surface_alt;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.switch {
+  background: @surface;
+  border-radius: 12px;
+  border: 1px solid @border;
+}
+
+.switch:checked {
+  background: @primary;
+}

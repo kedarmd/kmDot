@@ -10,6 +10,7 @@ Dotfiles for a CachyOS + Hyprland workstation. This repo is the source of truth 
 - nvim
 - rofi
 - starship
+- swaync
 - waybar
 - theme-switcher
 - tmux

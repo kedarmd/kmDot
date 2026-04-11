@@ -34,6 +34,7 @@ APPS=(
   "nvim"
   "rofi"
   "starship"
+  "swaync"
   "waybar"
   "theme-switcher"
   "tmux"

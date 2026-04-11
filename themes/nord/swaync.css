@@ -1,0 +1,110 @@
+/* --------------------
+ * Nord Variables
+ * -------------------- */
+@define-color base          #2E3440;  /* nord0 */
+@define-color surface       #3B4252;  /* nord1 */
+@define-color surface_alt   #434C5E;  /* nord2 */
+@define-color text          #D8DEE9;  /* nord4 */
+@define-color text_alt      #E5E9F0;  /* nord5 */
+@define-color muted         #4C566A;  /* nord3 */
+@define-color border        #434C5E;  /* nord2 */
+@define-color primary       #88C0D0;  /* nord8 */
+@define-color primary_alt   #81A1C1;  /* nord9 */
+@define-color accent        #8FBCBB;  /* nord7 */
+@define-color success       #A3BE8C;  /* nord14 */
+@define-color warning       #EBCB8B;  /* nord13 */
+@define-color error         #BF616A;  /* nord11 */
+@define-color urgent        #BF616A;  /* nord11 */
+
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+  font-size: 13px;
+}
+
+#control-center {
+  background: @base;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.notification-row {
+  margin: 6px;
+}
+
+.notification,
+#control-center .notification {
+  background: @surface;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.notification.low {
+  border-color: @muted;
+}
+
+.notification.critical {
+  border-color: @error;
+}
+
+.summary {
+  color: @text;
+  font-weight: 600;
+}
+
+.body {
+  color: @text_alt;
+}
+
+.time,
+.app-name {
+  color: @muted;
+}
+
+.close-button {
+  background: @surface_alt;
+  color: @text_alt;
+  border: 1px solid @border;
+  border-radius: 10px;
+}
+
+.close-button:hover {
+  background: @primary;
+  color: @base;
+  border-color: @primary;
+}
+
+.notification-action {
+  background: @surface_alt;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.notification-action:hover {
+  background: @primary;
+  color: @base;
+  border-color: @primary;
+}
+
+.dnd {
+  background: @surface_alt;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.switch {
+  background: @surface;
+  border-radius: 12px;
+  border: 1px solid @border;
+}
+
+.switch:checked {
+  background: @primary;
+}

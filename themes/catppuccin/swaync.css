@@ -1,0 +1,110 @@
+/* -------------------------------------
+ * Catppuccin Mocha Variables (Contrast)
+ * ------------------------------------- */
+@define-color base          #11111b;  /* crust */
+@define-color surface       #181825;  /* mantle */
+@define-color surface_alt   #313244;  /* surface0 */
+@define-color text          #cdd6f4;  /* text */
+@define-color text_alt      #bac2de;  /* subtext1 */
+@define-color muted         #6c7086;  /* overlay0 */
+@define-color border        #45475a;  /* surface1 */
+@define-color primary       #b4befe;  /* lavender */
+@define-color primary_alt   #89b4fa;  /* blue */
+@define-color accent        #94e2d5;  /* teal */
+@define-color success       #a6e3a1;  /* green */
+@define-color warning       #f9e2af;  /* yellow */
+@define-color error         #f38ba8;  /* red */
+@define-color urgent        #f38ba8;  /* red */
+
+* {
+  font-family: "JetBrainsMono Nerd Font", monospace;
+  font-size: 13px;
+}
+
+#control-center {
+  background: @base;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.notification-row {
+  margin: 6px;
+}
+
+.notification,
+#control-center .notification {
+  background: @surface;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.notification.low {
+  border-color: @muted;
+}
+
+.notification.critical {
+  border-color: @error;
+}
+
+.summary {
+  color: @text;
+  font-weight: 600;
+}
+
+.body {
+  color: @text_alt;
+}
+
+.time,
+.app-name {
+  color: @muted;
+}
+
+.close-button {
+  background: @surface_alt;
+  color: @text_alt;
+  border: 1px solid @border;
+  border-radius: 10px;
+}
+
+.close-button:hover {
+  background: @primary;
+  color: @base;
+  border-color: @primary;
+}
+
+.notification-action {
+  background: @surface_alt;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.notification-action:hover {
+  background: @primary;
+  color: @base;
+  border-color: @primary;
+}
+
+.dnd {
+  background: @surface_alt;
+  color: @text;
+  border: 1px solid @border;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.switch {
+  background: @surface;
+  border-radius: 12px;
+  border: 1px solid @border;
+}
+
+.switch:checked {
+  background: @primary;
+}
