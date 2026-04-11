@@ -1,5 +1,5 @@
 import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick.Controls 2.15 as Controls
 import SddmComponents 2.0
 
 Rectangle {
@@ -14,6 +14,7 @@ Rectangle {
   property color errorColor: config.error ? config.error : "#bf616a"
   property string errorMessage: ""
   property bool showError: false
+  property string selectedUser: userModel.lastUser ? userModel.lastUser : ""
   
   TextConstants { id: textConstants }
 
@@ -63,6 +64,11 @@ Rectangle {
       onTriggered: showError = false
     }
 
+    function userNameAt(index) {
+      var entry = userModel.get(index)
+      return entry.name || entry.userName || entry.login || ""
+    }
+
     // Profile Avatar
     Rectangle {
       width: 100
@@ -75,8 +81,8 @@ Rectangle {
       
       Text {
         anchors.centerIn: parent
-        text: (userModel.lastUser && userModel.lastUser.length > 0)
-          ? userModel.lastUser.charAt(0).toUpperCase()
+        text: (selectedUser && selectedUser.length > 0)
+          ? selectedUser.charAt(0).toUpperCase()
           : "K"
         font.pixelSize: 42
         font.weight: Font.Medium
@@ -84,16 +90,42 @@ Rectangle {
       }
     }
 
-    // Username
-    Text {
-      text: userModel.lastUser || "Guest"
-      color: textColor
-      font.pixelSize: 22
-      font.weight: Font.Bold
-      horizontalAlignment: Text.AlignHCenter
+    // Username Dropdown
+    Controls.ComboBox {
+      id: userCombo
+      width: 222
+      height: 32
+      model: userModel
+      textRole: "name"
+      leftPadding: 14
+      rightPadding: 28
       anchors.horizontalCenter: parent.horizontalCenter
-      style: Text.Raised
-      styleColor: Qt.rgba(0, 0, 0, 0.5)
+      onCurrentTextChanged: selectedUser = userCombo.currentText
+
+      contentItem: Text {
+        text: userCombo.displayText
+        color: textColor
+        font.pixelSize: 20
+        font.weight: Font.Bold
+        verticalAlignment: Text.AlignVCenter
+        elide: Text.ElideRight
+      }
+
+      background: Rectangle {
+        radius: 16
+        color: Qt.rgba(1, 1, 1, 0.18)
+        border.color: Qt.rgba(1, 1, 1, 0.3)
+        border.width: 1
+      }
+
+      indicator: Text {
+        text: "▾"
+        color: Qt.rgba(1, 1, 1, 0.8)
+        font.pixelSize: 14
+        anchors.right: parent.right
+        anchors.rightMargin: 12
+        anchors.verticalCenter: parent.verticalCenter
+      }
     }
 
     // Password Input Row (Pill shape + Question Mark)
@@ -101,7 +133,7 @@ Rectangle {
       anchors.horizontalCenter: parent.horizontalCenter
       spacing: 10
 
-      TextField {
+      Controls.TextField {
         id: password
         width: 180
         height: 32
@@ -129,7 +161,7 @@ Rectangle {
 
         Keys.onPressed: function (event) {
           if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-            sddm.login(userModel.lastUser, password.text, sessionModel.lastIndex)
+            sddm.login(selectedUser, password.text, sessionModel.lastIndex)
           }
         }
       }
@@ -155,7 +187,7 @@ Rectangle {
           id: submitMouseArea
           anchors.fill: parent
           hoverEnabled: true
-          onClicked: sddm.login(userModel.lastUser, password.text, sessionModel.lastIndex)
+          onClicked: sddm.login(selectedUser, password.text, sessionModel.lastIndex)
         }
       }
     }
@@ -246,7 +278,26 @@ Rectangle {
     }
   }
 
-  Component.onCompleted: password.focus = true
+  Component.onCompleted: {
+    password.focus = true
+    if (userModel.count > 0) {
+      var fallbackIndex = 0
+      if (selectedUser.length > 0) {
+        for (var i = 0; i < userModel.count; i++) {
+          if (mainColumn.userNameAt(i) === selectedUser) {
+            fallbackIndex = i
+            break
+          }
+        }
+      } else {
+        selectedUser = mainColumn.userNameAt(0)
+      }
+      userCombo.currentIndex = fallbackIndex
+      if (selectedUser.length === 0) {
+        selectedUser = userCombo.currentText
+      }
+    }
+  }
 
   Connections {
     target: sddm
