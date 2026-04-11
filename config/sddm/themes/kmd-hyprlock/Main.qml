@@ -11,6 +11,9 @@ Rectangle {
   LayoutMirroring.childrenInherit: true
 
   property color textColor: config.text ? config.text : "#ffffff"
+  property color errorColor: config.error ? config.error : "#bf616a"
+  property string errorMessage: ""
+  property bool showError: false
   
   TextConstants { id: textConstants }
 
@@ -52,6 +55,13 @@ Rectangle {
     anchors.centerIn: parent
     anchors.verticalCenterOffset: -40 // Shift up slightly like macOS
     spacing: 20
+
+    Timer {
+      id: errorTimer
+      interval: 2500
+      repeat: false
+      onTriggered: showError = false
+    }
 
     // Profile Avatar
     Rectangle {
@@ -101,6 +111,11 @@ Rectangle {
         echoMode: TextInput.Password // Masks the text with dots
         color: textColor
         font.pixelSize: 14
+        onTextChanged: {
+          if (showError) {
+            showError = false
+          }
+        }
         
         // This styles the placeholder text specifically
         placeholderTextColor: Qt.rgba(1, 1, 1, 0.6) 
@@ -118,6 +133,43 @@ Rectangle {
           }
         }
       }
+
+      Rectangle {
+        width: 32
+        height: 32
+        radius: 16
+        color: submitMouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : Qt.rgba(1, 1, 1, 0.12)
+        border.color: Qt.rgba(1, 1, 1, 0.3)
+        border.width: 1
+
+        Text {
+          anchors.centerIn: parent
+          text: "→"
+          color: textColor
+          font.pixelSize: 16
+          font.weight: Font.Medium
+          anchors.verticalCenterOffset: -1
+        }
+
+        MouseArea {
+          id: submitMouseArea
+          anchors.fill: parent
+          hoverEnabled: true
+          onClicked: sddm.login(userModel.lastUser, password.text, sessionModel.lastIndex)
+        }
+      }
+    }
+
+    Text {
+      visible: showError
+      text: errorMessage
+      color: errorColor
+      font.pixelSize: 12
+      font.weight: Font.Medium
+      horizontalAlignment: Text.AlignHCenter
+      anchors.horizontalCenter: parent.horizontalCenter
+      style: Text.Raised
+      styleColor: Qt.rgba(0, 0, 0, 0.45)
     }
   }
 
@@ -195,4 +247,13 @@ Rectangle {
   }
 
   Component.onCompleted: password.focus = true
+
+  Connections {
+    target: sddm
+    function onLoginFailed() {
+      errorMessage = "Incorrect password"
+      showError = true
+      errorTimer.restart()
+    }
+  }
 }
