@@ -147,3 +147,5 @@ vim.api.nvim_create_autocmd("LspAttach", {
 		end
 	end,
 })
+
+require("config.opencode-nvim").setup({})
