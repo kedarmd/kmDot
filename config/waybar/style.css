@@ -6,9 +6,9 @@
 }
 
 window#waybar {
-  background: transparent;
+  background: @surface;
   color: @text;
-  border: none;
+  border: 1px solid @border;
 }
 
 tooltip {
@@ -27,11 +27,11 @@ tooltip label {
 #workspaces,
 #custom-clock,
 .modules-right {
-  background: @surface;
-  border: 1px solid @border;
+  background: transparent;
+  border: none;
   border-radius: 10px;
-  margin: 4px 6px 0 6px;
-  padding: 4px 4px;
+  margin: 0px 4px 0 4px;
+  padding: 4px 0px;
 }
 
 #custom-clock {
