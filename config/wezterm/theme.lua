@@ -1,1 +1,1 @@
-return "Tokyo Night Storm"
+return "Tokyo Night Night"
