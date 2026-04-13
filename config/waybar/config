@@ -3,7 +3,7 @@
   "position": "top",
 
   "modules-left": ["hyprland/workspaces"],
-  "modules-center": ["custom/clock", "custom/dnd"],
+  "modules-center": ["custom/kmdot", "custom/clock", "custom/dnd"],
   "modules-right": ["network", "bluetooth", "pulseaudio", "custom/power", "battery"],
 
   "hyprland/workspaces": {
@@ -21,6 +21,13 @@
     "exec": "~/.config/waybar/scripts/clock.sh",
     "return-type": "json",
     "interval": 60,
+    "tooltip": false
+  },
+
+  "custom/kmdot": {
+    "format": " kmDot",
+    "tooltip": "kmDot dotfiles",
+    "on-click": "~/.config/kmdot/rofi/menu/system.sh",
     "tooltip": false
   },
 
@@ -50,7 +57,7 @@
       "",
       ""
     ],
-    "interval": 60
+    "interval": 3
   },
 
   "custom/power": {

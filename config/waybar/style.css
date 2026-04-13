@@ -77,6 +77,15 @@ tooltip label {
   padding: 4px 12px;
 }
 
+#custom-kmdot {
+  background: @surface_alt;
+  border-radius: 10px;
+  color: @primary;
+  margin: 4px 8px 4px 0;
+  padding: 4px 12px;
+  font-weight: 600;
+}
+
 #custom-dnd {
   background: @surface_alt;
   border-radius: 10px;
