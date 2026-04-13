@@ -93,6 +93,7 @@ tooltip label {
 
 #network.disabled,
 #network.disconnected {
+  color: @text_alt;
   opacity: 0.4;
 }
 

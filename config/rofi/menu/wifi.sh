@@ -10,35 +10,34 @@ if ! command -v nmcli >/dev/null 2>&1; then
   exit 1
 fi
 
-# Make sure Wi-Fi is enabled
-nmcli radio wifi on >/dev/null 2>&1
+# Get current Wi-Fi state
+wifi_state=$(nmcli -t -f WIFI general 2>/dev/null)
 
 # Get Wi-Fi list in a parseable format:
 # ACTIVE:SSID:SECURITY
-wifi_list=$(nmcli -t -f ACTIVE,SSID,SECURITY device wifi list | sed '/^:/d')
-
-if [ -z "$wifi_list" ]; then
-  notify-send "Wi-Fi" "No networks found"
-  exit 0
-fi
+wifi_list=$(nmcli -t -f ACTIVE,SSID,SECURITY device wifi list 2>/dev/null | sed '/^:/d')
 
 # Build menu lines like:
 #   * MyWifi [WPA2]
 #     OtherNet [OPEN]
 menu_lines=$(
-  printf '%s\n' "$wifi_list" | while IFS=':' read -r active ssid security; do
-    [ -z "$ssid" ] && continue
+  if [ -n "$wifi_list" ]; then
+    printf '%s\n' "$wifi_list" | while IFS=':' read -r active ssid security; do
+      [ -z "$ssid" ] && continue
 
-    # Mark currently active network
-    if [ "$active" = "yes" ]; then
-      prefix="* "
-    else
-      prefix="  "
-    fi
+      # Mark currently active network
+      if [ "$active" = "yes" ]; then
+        prefix="* "
+      else
+        prefix="  "
+      fi
 
-    [ -z "$security" ] && security="OPEN"
-    printf '%s%s [%s]\n' "$prefix" "$ssid" "$security"
-  done
+      [ -z "$security" ] && security="OPEN"
+      printf '%s%s [%s]\n' "$prefix" "$ssid" "$security"
+    done
+  fi
+
+  printf '%s\n' "Wi-Fi On" "Wi-Fi Off"
 )
 
 # Show menu via rofi
@@ -46,6 +45,16 @@ choice=$(printf '%s\n' "$menu_lines" | rofi -dmenu -i -p "Wi-Fi")
 
 # User cancelled
 [ -z "$choice" ] && exit 0
+
+if [ "$choice" = "Wi-Fi On" ]; then
+  nmcli radio wifi on >/dev/null 2>&1
+  exit 0
+fi
+
+if [ "$choice" = "Wi-Fi Off" ]; then
+  nmcli radio wifi off >/dev/null 2>&1
+  exit 0
+fi
 
 # Extract SSID from choice:
 # choice looks like: "* MyWifi [WPA2]" or "  OtherNet [OPEN]"
@@ -79,4 +88,3 @@ if [ -n "$security" ] && [ "$security" != "--" ] && [ "$security" != "NONE" ] &&
 else
   nmcli dev wifi connect "$ssid"
 fi
-
