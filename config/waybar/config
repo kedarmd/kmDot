@@ -55,11 +55,11 @@
     "format-wifi": "{icon} {essid}",
     "format-ethernet": "{icon} {ifname}",
     "format-disabled": "{icon} Off",
-    "format-disconnected": "{icon} Disconnected",
+    "format-disconnected": "{icon} On",
     "format-icons": {
       "wifi": ["󰤟", "󰤢", "󰤥", "󰤨"],
       "ethernet": "󰈁",
-      "disconnected": "󰤮",
+      "disconnected": "󰤯",
       "disabled": "󰤮"
     },
     "tooltip-format": "{ifname} via {gwaddr}\n{ipaddr}/{cidr}",
@@ -68,8 +68,11 @@
   },
 
   "bluetooth": {
-    "format": " {status}",
-    "format-connected": " {device_alias}",
+    "format": "󰂯 {status}",
+    "format-on": "󰂯 On",
+    "format-off": "󰂲 Off",
+    "format-disabled": "󰂲 Off",
+    "format-connected": "󰂯 {device_alias}",
     "format-device-preference": [
       "headphones",
       "earbuds",
