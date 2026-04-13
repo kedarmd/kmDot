@@ -3,7 +3,7 @@
   "position": "top",
 
   "modules-left": ["hyprland/workspaces"],
-  "modules-center": ["custom/clock"],
+  "modules-center": ["custom/clock", "custom/dnd"],
   "modules-right": ["network", "bluetooth", "pulseaudio", "custom/power", "battery"],
 
   "hyprland/workspaces": {
@@ -24,10 +24,20 @@
     "tooltip": false
   },
 
+  "custom/dnd": {
+    "exec-if": "command -v swaync-client",
+    "exec": "~/.config/waybar/scripts/dnd.sh",
+    "return-type": "json",
+    "interval": 3,
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d",
+    "tooltip": true
+  },
+
   "battery": {
     "format": "{icon} {capacity}%",
-    "format-charging": "  {capacity}%",
-    "format-plugged": "  {capacity}%",
+    "format-charging": " {capacity}%",
+    "format-plugged": " {capacity}%",
     "format-alt": "{time} {capacity}%",
     "states": {
       "warning": 30,
@@ -40,13 +50,13 @@
       "",
       ""
     ],
-    "interval": 15
+    "interval": 60
   },
 
   "custom/power": {
     "exec": "~/.config/waybar/scripts/power_profile_status.sh",
     "return-type": "json",
-    "interval": 5,
+    "interval": 60,
     "on-click": "~/.config/waybar/scripts/power_profile_toggle.sh",
     "tooltip": true
   },
@@ -63,7 +73,7 @@
       "disabled": "󰤮"
     },
     "tooltip-format": "{ifname} via {gwaddr}\n{ipaddr}/{cidr}",
-    "interval": 5,
+    "interval": 60,
     "on-click": "~/.config/kmdot/rofi/menu/wifi.sh"
   },
 

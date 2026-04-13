@@ -21,12 +21,19 @@
   font-size: 13px;
 }
 
-#control-center {
-  background: @base;
+window,
+window.blank-window,
+window.floating-notifications {
+  background: transparent;
+}
+
+.control-center {
+  background: linear-gradient(145deg, alpha(@surface, 0.9), alpha(@surface_alt, 0.96));
   color: @text;
-  border: 1px solid @border;
-  border-radius: 12px;
-  padding: 8px;
+  border: 1px solid alpha(@border, 0.85);
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 35px 90px rgba(0, 0, 0, 0.55);
 }
 
 .notification-row {

@@ -74,6 +74,28 @@ tooltip label {
   border-radius: 10px;
   color: @text;
   margin: 4px 0;
+  padding: 4px 12px;
+}
+
+#custom-dnd {
+  background: @surface_alt;
+  border-radius: 10px;
+  color: @text;
+  margin: 4px 0 4px 8px;
+  padding: 4px 12px;
+  min-width: 20px;
+}
+
+#custom-dnd.on {
+  color: @warning;
+}
+
+#custom-dnd.off {
+  color: @text_alt;
+}
+
+#custom-dnd.pending {
+  color: @error;
 }
 
 /* Right-side modules */
