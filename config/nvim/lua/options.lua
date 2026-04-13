@@ -29,6 +29,8 @@ vim.opt.smartcase = true
 -- Enable termguicolors colors
 vim.opt.termguicolors = true
 
+vim.opt.signcolumn = "yes"
+
 -- Enable nvim starting with server
 local server_name = "/tmp/nvim-" .. vim.fn.getpid() .. ".sock"
 vim.fn.serverstart(server_name)
