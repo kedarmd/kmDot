@@ -1,15 +1,71 @@
 return {
-	"neovim/nvim-lspconfig",
+	"williamboman/mason.nvim",
 	dependencies = {
-		{ "williamboman/mason.nvim", config = true }, -- NOTE: Must be loaded before dependants
-		"williamboman/mason-lspconfig.nvim",
 		"WhoIsSethDaniel/mason-tool-installer.nvim",
-
-		-- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
 		{ "j-hui/fidget.nvim", opts = {} },
 	},
 	config = function()
-		-- The LspAttach Autocmd remains unchanged and is correctly set up.
+		-- 1. Initialize Mason FIRST so it adds downloaded binaries (like ts_ls) to your $PATH
+		require("mason").setup()
+
+		-- 2. Set up blink.cmp capabilities
+		local capabilities = require("blink.cmp").get_lsp_capabilities()
+
+		-- 3. Define servers using the Native 0.12 syntax
+		local servers = {
+			ts_ls = {
+				cmd = { "typescript-language-server", "--stdio" },
+				filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+				capabilities = capabilities,
+				root_markers = { "package.json", "tsconfig.json", ".git" },
+			},
+			gopls = {
+				cmd = { "gopls" },
+				filetypes = { "go", "gomod", "gowork", "gotmpl" },
+				capabilities = capabilities,
+				root_markers = { "go.work", "go.mod", ".git" },
+			},
+			lua_ls = {
+				cmd = { "lua-language-server" },
+				filetypes = { "lua" },
+				-- Added root markers for Lua so it knows where the project root is
+				root_markers = { ".luarc.json", ".stylua.toml", "init.lua", ".git" },
+				capabilities = capabilities,
+				settings = {
+					Lua = {
+						completion = { callSnippet = "Replace" },
+					},
+				},
+			},
+		}
+
+		-- 4. Auto-install tools via Mason
+		-- We must use Mason's specific package names here, not Neovim's LSP names
+		local ensure_installed = {
+			"typescript-language-server", -- Mason's name for ts_ls
+			"gopls", -- Mason's name for gopls
+			"lua-language-server", -- Mason's name for lua_ls
+			"stylua", -- Your Lua formatter
+		}
+		require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
+
+		-- 5. Configure Diagnostics Visually
+		vim.diagnostic.config({
+			signs = {
+				text = {
+					[vim.diagnostic.severity.ERROR] = " ",
+					[vim.diagnostic.severity.WARN] = " ",
+					[vim.diagnostic.severity.HINT] = "󰠠 ",
+					[vim.diagnostic.severity.INFO] = " ",
+				},
+			},
+			virtual_text = { prefix = "●", spacing = 4 },
+			underline = true,
+			update_in_insert = false,
+			severity_sort = true,
+		})
+
+		-- 6. Native LspAttach Autocmd (Exactly as you wrote it)
 		vim.api.nvim_create_autocmd("LspAttach", {
 			group = vim.api.nvim_create_augroup("lsp-attach", { clear = true }),
 			callback = function(event)
@@ -17,12 +73,7 @@ return {
 					mode = mode or "n"
 					vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
 				end
-				-- map("gd", require("telescope.builtin").lsp_definitions, "[G]oto [D]efinition")
-				-- map("gr", require("telescope.builtin").lsp_references, "[G]oto [R]eferences")
-				-- map("gI", require("telescope.builtin").lsp_implementations, "[G]oto [I]mplementation")
-				-- map("<leader>D", require("telescope.builtin").lsp_type_definitions, "Type [D]efinition")
-				-- map("<leader>ds", require("telescope.builtin").lsp_document_symbols, "[D]ocument [S]ymbols")
-				-- map("<leader>ws", require("telescope.builtin").lsp_dynamic_workspace_symbols, "[W]orkspace [S]ymbols")
+
 				map("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
 				map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction", { "n", "x" })
 				map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
@@ -59,74 +110,12 @@ return {
 			end,
 		})
 
-		local capabilities = require("blink.cmp").get_lsp_capabilities()
-
-		local servers = {
-			ts_ls = {
-				root_dir = require("lspconfig").util.root_pattern("package.json"),
-				capabilities = capabilities,
-				single_file_support = false,
-			},
-
-			lua_ls = {
-				settings = {
-					Lua = {
-						completion = {
-							callSnippet = "Replace",
-						},
-					},
-				},
-			},
-		}
-
-		local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
-
-		vim.diagnostic.config({
-			signs = {
-				text = {
-					[vim.diagnostic.severity.ERROR] = signs.Error,
-					[vim.diagnostic.severity.WARN] = signs.Warn,
-					[vim.diagnostic.severity.HINT] = signs.Hint,
-					[vim.diagnostic.severity.INFO] = signs.Info,
-				},
-			},
-			virtual_text = {
-				prefix = "●", -- Could be '●', '▎', 'x'
-				spacing = 4,
-			},
-			underline = true,
-			update_in_insert = false,
-			severity_sort = true,
-		})
-
-		require("mason").setup()
-
-		local ensure_installed = vim.tbl_keys(servers or {})
-		vim.list_extend(ensure_installed, {
-			"stylua", -- Used to format Lua code
-		})
-		require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
-
-		require("mason-lspconfig").setup({
-			-- FIX 2: Change the handler function to use vim.lsp.config/enable
-			handlers = {
-				function(server_name)
-					-- 1. Get custom config (if any)
-					local server_config = servers[server_name] or {}
-
-					-- 2. Force merge capabilities (this logic remains correct)
-					server_config.capabilities =
-						vim.tbl_deep_extend("force", {}, capabilities, server_config.capabilities or {})
-
-					-- 3. Use the new API: vim.lsp.config to define the settings
-					vim.lsp.config(server_name, server_config)
-
-					-- 4. Use the new API: vim.lsp.enable to start the server
-					-- mason-lspconfig will handle starting the server via a default handler if none is provided.
-					-- When providing a custom handler, the recommended action is to use the core API.
-					vim.lsp.enable({ server_name })
-				end,
-			},
-		})
+		-- 7. The Native 0.12 Engine Initialization
+		for server_name, server_config in pairs(servers) do
+			-- Pass your custom capabilities and root_markers into the native config
+			vim.lsp.config(server_name, server_config)
+			-- Enable the server globally using a string, not a table
+			vim.lsp.enable(server_name)
+		end
 	end,
 }
