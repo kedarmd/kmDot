@@ -53,10 +53,6 @@ tooltip label {
   transition: all 300ms ease;
 }
 
-#workspaces button.empty {
-  opacity: 0.4;
-}
-
 #workspaces button.urgent {
   background: @urgent;
   color: @base;
