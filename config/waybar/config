@@ -26,7 +26,7 @@
 
   "custom/dnd": {
     "exec-if": "command -v swaync-client",
-    "exec": "~/.config/waybar/scripts/dnd.sh",
+    "exec": "~/.config/waybar/scripts/notifications.sh",
     "return-type": "json",
     "interval": 3,
     "on-click": "swaync-client -t -sw",
