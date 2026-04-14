@@ -12,6 +12,7 @@ Rectangle {
 
   property color textColor: config.text ? config.text : "#ffffff"
   property color errorColor: config.error ? config.error : "#bf616a"
+  property string fontFamily: config.fontFamily ? config.fontFamily : "JetBrainsMono Nerd Font Propo"
   property string errorMessage: ""
   property bool showError: false
   property string selectedUser: userModel.lastUser ? userModel.lastUser : ""
@@ -45,6 +46,7 @@ Rectangle {
     anchors.right: parent.right
     anchors.margins: 20
     color: textColor
+    font.family: root.fontFamily
     font.pixelSize: 13
     font.weight: Font.Medium
     text: Qt.formatDateTime(new Date(), "ddd h:mm A") 
@@ -84,6 +86,7 @@ Rectangle {
         text: (selectedUser && selectedUser.length > 0)
           ? selectedUser.charAt(0).toUpperCase()
           : "K"
+        font.family: root.fontFamily
         font.pixelSize: 42
         font.weight: Font.Medium
         color: textColor
@@ -100,11 +103,13 @@ Rectangle {
       leftPadding: 14
       rightPadding: 28
       anchors.horizontalCenter: parent.horizontalCenter
+      font.family: root.fontFamily
       onCurrentTextChanged: selectedUser = userCombo.currentText
 
       contentItem: Text {
         text: userCombo.displayText
         color: textColor
+        font.family: root.fontFamily
         font.pixelSize: 20
         font.weight: Font.Bold
         verticalAlignment: Text.AlignVCenter
@@ -121,6 +126,7 @@ Rectangle {
       indicator: Text {
         text: "▾"
         color: Qt.rgba(1, 1, 1, 0.8)
+        font.family: root.fontFamily
         font.pixelSize: 14
         anchors.right: parent.right
         anchors.rightMargin: 12
@@ -142,6 +148,7 @@ Rectangle {
         placeholderText: "Enter Password"
         echoMode: TextInput.Password // Masks the text with dots
         color: textColor
+        font.family: root.fontFamily
         font.pixelSize: 14
         onTextChanged: {
           if (showError) {
@@ -176,8 +183,9 @@ Rectangle {
 
         Text {
           anchors.centerIn: parent
-          text: "→"
+          text: ""
           color: textColor
+          font.family: root.fontFamily
           font.pixelSize: 16
           font.weight: Font.Medium
           anchors.verticalCenterOffset: -1
@@ -196,6 +204,7 @@ Rectangle {
       visible: showError
       text: errorMessage
       color: errorColor
+      font.family: root.fontFamily
       font.pixelSize: 12
       font.weight: Font.Medium
       horizontalAlignment: Text.AlignHCenter
@@ -223,7 +232,7 @@ Rectangle {
         color: powerMouseArea1.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
         border.color: Qt.rgba(1, 1, 1, 0.6); border.width: 1.5
         
-        Text { anchors.centerIn: parent; text: "⏻"; color: textColor; font.pixelSize: 20 }
+        Text { anchors.centerIn: parent; text: ""; color: textColor; font.family: root.fontFamily; font.pixelSize: 20 }
         
         MouseArea {
           id: powerMouseArea1
@@ -232,7 +241,7 @@ Rectangle {
           onClicked: sddm.powerOff()
         }
       }
-      Text { text: "Shut Down"; color: textColor; font.pixelSize: 12; font.weight: Font.Medium; anchors.horizontalCenter: parent.horizontalCenter; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
+      Text { text: "Shut Down"; color: textColor; font.family: root.fontFamily; font.pixelSize: 12; font.weight: Font.Medium; anchors.horizontalCenter: parent.horizontalCenter; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
     }
 
     // Restart
@@ -244,7 +253,7 @@ Rectangle {
         color: powerMouseArea2.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
         border.color: Qt.rgba(1, 1, 1, 0.6); border.width: 1.5
         
-        Text { anchors.centerIn: parent; text: "⟳"; color: textColor; font.pixelSize: 24; anchors.verticalCenterOffset: -2 }
+        Text { anchors.centerIn: parent; text: ""; color: textColor; font.family: root.fontFamily; font.pixelSize: 24; anchors.verticalCenterOffset: -2 }
         
         MouseArea {
           id: powerMouseArea2
@@ -253,7 +262,7 @@ Rectangle {
           onClicked: sddm.reboot()
         }
       }
-      Text { text: "Restart"; color: textColor; font.pixelSize: 12; font.weight: Font.Medium; anchors.horizontalCenter: parent.horizontalCenter; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
+      Text { text: "Restart"; color: textColor; font.family: root.fontFamily; font.pixelSize: 12; font.weight: Font.Medium; anchors.horizontalCenter: parent.horizontalCenter; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
     }
 
     // Sleep
@@ -265,7 +274,7 @@ Rectangle {
         color: powerMouseArea3.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
         border.color: Qt.rgba(1, 1, 1, 0.6); border.width: 1.5
         
-        Text { anchors.centerIn: parent; text: "☾"; color: textColor; font.pixelSize: 20; anchors.verticalCenterOffset: -1 }
+        Text { anchors.centerIn: parent; text: ""; color: textColor; font.family: root.fontFamily; font.pixelSize: 20; anchors.verticalCenterOffset: -1 }
         
         MouseArea {
           id: powerMouseArea3
@@ -274,7 +283,7 @@ Rectangle {
           onClicked: sddm.suspend()
         }
       }
-      Text { text: "Sleep"; color: textColor; font.pixelSize: 12; font.weight: Font.Medium; anchors.horizontalCenter: parent.horizontalCenter; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
+      Text { text: "Sleep"; color: textColor; font.family: root.fontFamily; font.pixelSize: 12; font.weight: Font.Medium; anchors.horizontalCenter: parent.horizontalCenter; style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5) }
     }
   }
 
