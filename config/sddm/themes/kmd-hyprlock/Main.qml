@@ -16,6 +16,13 @@ Rectangle {
   property string errorMessage: ""
   property bool showError: false
   property string selectedUser: userModel.lastUser ? userModel.lastUser : ""
+
+  // Light pill UI for dark wallpapers.
+  property color pillBgColor: Qt.rgba(1, 1, 1, 0.58)
+  property color pillBorderColor: Qt.rgba(0, 0, 0, 0.18)
+  property real pillBorderWidth: 1
+  property color pillTextColor: Qt.rgba(0, 0, 0, 0.92)
+  property color pillPlaceholderColor: Qt.rgba(0, 0, 0, 0.5)
   
   TextConstants { id: textConstants }
 
@@ -77,9 +84,9 @@ Rectangle {
       height: 100
       radius: 50
       anchors.horizontalCenter: parent.horizontalCenter
-      color: Qt.rgba(1, 1, 1, 0.2)
-      border.color: Qt.rgba(1, 1, 1, 0.4)
-      border.width: 1
+      color: pillBgColor
+      border.color: pillBorderColor
+      border.width: pillBorderWidth
       
       Text {
         anchors.centerIn: parent
@@ -89,7 +96,7 @@ Rectangle {
         font.family: root.fontFamily
         font.pixelSize: 42
         font.weight: Font.Medium
-        color: textColor
+        color: pillTextColor
       }
     }
 
@@ -108,7 +115,7 @@ Rectangle {
 
       contentItem: Text {
         text: userCombo.displayText
-        color: textColor
+        color: pillTextColor
         font.family: root.fontFamily
         font.pixelSize: 20
         font.weight: Font.Bold
@@ -118,14 +125,14 @@ Rectangle {
 
       background: Rectangle {
         radius: 16
-        color: Qt.rgba(1, 1, 1, 0.18)
-        border.color: Qt.rgba(1, 1, 1, 0.3)
-        border.width: 1
+        color: pillBgColor
+        border.color: pillBorderColor
+        border.width: pillBorderWidth
       }
 
       indicator: Text {
         text: "▾"
-        color: Qt.rgba(1, 1, 1, 0.8)
+        color: Qt.rgba(0, 0, 0, 0.65)
         font.family: root.fontFamily
         font.pixelSize: 14
         anchors.right: parent.right
@@ -147,7 +154,7 @@ Rectangle {
         rightPadding: 12
         placeholderText: "Enter Password"
         echoMode: TextInput.Password // Masks the text with dots
-        color: textColor
+        color: pillTextColor
         font.family: root.fontFamily
         font.pixelSize: 14
         onTextChanged: {
@@ -157,13 +164,14 @@ Rectangle {
         }
         
         // This styles the placeholder text specifically
-        placeholderTextColor: Qt.rgba(1, 1, 1, 0.6) 
+        placeholderTextColor: pillPlaceholderColor
 
         // This creates the pill shape background
         background: Rectangle {
           radius: 16
-          color: Qt.rgba(1, 1, 1, 0.25)
-          border.color: "transparent"
+          color: pillBgColor
+          border.color: pillBorderColor
+          border.width: pillBorderWidth
         }
 
         Keys.onPressed: function (event) {
@@ -177,14 +185,14 @@ Rectangle {
         width: 32
         height: 32
         radius: 16
-        color: submitMouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : Qt.rgba(1, 1, 1, 0.12)
-        border.color: Qt.rgba(1, 1, 1, 0.3)
-        border.width: 1
+        color: submitMouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.65) : pillBgColor
+        border.color: pillBorderColor
+        border.width: pillBorderWidth
 
         Text {
           anchors.centerIn: parent
           text: ""
-          color: textColor
+          color: pillTextColor
           font.family: root.fontFamily
           font.pixelSize: 16
           font.weight: Font.Medium
@@ -229,10 +237,10 @@ Rectangle {
       Rectangle {
         width: 44; height: 44; radius: 22
         anchors.horizontalCenter: parent.horizontalCenter
-        color: powerMouseArea1.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
-        border.color: Qt.rgba(1, 1, 1, 0.6); border.width: 1.5
+        color: powerMouseArea1.containsMouse ? Qt.rgba(1, 1, 1, 0.65) : pillBgColor
+        border.color: pillBorderColor; border.width: pillBorderWidth
         
-        Text { anchors.centerIn: parent; text: ""; color: textColor; font.family: root.fontFamily; font.pixelSize: 20 }
+        Text { anchors.centerIn: parent; text: ""; color: pillTextColor; font.family: root.fontFamily; font.pixelSize: 20 }
         
         MouseArea {
           id: powerMouseArea1
@@ -250,10 +258,10 @@ Rectangle {
       Rectangle {
         width: 44; height: 44; radius: 22
         anchors.horizontalCenter: parent.horizontalCenter
-        color: powerMouseArea2.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
-        border.color: Qt.rgba(1, 1, 1, 0.6); border.width: 1.5
+        color: powerMouseArea2.containsMouse ? Qt.rgba(1, 1, 1, 0.65) : pillBgColor
+        border.color: pillBorderColor; border.width: pillBorderWidth
         
-        Text { anchors.centerIn: parent; text: ""; color: textColor; font.family: root.fontFamily; font.pixelSize: 24; anchors.verticalCenterOffset: -2 }
+        Text { anchors.centerIn: parent; text: ""; color: pillTextColor; font.family: root.fontFamily; font.pixelSize: 24; anchors.verticalCenterOffset: -2 }
         
         MouseArea {
           id: powerMouseArea2
@@ -271,10 +279,10 @@ Rectangle {
       Rectangle {
         width: 44; height: 44; radius: 22
         anchors.horizontalCenter: parent.horizontalCenter
-        color: powerMouseArea3.containsMouse ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
-        border.color: Qt.rgba(1, 1, 1, 0.6); border.width: 1.5
+        color: powerMouseArea3.containsMouse ? Qt.rgba(1, 1, 1, 0.65) : pillBgColor
+        border.color: pillBorderColor; border.width: pillBorderWidth
         
-        Text { anchors.centerIn: parent; text: ""; color: textColor; font.family: root.fontFamily; font.pixelSize: 20; anchors.verticalCenterOffset: -1 }
+        Text { anchors.centerIn: parent; text: ""; color: pillTextColor; font.family: root.fontFamily; font.pixelSize: 20; anchors.verticalCenterOffset: -1 }
         
         MouseArea {
           id: powerMouseArea3
