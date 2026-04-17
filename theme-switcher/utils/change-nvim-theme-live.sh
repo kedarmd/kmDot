@@ -4,7 +4,7 @@
 set -e
 
 THEME="$1"
-COMMAND=":colorscheme $THEME<CR>"
+COMMAND=':lua vim.cmd("mksession! /tmp/restart.vim"); vim.cmd("restart source /tmp/restart.vim")<CR>'
 
 SERVERS=()
 
