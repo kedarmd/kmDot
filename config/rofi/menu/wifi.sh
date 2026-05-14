@@ -41,7 +41,7 @@ menu_lines=$(
 )
 
 # Show menu via rofi
-choice=$(printf '%s\n' "$menu_lines" | rofi -dmenu -i -p "Wi-Fi")
+choice=$(printf '%s\n' "$menu_lines" | rofi -dmenu -i -no-show-icons -p "WiFi")
 
 # User cancelled
 [ -z "$choice" ] && exit 0
