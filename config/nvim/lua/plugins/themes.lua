@@ -12,4 +12,7 @@ return {
 	{
 		"folke/tokyonight.nvim",
 	},
+	{
+		"sainnhe/everforest",
+	},
 }
