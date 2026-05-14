@@ -37,7 +37,11 @@ menu_lines=$(
     done
   fi
 
-  printf '%s\n' "Wi-Fi On" "Wi-Fi Off"
+  if [ "$wifi_state" = "enabled" ]; then
+  printf '%s\n' "Wi-Fi Off"
+else
+  printf '%s\n' "Wi-Fi On"
+fi
 )
 
 # Show menu via rofi
