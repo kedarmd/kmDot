@@ -27,7 +27,7 @@ menu_lines=$(
 
       # Mark currently active network
       if [ "$active" = "yes" ]; then
-        prefix="* "
+        prefix=" "
       else
         prefix="  "
       fi
