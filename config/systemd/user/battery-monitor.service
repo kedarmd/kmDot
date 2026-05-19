@@ -1,0 +1,6 @@
+[Unit]
+Description=Battery Monitor - notify and switch to power-saver at 20%%
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/hypr/scripts/battery_monitor.sh

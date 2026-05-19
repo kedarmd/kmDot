@@ -28,6 +28,7 @@ echo "Welcome to kmDot installer!"
 echo ""
 
 APPS=(
+  "battery"
   "fish"
   "ghostty"
   "hyprland"
