@@ -1,106 +1,109 @@
 @import "colors.css";
 
 * {
-  font-family: "JetBrainsMono Nerd Font Propo";
-  font-size: 13px;
+    font-family: "JetBrainsMono Nerd Font Propo";
+    font-size: 13px;
 }
 
 window#waybar {
-  background: @surface;
-  color: @text;
-  border: 1px solid @border;
+    background: transparent;
+    color: @text;
+    border: none;
 }
 
 tooltip {
-  background: @base;
-  color: @text;
-  border: 1px solid @border;
-  border-radius: 12px;
-  padding: 8px 10px;
+    background: @base;
+    color: @text;
+    border: 1px solid @border;
+    border-radius: 12px;
 }
 
 tooltip label {
-  color: @text;
+    color: @text;
 }
 
 /* Shared group containers */
 #workspaces,
 #custom-clock,
 .modules-right {
-  background: transparent;
-  border: none;
-  border-radius: 10px;
-  margin: 0px 4px 0 4px;
-  padding: 4px 0px;
+    background: transparent;
 }
 
-#custom-clock {
-  padding: 4px 12px;
+.modules-right,
+.modules-left,
+.modules-center {
+    background: @surface;
+    border: 1px solid @primary;
+    border-radius: 10px;
+    margin: 6px 6px 0 6px;
+    padding: 6px;
 }
 
-.modules-right {
-  padding: 4px 10px;
+.modules-right > * > *,
+.modules-left #workspaces button,
+.modules-center > * > * {
+    margin-right: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border: 1px solid @border;
+}
+
+.modules-left #workspaces button:last-child {
+    margin-right: 0px;
 }
 
 /* Workspaces */
 #workspaces button {
-  background: @surface_alt;
-  color: @text_alt;
-  margin: 0 4px;
-  padding: 2px 14px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  transition: all 300ms ease;
+    background: @surface_alt;
+    color: @text_alt;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: all 300ms ease;
 }
 
 #workspaces button.urgent {
-  background: @urgent;
-  color: @base;
+    background: @urgent;
+    color: @base;
 }
 
 #workspaces button.active {
-  background: @primary;
-  color: @base;
-  opacity: 1;
+    background: @primary;
+    color: @base;
+    opacity: 1;
 }
 
 /* Clock */
 #custom-clock {
-  background: @surface_alt;
-  border-radius: 10px;
-  color: @text;
-  margin: 4px 0;
-  padding: 4px 12px;
+    background: @surface_alt;
+    border-radius: 10px;
+    color: @text;
 }
 
 #custom-kmdot {
-  background: @surface_alt;
-  border-radius: 10px;
-  color: @primary;
-  margin: 4px 8px 4px 0;
-  padding: 4px 12px;
-  font-weight: 600;
+    background: @surface_alt;
+    border-radius: 10px;
+    color: @primary;
+    font-weight: 600;
 }
 
 #custom-dnd {
-  background: @surface_alt;
-  border-radius: 10px;
-  color: @text;
-  margin: 4px 0 4px 8px;
-  padding: 4px 12px;
-  min-width: 20px;
+    background: @surface_alt;
+    border-radius: 10px;
+    color: @text;
+    min-width: 20px;
+    margin-right: 0px;
 }
 
 #custom-dnd.on {
-  color: @warning;
+    color: @warning;
 }
 
 #custom-dnd.off {
-  color: @text_alt;
+    color: @text_alt;
 }
 
 #custom-dnd.pending {
-  color: @error;
+    color: @error;
 }
 
 /* Right-side modules */
@@ -109,75 +112,72 @@ tooltip label {
 #pulseaudio,
 #custom-power,
 #battery {
-  background: @surface_alt;
-  color: @text;
-  border-radius: 10px;
-  min-width: 60px;
-  padding: 4px 10px;
-  margin: 0 4px;
+    background: @surface_alt;
+    color: @text;
+    border-radius: 10px;
+    min-width: 60px;
 }
 
 #network {
-  color: @accent;
-  margin-left: 0;
+    color: @accent;
 }
 
 #network.disabled {
-  color: @text_alt;
-  opacity: 0.4;
+    color: @text_alt;
+    opacity: 0.4;
 }
 
 #bluetooth {
-  color: @primary;
+    color: @primary;
 }
 
 #bluetooth.disabled,
 #bluetooth.off {
-  opacity: 0.4;
+    opacity: 0.4;
 }
 
 #pulseaudio {
-  color: @text;
+    color: @text;
 }
 
 #pulseaudio.bluetooth {
-  color: @accent;
+    color: @accent;
 }
 
 #pulseaudio.muted {
-  opacity: 0.4;
+    opacity: 0.4;
 }
 
 #custom-power {
-  color: @text_alt;
+    color: @text_alt;
 }
 
 #custom-power.performance {
-  color: @error;
+    color: @error;
 }
 
 #custom-power.balanced {
-  color: @primary;
+    color: @primary;
 }
 
 #custom-power.battery {
-  color: @success;
+    color: @success;
 }
 
 #battery {
-  color: @text;
-  margin-right: 0; 
+    color: @text;
+    margin-right: 0px;
 }
 
 #battery.warning {
-  color: @warning;
+    color: @warning;
 }
 
 #battery.critical {
-  color: @error;
+    color: @error;
 }
 
 #battery.charging {
-  background: @surface_alt;
-  color: @success;
+    background: @surface_alt;
+    color: @success;
 }
