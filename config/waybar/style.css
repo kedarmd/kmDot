@@ -34,7 +34,7 @@ tooltip label {
 .modules-center {
     background: @surface;
     border: 1px solid @primary;
-    border-radius: 10px;
+    border-radius: 14px;
     margin: 6px 6px 0 6px;
     padding: 6px;
 }
