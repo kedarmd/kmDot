@@ -5,17 +5,17 @@ current=$(powerprofilesctl get 2>/dev/null)
 case "$current" in
   "power-saver")
     icon=""
-    label="Saver"
+    label="Echo"
     class="battery"      # <- matches your CSS: #custom-power.battery
     ;;
   "balanced")
     icon=""
-    label="Balanced"
+    label="Norm"
     class="balanced"
     ;;
   "performance")
     icon=""
-    label="Perf"
+    label="Turbo"
     class="performance"
     ;;
   *)

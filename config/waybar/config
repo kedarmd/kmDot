@@ -67,42 +67,46 @@
     "on-click": "~/.config/waybar/scripts/power_profile_toggle.sh",
     "tooltip": true
   },
-  
+
   "network": {
-    "format-wifi": "{icon} {essid}",
-    "format-ethernet": "{icon} {ifname}",
-    "format-disabled": "{icon} Off",
-    "format-disconnected": "{icon} On",
+    "format-wifi": "{icon}",
+    "format-ethernet": "{icon}",
+    "format-disabled": "{icon}",
+    "format-disconnected": "{icon}",
     "format-icons": {
       "wifi": ["󰤟", "󰤢", "󰤥", "󰤨"],
       "ethernet": "󰈁",
       "disconnected": "󰤯",
       "disabled": "󰤮"
     },
-    "tooltip-format": "{ifname} via {gwaddr}\n{ipaddr}/{cidr}",
+    "tooltip-format": "Connected to: {essid}",
     "interval": 60,
-    "on-click": "~/.config/kmdot/rofi/menu/wifi.sh"
+    "on-click": "~/.config/kmdot/rofi/menu/wifi.sh",
+    "on-click-right": "nmcli radio wifi off >/dev/null 2>&1"
   },
 
   "bluetooth": {
-    "format": "󰂯 {status}",
-    "format-on": "󰂯 On",
-    "format-off": "󰂲 Off",
-    "format-disabled": "󰂲 Off",
-    "format-connected": "󰂯 {device_alias}",
+    "format": "󰂯",
+    "format-on": "󰂯",
+    "format-off": "󰂲",
+    "format-disabled": "󰂲",
+    "format-connected": "󰂯",
     "format-device-preference": [
       "headphones",
       "earbuds",
       "speaker"
     ],
-    "tooltip-format": "{controller_alias}\n{device_enumerate}",
+    "tooltip-format": "Bluetooth: {status}",
+    "tooltip-format-connected": "{controller_alias}: {num_connections} connected\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}",
+    "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_battery_percentage}%",
     "on-click": "blueman-manager",
-    "on-click-right": "bluetoothctl disconnect"
+    "on-click-right": "bluetoothctl power off"
   },
 
   "pulseaudio": {
     "format": "{icon} {volume}%",
-    "format-muted": "󰝟 Muted",
+    "format-muted": "󰝟 Mute",
     "tooltip-format": "Volume: {volume}%",
     "scroll-step": 2,
     "on-click": "pamixer -t",

@@ -12,7 +12,7 @@ window#waybar {
 }
 
 tooltip {
-    background: @base;
+    background: @surface_alt;
     color: @text;
     border: 1px solid @border;
     border-radius: 12px;
@@ -43,8 +43,7 @@ tooltip label {
 .modules-left #workspaces button,
 .modules-center > * > * {
     margin-right: 6px;
-    padding-left: 12px;
-    padding-right: 12px;
+    padding: 2px 12px;
     border: 1px solid @border;
 }
 
@@ -69,8 +68,7 @@ tooltip label {
 #workspaces button.active {
     background: @primary;
     color: @base;
-    opacity: 1;
-    border: none;
+    border: 1px solid @primary;
 }
 
 /* Clock */
@@ -116,22 +114,23 @@ tooltip label {
     background: @surface_alt;
     color: @text;
     border-radius: 10px;
-    min-width: 60px;
+    min-width: 30px;
 }
 
-#network {
-    color: @accent;
-}
-
-#network.disabled {
-    color: @text_alt;
-    opacity: 0.4;
-}
-
+#network,
 #bluetooth {
-    color: @primary;
+    background: @surface_alt;
+    color: @text;
 }
 
+#network.wifi,
+#bluetooth.connected {
+    background: @primary;
+    color: @base;
+    border: 1px solid @primary;
+}
+
+#network.disabled,
 #bluetooth.disabled,
 #bluetooth.off {
     opacity: 0.4;
