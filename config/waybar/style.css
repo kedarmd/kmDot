@@ -109,7 +109,7 @@ tooltip label {
 #network,
 #bluetooth,
 #pulseaudio,
-#custom-power,
+#power-profiles-daemon,
 #battery {
     background: @surface_alt;
     color: @text;
@@ -148,19 +148,15 @@ tooltip label {
     opacity: 0.4;
 }
 
-#custom-power {
-    color: @text_alt;
-}
-
-#custom-power.performance {
+#power-profiles-daemon.performance {
     color: @error;
 }
 
-#custom-power.balanced {
+#power-profiles-daemon.balanced {
     color: @primary;
 }
 
-#custom-power.battery {
+#power-profiles-daemon.power-saver {
     color: @success;
 }
 

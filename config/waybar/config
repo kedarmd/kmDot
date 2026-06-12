@@ -4,7 +4,7 @@
 
   "modules-left": ["hyprland/workspaces"],
   "modules-center": ["custom/kmdot", "custom/clock", "custom/dnd"],
-  "modules-right": ["network", "bluetooth", "pulseaudio", "custom/power", "battery"],
+  "modules-right": ["network", "bluetooth", "pulseaudio", "power-profiles-daemon", "battery"],
 
   "hyprland/workspaces": {
     "format": "{id}",
@@ -60,12 +60,18 @@
     "interval": 3
   },
 
-  "custom/power": {
-    "exec": "~/.config/waybar/scripts/power_profile_status.sh",
-    "return-type": "json",
+  "power-profiles-daemon": {
+    "format": "{icon}",
+    "tooltip-format": "Power profile: {profile}",
+    "tooltip": true,
+    "format-icons": {
+        "default": "",
+        "performance": " Turbo",
+        "balanced": " Norm",
+        "power-saver": " Echo"
+    },
     "interval": 60,
-    "on-click": "~/.config/waybar/scripts/power_profile_toggle.sh",
-    "tooltip": true
+    "on-click": "~/.config/kmdot/rofi/menu/power_profile.sh"
   },
 
   "network": {
