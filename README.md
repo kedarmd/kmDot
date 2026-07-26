@@ -48,3 +48,5 @@ Themes: catppuccin, everforest, nord, onedark, tokyonight
 - **Tmux Nerd Font glyphs missing**: set `LANG=en_IN.UTF-8 LC_ALL=en_IN.UTF-8`.
 
 ### License
+
+Temp
