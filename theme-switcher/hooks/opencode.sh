@@ -22,3 +22,4 @@ else
 fi
 
 echo "✓ OpenCode theme updated to: $THEME"
+echo "  - Theme value: $THEME_VALUE"
