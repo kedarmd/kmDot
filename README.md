@@ -46,3 +46,5 @@ Themes: catppuccin, everforest, nord, onedark, tokyonight
   wallpaper script (`config/hyprland/scripts/cycle_wallpapers.sh`) exits early
   if hyprpaper isn't running.
 - **Tmux Nerd Font glyphs missing**: set `LANG=en_IN.UTF-8 LC_ALL=en_IN.UTF-8`.
+
+### License
