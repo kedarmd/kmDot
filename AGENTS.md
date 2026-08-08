@@ -35,5 +35,5 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 - **Tmux**: prefix `C-s`; modular config in `config/tmux/conf.d/` (`00-base`, `10-bindings`, `20-theme`, `90-plugins`); TPM for plugins; UTF-8 locale required for Nerd Fonts.
 - **Neovim**: lazy.nvim plugin manager; entrypoint `init.lua` → `require("options")` + `require("config.lazy")`.
 - **Wallpapers**: theme-specific in `themes/<theme>/wallpapers/`; `cycle_wallpapers.sh` exits early if hyprpaper isn't running; active theme cached in `~/.cache/kmdot_theme`.
-- **Gitignored**: `hyprland.conf.backup`, `config/fish/secrets.fish`.
+- **Gitignored**: `config/fish/secrets.fish`.
 - **OpenCode theme hook**: writes to `~/.config/opencode/tui.json` via `theme-switcher/hooks/opencode.sh`.

@@ -3,9 +3,9 @@
 # Exit on Error
 set -e
 
-CONFIG_FILE="$HOME/.config/kmdot/hyprland/theme.conf"
+CONFIG_FILE="$HOME/.config/kmdot/hyprland/theme.lua"
 THEME="$1"
-THEME_FILE="$HOME/.config/kmdot/themes/$THEME/hyprland.conf"
+THEME_FILE="$HOME/.config/kmdot/themes/$THEME/hyprland.lua"
 
 # Check if theme file exists
 if [ ! -f "$THEME_FILE" ]; then

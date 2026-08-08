@@ -19,6 +19,6 @@ mkdir -p "$(dirname "$CACHE_THEME_FILE")"
 echo "$THEME" > "$CACHE_THEME_FILE"
 
 # Apply new wallpapaer on theme change
-~/.config/hypr/scripts/cycle_wallpapers.sh "$THEME"
+~/.config/kmdot/hyprland/scripts/cycle_wallpapers.sh "$THEME"
 
 echo "Wallpapers updated successfully!"
