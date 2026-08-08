@@ -37,8 +37,8 @@ hl.bind(mod .. " + CTRL + down",  hl.dsp.window.resize({ x = 0,   y = 20,  relat
 
 -- Layout controls
 hl.bind(mod .. " + S",          hl.dsp.layout("swaporientation"))
-hl.bind(mod .. " + M",          hl.dsp.window.fullscreen({ mode = "fullscreen", action = "set" }))
-hl.bind(mod .. " + SHIFT + M",  hl.dsp.window.fullscreen({ mode = "fullscreen", action = "unset" }))
+hl.bind(mod .. " + M",          hl.dsp.window.fullscreen({ mode = "maximized" }))
+hl.bind(mod .. " + SHIFT + M",  hl.dsp.window.fullscreen({ mode = "fullscreen" }))
 
 -- Switch to workspace
 for i = 1, 5 do
