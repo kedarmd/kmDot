@@ -16,6 +16,7 @@ hl.bind(mod .. " + SHIFT + E", hl.dsp.exit())
 hl.bind(mod .. " + L", hl.dsp.exec_cmd("hyprlock"))
 hl.bind(mod .. " + ESCAPE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/rofi/menu/system.sh'"))
 hl.bind(mod .. " + R", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/waybar/scripts/launch.sh'"))
+hl.bind(mod .. " + K", hl.dsp.exec_cmd("bash -lc '$HOME/.config/kmdot/rofi/menu/kmdot.sh'"))
 
 -- Focus with arrow keys
 hl.bind(mod .. " + left", hl.dsp.focus({ direction = "left" }))
