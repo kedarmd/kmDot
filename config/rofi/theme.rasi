@@ -69,15 +69,15 @@ element-text {
 }
 
 element selected {
-  background-color: @selected;
-  text-color: @selected-foreground;
+  background-color: @background-alt;
+  text-color: @selected;
 }
 
 element-icon selected {
-  background-color: @selected;
+  background-color: @background-alt;
 }
 
 element-text selected {
-  background-color: @selected;
-  text-color: @selected-foreground;
+  background-color: @background-alt;
+  text-color: @selected;
 }
