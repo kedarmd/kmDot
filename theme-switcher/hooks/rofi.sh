@@ -3,7 +3,7 @@
 # Exit on Error
 set -e
 
-CONFIG_FILE="$HOME/.config/kmdot/rofi/theme.rasi"
+CONFIG_FILE="$HOME/.config/kmdot/rofi/colors.rasi"
 THEME="$1"
 COLORSCHEME_FILE="$HOME/.config/kmdot/themes/$THEME/rofi.rasi"
 

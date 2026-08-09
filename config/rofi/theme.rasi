@@ -1,14 +1,7 @@
+@theme "colors.rasi"
+
 * {
   font: "JetBrainsMono Nerd Font 12";
-
-  background: #1a1b26;
-  background-alt: #292e42;
-  foreground: #c0caf5;
-  selected: #7aa2f7;
-  selected-foreground: #1a1b26;
-
-  border-color: #3b4261;
-  separatorcolor: #3b4261;
 
   border-radius: 6px;
   padding: 8px;
