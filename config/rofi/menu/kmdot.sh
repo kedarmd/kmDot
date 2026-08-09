@@ -7,10 +7,11 @@ export LC_CTYPE=en_US.UTF-8
 
 apps="󰪥  Applications"
 connections="󰤨  Connections"
+keybinds="󰌌  Keybinds"
 system="  System"
 themes="  Themes"
 
-options="$apps\n$connections\n$system\n$themes"
+options="$apps\n$connections\n$keybinds\n$system\n$themes"
 
 choice=$(printf '%b\n' "$options" | rofi -dmenu -no-show-icons -normal-window -i -p "kmDot")
 
@@ -20,6 +21,9 @@ case "$choice" in
     ;;
   "$connections")
     "$HOME/.config/kmdot/rofi/menu/connectivity.sh"
+    ;;
+  "$keybinds")
+    "$HOME/.config/kmdot/rofi/menu/keybinds.sh"
     ;;
   "$system")
     "$HOME/.config/kmdot/rofi/menu/system.sh"
