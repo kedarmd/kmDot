@@ -26,5 +26,10 @@ DesktopNames=Hyprland
 Keywords=tiling;wayland;compositor;
 EOF
 
+if pgrep -x hypridle >/dev/null; then
+  pkill hypridle
+  hypridle &
+fi
+
 echo "kmDot hyprland config synced!!!"
 
