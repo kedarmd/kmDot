@@ -109,6 +109,7 @@ tooltip label {
 #network,
 #bluetooth,
 #pulseaudio,
+#backlight,
 #power-profiles-daemon,
 #battery {
     background: @surface_alt;
@@ -146,6 +147,10 @@ tooltip label {
 
 #pulseaudio.muted {
     opacity: 0.4;
+}
+
+#backlight {
+    color: @text;
 }
 
 #power-profiles-daemon.performance {

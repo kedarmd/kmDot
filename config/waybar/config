@@ -4,7 +4,7 @@
 
   "modules-left": ["hyprland/workspaces"],
   "modules-center": ["custom/kmdot", "custom/clock", "custom/dnd"],
-  "modules-right": ["network", "bluetooth", "pulseaudio", "power-profiles-daemon", "battery"],
+  "modules-right": ["network", "bluetooth", "pulseaudio", "backlight", "power-profiles-daemon", "battery"],
 
   "hyprland/workspaces": {
     "format": "{id}",
@@ -119,5 +119,12 @@
     "format-icons": {
       "default": ["", "", ""]
     }
+  },
+
+  "backlight": {
+    "format": "{icon} {percent}%",
+    "format-icons": ["󰃞", "󰃝", "󰃟", "󰃠"],
+    "on-scroll-up": "~/.config/waybar/scripts/brightness.sh up",
+    "on-scroll-down": "~/.config/waybar/scripts/brightness.sh down"
   }
 }
