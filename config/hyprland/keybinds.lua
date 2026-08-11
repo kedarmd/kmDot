@@ -81,3 +81,8 @@ hl.bind("PRINT", hl.dsp.exec_cmd("hyprshot -m region")) -- Screenshot region
 -- Custom scripts
 hl.bind(mod .. " + J", hl.dsp.layout("togglesplit")) -- Toggle split layout
 hl.bind("SUPER + CTRL + SPACE", hl.dsp.exec_cmd("~/.config/kmdot/hyprland/scripts/cycle_wallpapers.sh")) -- Cycle wallpapers
+
+hl.bind(
+	"SUPER + SHIFT + SPACE",
+	hl.dsp.exec_cmd("~/.config/kmdot/hyprland/scripts/toggle_handy.sh")
+) -- Toggle Handy transcription window (launch hidden if not running, else toggle)
