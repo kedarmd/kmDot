@@ -27,7 +27,7 @@
   "custom/kmdot": {
     "format": " kmDot",
     "tooltip": "kmDot dotfiles",
-    "on-click": "~/.config/kmdot/rofi/menu/system.sh",
+    "on-click": "$HOME/.config/rofi/menu/kmdot.sh",
     "tooltip": false
   },
 
