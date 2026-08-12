@@ -6,6 +6,13 @@ Dotfiles for CachyOS + Hyprland. Source of truth is this repo; sync copies confi
 
 fish · ghostty · hyprland · nvim · rofi · starship · swaync · waybar · tmux · xdg-desktop-portal · theme-switcher · battery
 
+## Screenshots
+
+![Setup 1](./screenshots/2026-08-13-004752_hyprshot.png)
+![Setup 2](./screenshots/2026-08-13-004809_hyprshot.png)
+![Setup 3](./screenshots/2026-08-13-004835_hyprshot.png)
+![Setup 4](./screenshots/2026-08-13-004917_hyprshot.png)
+
 ## Install
 
 ```bash
