@@ -103,7 +103,7 @@ Rectangle {
     // Username Dropdown
     Controls.ComboBox {
       id: userCombo
-      width: 222
+      width: 252
       height: 32
       model: userModel
       textRole: "name"
@@ -148,7 +148,7 @@ Rectangle {
 
       Controls.TextField {
         id: password
-        width: 180
+        width: 210
         height: 32
         leftPadding: 12
         rightPadding: 12
@@ -157,6 +157,7 @@ Rectangle {
         color: pillTextColor
         font.family: root.fontFamily
         font.pixelSize: 14
+        font.letterSpacing: 4
         onTextChanged: {
           if (showError) {
             showError = false
