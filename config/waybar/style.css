@@ -6,9 +6,10 @@
 }
 
 window#waybar {
-    background: transparent;
+    background: @surface;
     color: @text;
-    border: none;
+    border: 1px solid @muted;
+    border-radius: 12px;
 }
 
 tooltip {
@@ -32,11 +33,7 @@ tooltip label {
 .modules-right,
 .modules-left,
 .modules-center {
-    background: @surface;
-    border: 2px solid @border;
-    border-radius: 14px;
-    margin: 6px 6px 0 6px;
-    padding: 6px;
+    padding: 8px;
 }
 
 .modules-right > * > *,

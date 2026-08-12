@@ -31,6 +31,8 @@ vim.opt.termguicolors = true
 
 vim.opt.signcolumn = "yes"
 
+vim.opt.cmdheight = 0
+
 -- Enable nvim starting with server
 local server_name = "/tmp/nvim-" .. vim.fn.getpid() .. ".sock"
 vim.fn.serverstart(server_name)
