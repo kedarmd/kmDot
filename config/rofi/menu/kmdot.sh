@@ -13,7 +13,7 @@ themes="  Themes"
 
 options="$apps\n$connections\n$keybinds\n$system\n$themes"
 
-choice=$(printf '%b\n' "$options" | rofi -dmenu -no-show-icons -normal-window -i -p "kmDot")
+choice=$(printf '%b\n' "$options" | rofi -dmenu -no-show-icons -normal-window -i -p " kmDot")
 
 case "$choice" in
   "$apps")
