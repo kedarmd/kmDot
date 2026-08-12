@@ -8,8 +8,6 @@
 window#waybar {
     background: @surface;
     color: @text;
-    border: 1px solid @muted;
-    border-radius: 12px;
 }
 
 tooltip {
