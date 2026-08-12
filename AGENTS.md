@@ -36,4 +36,5 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 - **Neovim**: lazy.nvim plugin manager; entrypoint `init.lua` → `require("options")` + `require("config.lazy")`.
 - **Wallpapers**: theme-specific in `themes/<theme>/wallpapers/`; `cycle_wallpapers.sh` exits early if hyprpaper isn't running; active theme cached in `~/.cache/kmdot_theme`.
 - **Gitignored**: `config/fish/secrets.fish`.
-- **OpenCode theme hook**: writes to `~/.config/opencode/tui.json` via `theme-switcher/hooks/opencode.sh`.
+- **OpenCode theme hook**: writes the `theme` key to `~/.config/opencode/tui.json` (and `~/.local/share/opencode/kv.json` if present, since the `/themes` runtime pref can otherwise override it) via `theme-switcher/hooks/opencode.sh`. Applies on next opencode launch (no live reload).
+- **Zed theme hook**: rewrites the top-level `"theme"` key (as a scalar, never touching `icon_theme`) in `~/.config/zed/settings.json` via `theme-switcher/hooks/zed.sh`. It writes **in place** (`cat >`, same inode) so Zed's settings watcher hot-reloads it live — no restart needed. Themes come from the catppuccin/everforest/nord/tokyo-night extensions (onedark uses built-in One Dark); see `themes/<theme>/zed.conf`.

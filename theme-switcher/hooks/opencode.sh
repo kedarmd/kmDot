@@ -13,12 +13,16 @@ fi
 
 THEME_VALUE=$(grep "^theme" "$COLORSCHEME_FILE" | head -1 | sed 's/^theme\s*=\s*//' | tr -d '"')
 
-if grep -q '"theme"' "$CONFIG_FILE"; then
-  sed -i "s/\"theme\":.*/\"theme\": \"$THEME_VALUE\",/" "$CONFIG_FILE"
-elif grep -q '"provider"' "$CONFIG_FILE"; then
-  sed -i '/"provider"/a\  "theme": "'"$THEME_VALUE"'",' "$CONFIG_FILE"
-else
-  sed -i '1s/^{/{\n  "theme": "'"$THEME_VALUE"'",/' "$CONFIG_FILE"
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "ERROR: OpenCode TUI config not found: $CONFIG_FILE"
+  exit 1
 fi
 
-echo "✓ OpenCode theme updated to: $THEME"
+jq --arg theme "$THEME_VALUE" '.theme = $theme' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"
+
+KV_FILE="$HOME/.local/share/opencode/kv.json"
+if [ -f "$KV_FILE" ]; then
+  jq --arg theme "$THEME_VALUE" '.theme = $theme' "$KV_FILE" > "$KV_FILE.tmp" && mv "$KV_FILE.tmp" "$KV_FILE"
+fi
+
+echo "✓ OpenCode theme updated to: $THEME_VALUE (applies on next launch)"
