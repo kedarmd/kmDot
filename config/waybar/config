@@ -64,7 +64,7 @@
     "tooltip-format": "Connected to: {essid}",
     "interval": 60,
     "on-click": "~/.config/kmdot/rofi/menu/wifi.sh",
-    "on-click-right": "nmcli radio wifi off >/dev/null 2>&1"
+    "on-click-right": "~/.config/waybar/scripts/wifi_toggle.sh"
   },
 
   "bluetooth": {
@@ -83,7 +83,7 @@
     "tooltip-format-enumerate-connected": "{device_alias}",
     "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_battery_percentage}%",
     "on-click": "blueman-manager",
-    "on-click-right": "bluetoothctl power off"
+    "on-click-right": "~/.config/waybar/scripts/bluetooth_toggle.sh"
   },
 
   "pulseaudio": {
