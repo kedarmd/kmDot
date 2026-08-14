@@ -105,8 +105,7 @@ tooltip label {
 #bluetooth,
 #pulseaudio,
 #backlight,
-#power-profiles-daemon,
-#battery {
+#custom-battery {
     background: @surface_alt;
     color: @text;
     border-radius: 10px;
@@ -148,32 +147,20 @@ tooltip label {
     color: @text;
 }
 
-#power-profiles-daemon.performance {
-    color: @error;
-}
-
-#power-profiles-daemon.balanced {
-    color: @primary;
-}
-
-#power-profiles-daemon.power-saver {
-    color: @success;
-}
-
-#battery {
+#custom-battery {
     color: @text;
     margin-right: 0px;
 }
 
-#battery.warning {
+#custom-battery.warning {
     color: @warning;
 }
 
-#battery.critical {
+#custom-battery.critical {
     color: @error;
 }
 
-#battery.charging {
+#custom-battery.charging {
     background: @surface_alt;
     color: @success;
 }
