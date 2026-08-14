@@ -5,7 +5,7 @@
 @define-color surface       #2C323C;  /* cursor_grey */
 @define-color surface_alt   #3E4452;  /* visual_grey */
 @define-color text          #ABB2BF;  /* foreground */
-@define-color text_alt      #5C6370;  /* comment_grey */
+@define-color text_alt      #98A0AD;  /* brighter secondary text */
 @define-color muted         #5C6370;  /* comment_grey */
 @define-color border        #4B5263;  /* gutter_fg_grey */
 @define-color primary       #61AFEF;  /* blue */
