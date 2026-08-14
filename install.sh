@@ -33,6 +33,7 @@ APPS=(
   "ghostty"
   "hyprland"
   "nvim"
+  "quickshell"
   "rofi"
   "starship"
   "swaync"

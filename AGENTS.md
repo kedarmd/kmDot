@@ -17,6 +17,7 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 | Uninstall | `./uninstall.sh` | Also requires `gum`. Removes symlink targets + kmdot copies. |
 | Switch theme (CLI) | `theme-switcher/main.sh <theme>` | Themes: catppuccin, everforest, nord, onedark, tokyonight |
 | Switch theme (rofi) | `config/rofi/menu/theme-switcher.sh` (via rofi launcher after sync) | Picks theme via rofi dmenu, calls main.sh |
+| Quickshell sync | `./sync/quickshell.sh` | Bar config lives in `config/quickshell/`. `waybar` remains installed for manual use (Super+H/R). |
 
 ## Adding an App
 
@@ -35,6 +36,7 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 - **Tmux**: prefix `C-s`; modular config in `config/tmux/conf.d/` (`00-base`, `10-bindings`, `20-theme`, `90-plugins`); TPM for plugins; UTF-8 locale required for Nerd Fonts.
 - **Neovim**: lazy.nvim plugin manager; entrypoint `init.lua` → `require("options")` + `require("config.lazy")`.
 - **Wallpapers**: theme-specific in `themes/<theme>/wallpapers/`; `cycle_wallpapers.sh` exits early if hyprpaper isn't running; active theme cached in `~/.cache/kmdot_theme`.
+- **Quickshell**: top bar in `config/quickshell/`; colors are a `pragma Singleton` (`Colors.qml`, tokyonight default) regenerated from `themes/<theme>/quickshell.conf` by `theme-switcher/hooks/quickshell.sh` — quickshell live-reloads, no restart. Not autostarted previously — autostart now launches `quickshell &`; waybar stays installed for Super+H/R manual use. Install with `sudo pacman -S quickshell` (cachyos-extra-v4).
 - **Gitignored**: `config/fish/secrets.fish`.
 - **OpenCode theme hook**: writes the `theme` key to `~/.config/opencode/tui.json` (and `~/.local/share/opencode/kv.json` if present, since the `/themes` runtime pref can otherwise override it) via `theme-switcher/hooks/opencode.sh`. Applies on next opencode launch (no live reload).
 - **Zed theme hook**: rewrites the top-level `"theme"` key (as a scalar, never touching `icon_theme`) in `~/.config/zed/settings.json` via `theme-switcher/hooks/zed.sh`. It writes **in place** (`cat >`, same inode) so Zed's settings watcher hot-reloads it live — no restart needed. Themes come from the catppuccin/everforest/nord/tokyo-night extensions (onedark uses built-in One Dark); see `themes/<theme>/zed.conf`.
