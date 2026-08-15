@@ -69,7 +69,7 @@ Item {
       if (mouse.button === Qt.RightButton) {
         Networking.wifiEnabled = !Networking.wifiEnabled
       } else {
-        wifiProc.exec(["sh", "-c", "$HOME/.config/kmdot/rofi/menu/wifi.sh"])
+        wifiProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-wifi"])
       }
     }
     onEntered: root.tooltip.show(root, root.tooltipText)

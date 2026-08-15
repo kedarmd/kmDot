@@ -1,10 +1,20 @@
 import QtQuick
 import Quickshell
 import "components"
+import "menu"
 import "modules"
 
 Scope {
-  id: root
+  id: shellRoot
+
+  property var activeLauncher: null
+  property AppLauncher appLauncher: AppLauncher { scope: shellRoot }
+  property KmdotLauncher kmdotLauncher: KmdotLauncher { scope: shellRoot }
+  property SystemLauncher systemLauncher: SystemLauncher { scope: shellRoot }
+  property ThemeLauncher themeLauncher: ThemeLauncher { scope: shellRoot }
+  property ConnectionsLauncher connectionsLauncher: ConnectionsLauncher { scope: shellRoot }
+  property WifiLauncher wifiLauncher: WifiLauncher { scope: shellRoot }
+  property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
 
   Variants {
     model: Quickshell.screens

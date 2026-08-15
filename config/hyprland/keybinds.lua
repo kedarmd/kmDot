@@ -9,15 +9,15 @@ local mod = "SUPER"
 hl.bind(mod .. " + RETURN", hl.dsp.exec_cmd("/usr/bin/ghostty")) -- Launch ghostty
 hl.bind(mod .. " + B", hl.dsp.exec_cmd("zen-browser")) -- Open Zen browser
 hl.bind(mod .. " + F", hl.dsp.exec_cmd("/usr/bin/nautilus")) -- Open file manager
-hl.bind(mod .. " + SPACE", hl.dsp.exec_cmd("rofi -show drun")) -- Application launcher
-hl.bind(mod .. " + T", hl.dsp.exec_cmd("bash -lc '$HOME/.config/kmdot/rofi/menu/theme-switcher.sh'")) -- Theme switcher
+hl.bind(mod .. " + SPACE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/launcher.sh'")) -- Application launcher (quickshell)
+hl.bind(mod .. " + T", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-theme'")) -- Theme switcher (quickshell)
 hl.bind(mod .. " + W", hl.dsp.window.close()) -- Close window
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exit()) -- Exit Hyprland
 hl.bind(mod .. " + L", hl.dsp.exec_cmd("hyprlock")) -- Lock screen
-hl.bind(mod .. " + ESCAPE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/rofi/menu/system.sh'")) -- System menu
+hl.bind(mod .. " + ESCAPE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-system'")) -- System menu (quickshell)
 hl.bind(mod .. " + R", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/waybar/scripts/launch.sh'")) -- Reload Waybar
 hl.bind(mod .. " + H", hl.dsp.exec_cmd("$HOME/.config/kmdot/waybar/scripts/toggle.sh")) -- Toggle Waybar
-hl.bind(mod .. " + K", hl.dsp.exec_cmd("bash -lc '$HOME/.config/kmdot/rofi/menu/kmdot.sh'")) -- kmDot menu
+hl.bind(mod .. " + K", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-kmdot'")) -- kmDot menu (quickshell)
 
 -- Focus with arrow keys
 hl.bind(mod .. " + left", hl.dsp.focus({ direction = "left" })) -- Focus window left

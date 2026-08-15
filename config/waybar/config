@@ -28,7 +28,7 @@
   "custom/kmdot": {
     "format": " kmDot",
     "tooltip": "kmDot dotfiles",
-    "on-click": "$HOME/.config/rofi/menu/kmdot.sh",
+    "on-click": "~/.config/kmdot/quickshell/scripts/toggle.sh kmdot-kmdot",
     "tooltip": false
   },
 
@@ -63,7 +63,7 @@
     },
     "tooltip-format": "Connected to: {essid}",
     "interval": 60,
-    "on-click": "~/.config/kmdot/rofi/menu/wifi.sh",
+    "on-click": "~/.config/kmdot/quickshell/scripts/toggle.sh kmdot-wifi",
     "on-click-right": "~/.config/waybar/scripts/wifi_toggle.sh"
   },
 

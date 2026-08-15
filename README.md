@@ -28,10 +28,10 @@ Single-app re-sync: `./sync/<app>.sh` (skips TUI).
 theme-switcher/main.sh <theme>
 ```
 
-Or via rofi dmenu (after sync):
+Or via the quickshell theme launcher (Super+T, after sync):
 
 ```bash
-~/.config/kmdot/rofi/menu/theme-switcher.sh
+~/.config/kmdot/quickshell/scripts/toggle.sh kmdot-theme
 ```
 
 Themes: catppuccin, everforest, nord, onedark, tokyonight

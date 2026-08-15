@@ -21,7 +21,7 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onClicked: kmdotProc.exec(["sh", "-c", "$HOME/.config/kmdot/rofi/menu/kmdot.sh"])
+    onClicked: kmdotProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-kmdot"])
   }
 
   Process {
