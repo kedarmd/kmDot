@@ -65,7 +65,7 @@ Item {
         if (root.adapter) root.adapter.enabled = !root.adapter.enabled
         root.refresh()
       } else {
-        managerProc.exec(["blueman-manager"])
+        toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-bluetooth"])
       }
     }
     onEntered: root.tooltip.show(root, root.tooltipText)
@@ -73,6 +73,6 @@ Item {
   }
 
   Process {
-    id: managerProc
+    id: toggleProc
   }
 }

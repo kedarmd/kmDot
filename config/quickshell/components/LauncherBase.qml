@@ -64,7 +64,10 @@ Item {
 
   onQueryChanged: root.recompute()
   onPoolChanged: root.recompute()
-  onOpenedChanged: if (root.opened) focusTimer.start()
+  onOpenedChanged: {
+    if (root.opened) focusTimer.start()
+    root.onOpenedChange()
+  }
 
   // ---- item accessors (menu items vs DesktopEntry apps) ----
   function itemLabel(item) { return item.label || item.name || "" }
@@ -152,6 +155,11 @@ Item {
   // ---- lifecycle ----
   // Subclasses override to (re)build root.pool on each open (dynamic lists, e.g. wifi/themes).
   function refreshItems() {}
+
+  // Called on every open/close (opened property changes) so subclasses can tie
+  // work to visibility (e.g. bluetooth discovery). Subclasses must NOT re-declare
+  // onOpenedChanged — that would shadow the base's focus-timer handler.
+  function onOpenedChange() {}
 
   function recompute() {
     const q = root.query.trim()
@@ -583,16 +591,28 @@ Item {
           spacing: 8
 
           Text {
+            id: footerHintText
             anchors.verticalCenter: parent.verticalCenter
             text: root.promptMode ? root.promptHint : root.footerHint
             font.pixelSize: 12
             font.family: "JetBrainsMono Nerd Font Propo"
             color: Colors.muted
+            // Keep the hint within its own space so it never runs underneath the
+            // right-aligned footer pill (e.g. bluetooth/wifi on-off button).
+            elide: Text.ElideRight
+            width: root.footerActionText !== ""
+              ? parent.width - footerPill.width - 12
+              : footerHintText.implicitWidth
           }
 
-          Item { width: 1; height: 1 }
+          Item {
+            id: footerSpacer
+            width: parent.width - footerHintText.width - footerCountText.width - 16
+            height: 1
+          }
 
           Text {
+            id: footerCountText
             anchors.verticalCenter: parent.verticalCenter
             text: root.countShown
               ? root.resultCount + " " + root.countNoun + (root.resultCount === 1 ? "" : "s")
@@ -601,11 +621,13 @@ Item {
             font.family: "JetBrainsMono Nerd Font Propo"
             color: Colors.muted
             horizontalAlignment: Text.AlignRight
-            width: parent.width - 180
+            visible: root.countShown
+            width: root.countShown ? footerCountText.implicitWidth : 0
           }
         }
 
         Rectangle {
+          id: footerPill
           anchors {
             right: parent.right
             verticalCenter: parent.verticalCenter

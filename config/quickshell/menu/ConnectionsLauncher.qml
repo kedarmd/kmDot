@@ -16,7 +16,7 @@ LauncherBase {
   ]
 
   onActivated: function(item) {
-    if (item.action === "bluetooth") root.runCommand("blueman-manager")
+    if (item.action === "bluetooth") root.scope.bluetoothLauncher.openLauncher()
     else if (item.action === "wifi") root.scope.wifiLauncher.openLauncher()
   }
 }

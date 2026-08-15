@@ -14,6 +14,7 @@ Scope {
   property ThemeLauncher themeLauncher: ThemeLauncher { scope: shellRoot }
   property ConnectionsLauncher connectionsLauncher: ConnectionsLauncher { scope: shellRoot }
   property WifiLauncher wifiLauncher: WifiLauncher { scope: shellRoot }
+  property BluetoothLauncher bluetoothLauncher: BluetoothLauncher { scope: shellRoot }
   property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
 
   Variants {
