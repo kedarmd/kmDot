@@ -179,6 +179,7 @@ Item {
     if (root.scope && root.scope.activeLauncher && root.scope.activeLauncher !== root) {
       root.scope.activeLauncher.closeLauncher()
     }
+    if (root.scope && root.scope.batteryPopup) root.scope.batteryPopup.close()
     if (root.scope) root.scope.activeLauncher = root
     root.opened = true
   }

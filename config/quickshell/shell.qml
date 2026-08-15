@@ -16,6 +16,7 @@ Scope {
   property WifiLauncher wifiLauncher: WifiLauncher { scope: shellRoot }
   property BluetoothLauncher bluetoothLauncher: BluetoothLauncher { scope: shellRoot }
   property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
+  property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }
 
   Variants {
     model: Quickshell.screens

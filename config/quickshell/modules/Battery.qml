@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Io
 import Quickshell.Services.UPower
 import qs
 
@@ -81,8 +82,19 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onClicked: root.cycleProfile()
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    onClicked: {
+      if (mouse.button === Qt.RightButton) {
+        root.cycleProfile()
+      } else {
+        toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-battery"])
+      }
+    }
     onEntered: root.tooltip.show(root, root.tooltipText)
     onExited: root.tooltip.hide()
+  }
+
+  Process {
+    id: toggleProc
   }
 }
