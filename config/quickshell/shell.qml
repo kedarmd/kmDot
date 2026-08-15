@@ -19,6 +19,13 @@ Scope {
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }
   property VolumePopup volumePopup: VolumePopup { scope: shellRoot }
   property BrightnessPopup brightnessPopup: BrightnessPopup { scope: shellRoot }
+  property CalendarPopup calendarPopup: CalendarPopup { scope: shellRoot }
+
+  Component.onCompleted: {
+    // Force-instantiate the calendar popup at startup so its 30-min resync
+    // timer (and the initial ICS fetch) run even if it's never opened.
+    calendarPopup
+  }
 
   Variants {
     model: Quickshell.screens

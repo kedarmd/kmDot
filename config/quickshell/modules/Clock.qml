@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs
 
 Item {
@@ -19,6 +20,17 @@ Item {
     font.family: "JetBrainsMono Nerd Font Propo"
     font.pixelSize: 14
     color: Colors.text_alt
+  }
+
+  MouseArea {
+    anchors.fill: parent
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+    onClicked: toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-calendar"])
+  }
+
+  Process {
+    id: toggleProc
   }
 
   function formatClock(date) {
