@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Services.UPower
 import Quickshell.Wayland
 import qs
+import "../components"
 
 PanelWindow {
   id: root
@@ -120,10 +121,17 @@ PanelWindow {
     histProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/battery-history.sh"])
   }
 
+  function pickScreen() {
+    posProc.exec(["sh", "-c", "hyprctl cursorpos"])
+  }
+
   function open() {
     if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
+    if (root.scope && root.scope.volumePopup && root.scope.volumePopup !== root) root.scope.volumePopup.close()
+    if (root.scope && root.scope.brightnessPopup && root.scope.brightnessPopup !== root) root.scope.brightnessPopup.close()
     root.opened = true
     root.loadHistory()
+    root.pickScreen()
     focusTimer.start()
   }
 
@@ -177,6 +185,26 @@ PanelWindow {
       }
     }
     onExited: root.buildHistory()
+  }
+
+  Process {
+    id: posProc
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const m = /(-?\d+),\s*(-?\d+)/.exec(String(this.text).trim())
+        if (!m) return
+        const X = parseInt(m[1], 10)
+        const Y = parseInt(m[2], 10)
+        const screens = Quickshell.screens.values
+        for (let i = 0; i < screens.length; i++) {
+          const s = screens[i]
+          if (X >= s.x && X < s.x + s.width && Y >= s.y && Y < s.y + s.height) {
+            root.screen = s
+            return
+          }
+        }
+      }
+    }
   }
 
   Item {
@@ -380,75 +408,33 @@ PanelWindow {
           width: parent.width
           spacing: 8
 
-          Rectangle {
+          PillButton {
             width: (parent.width - 16) / 3
-            height: 36
-            radius: 8
-            color: root.isProfileActive(PowerProfile.PowerSaver) ? Colors.surface_alt : "transparent"
-            border.width: 1
-            border.color: root.isProfileActive(PowerProfile.PowerSaver) ? Colors.primary : Colors.border
-
-            Text {
-              anchors.centerIn: parent
-              text: "Power Saver"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 12
-              color: root.isProfileActive(PowerProfile.PowerSaver) ? Colors.primary : Colors.text_alt
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: Qt.PointingHandCursor
-              onClicked: PowerProfiles.profile = PowerProfile.PowerSaver
-            }
+            height: 30
+            active: root.isProfileActive(PowerProfile.PowerSaver)
+            text: "Power Saver"
+            textSize: 12
+            onClicked: PowerProfiles.profile = PowerProfile.PowerSaver
           }
 
-          Rectangle {
+          PillButton {
             width: (parent.width - 16) / 3
-            height: 36
-            radius: 8
-            color: root.isProfileActive(PowerProfile.Balanced) ? Colors.surface_alt : "transparent"
-            border.width: 1
-            border.color: root.isProfileActive(PowerProfile.Balanced) ? Colors.primary : Colors.border
-
-            Text {
-              anchors.centerIn: parent
-              text: "Balanced"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 12
-              color: root.isProfileActive(PowerProfile.Balanced) ? Colors.primary : Colors.text_alt
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: Qt.PointingHandCursor
-              onClicked: PowerProfiles.profile = PowerProfile.Balanced
-            }
+            height: 30
+            active: root.isProfileActive(PowerProfile.Balanced)
+            text: "Balanced"
+            textSize: 12
+            onClicked: PowerProfiles.profile = PowerProfile.Balanced
           }
 
-          Rectangle {
+          PillButton {
             width: (parent.width - 16) / 3
-            height: 36
-            radius: 8
+            height: 30
             opacity: PowerProfiles.hasPerformanceProfile ? 1.0 : 0.4
-            color: root.isProfileActive(PowerProfile.Performance) ? Colors.surface_alt : "transparent"
-            border.width: 1
-            border.color: root.isProfileActive(PowerProfile.Performance) ? Colors.primary : Colors.border
-
-            Text {
-              anchors.centerIn: parent
-              text: "Performance"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 12
-              color: root.isProfileActive(PowerProfile.Performance) ? Colors.primary : Colors.text_alt
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: Qt.PointingHandCursor
-              enabled: PowerProfiles.hasPerformanceProfile
-              onClicked: PowerProfiles.profile = PowerProfile.Performance
-            }
+            active: root.isProfileActive(PowerProfile.Performance)
+            enabled: PowerProfiles.hasPerformanceProfile
+            text: "Performance"
+            textSize: 12
+            onClicked: PowerProfiles.profile = PowerProfile.Performance
           }
         }
       }

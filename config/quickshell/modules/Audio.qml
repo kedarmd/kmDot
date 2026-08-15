@@ -20,7 +20,7 @@ Item {
   readonly property string tooltipText: "Volume: " + Math.round(volume * 100) + "%"
 
   readonly property string icon: {
-    if (muted) return "󰝟"
+    if (muted) return "\uEEE8"
     if (volume <= 0.333) return ""
     if (volume <= 0.666) return ""
     return ""
@@ -49,7 +49,7 @@ Item {
       if (mouse.button === Qt.RightButton) {
         if (root.audio) root.audio.muted = !root.audio.muted
       } else {
-        volumeProc.exec(["pavucontrol"])
+        toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-volume"])
       }
     }
     onWheel: {
@@ -63,6 +63,6 @@ Item {
   }
 
   Process {
-    id: volumeProc
+    id: toggleProc
   }
 }

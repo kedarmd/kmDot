@@ -98,9 +98,15 @@ Item {
 
   MouseArea {
     anchors.fill: parent
+    cursorShape: Qt.PointingHandCursor
+    onClicked: toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-brightness"])
     onWheel: {
       const step = Math.max(1, Math.round(root.max * 0.02))
       root.apply(wheel.angleDelta.y > 0 ? root.cur + step : root.cur - step)
     }
+  }
+
+  Process {
+    id: toggleProc
   }
 }
