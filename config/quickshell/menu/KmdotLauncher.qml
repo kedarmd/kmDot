@@ -13,6 +13,7 @@ LauncherBase {
   // NOTE: keep glyphs in the BMP (<= \uffff); non-BMP nerd glyphs (e.g. \uf0aa5) desync the QML lexer.
   items: [
     { label: "Applications", glyph: "\uf108", action: "apps" },
+    { label: "Clipboard", glyph: "\uf0ea", action: "clipboard" },
     { label: "Connections", glyph: "\uf1eb", action: "connections" },
     { label: "Keybinds", glyph: "\uf11c", action: "keybinds" },
     { label: "System", glyph: "\uf013", action: "system" },
@@ -25,5 +26,6 @@ LauncherBase {
     else if (item.action === "themes") root.scope.themeLauncher.openLauncher()
     else if (item.action === "connections") root.scope.connectionsLauncher.openLauncher()
     else if (item.action === "keybinds") root.scope.keybindsLauncher.openLauncher()
+    else if (item.action === "clipboard") root.scope.clipboardLauncher.openLauncher()
   }
 }

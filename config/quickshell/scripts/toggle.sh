@@ -28,7 +28,9 @@ fi
 # died, or a theme switch live-reloaded and the old SocketServer unlinked the
 # socket after the new one bound). Restart quickshell and retry.
 notify-send "kmDot" "Restarting quickshell to restore launchers…"
-pkill -x quickshell
+# pkill exits 1 when quickshell is already dead (exactly the case we're healing),
+# and `set -e` would abort the script before the restart — so guard it.
+pkill -x quickshell || true
 sleep 1
 rm -f "$SOCK"
 setsid nohup quickshell >/dev/null 2>&1 < /dev/null &

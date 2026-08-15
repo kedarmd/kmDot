@@ -16,6 +16,7 @@ Scope {
   property WifiLauncher wifiLauncher: WifiLauncher { scope: shellRoot }
   property BluetoothLauncher bluetoothLauncher: BluetoothLauncher { scope: shellRoot }
   property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
+  property ClipboardLauncher clipboardLauncher: ClipboardLauncher { scope: shellRoot }
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }
   property VolumePopup volumePopup: VolumePopup { scope: shellRoot }
   property BrightnessPopup brightnessPopup: BrightnessPopup { scope: shellRoot }
