@@ -579,6 +579,16 @@ Item {
             left: parent.left
             right: parent.right
           }
+          height: 12
+          color: Colors.base
+        }
+
+        Rectangle {
+          anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+          }
           height: 1
           color: Colors.border
         }
