@@ -15,8 +15,6 @@ hl.bind(mod .. " + W", hl.dsp.window.close()) -- Close window
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exit()) -- Exit Hyprland
 hl.bind(mod .. " + L", hl.dsp.exec_cmd("hyprlock")) -- Lock screen
 hl.bind(mod .. " + ESCAPE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-system'")) -- System menu (quickshell)
-hl.bind(mod .. " + R", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/waybar/scripts/launch.sh'")) -- Reload Waybar
-hl.bind(mod .. " + H", hl.dsp.exec_cmd("$HOME/.config/kmdot/waybar/scripts/toggle.sh")) -- Toggle Waybar
 hl.bind(mod .. " + K", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-kmdot'")) -- kmDot menu (quickshell)
 
 -- Focus with arrow keys

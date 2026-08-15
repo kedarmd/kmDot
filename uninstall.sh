@@ -28,25 +28,19 @@ APPS=(
   "ghostty"
   "hyprland"
   "nvim"
-  "rofi"
   "starship"
-  "waybar"
 )
 
 declare -A TARGETS
 TARGETS["ghostty"]="$HOME/.config/ghostty"
 TARGETS["hyprland"]="$HOME/.config/hypr"
 TARGETS["nvim"]="$HOME/.config/nvim"
-TARGETS["rofi"]="$HOME/.config/rofi"
 TARGETS["starship"]="$HOME/.config/starship.toml"
-TARGETS["waybar"]="$HOME/.config/waybar"
 
 declare -A SOURCES
 SOURCES["ghostty"]="$HOME/.config/kmdot/ghostty"
 SOURCES["hyprland"]="$HOME/.config/kmdot/hyprland"
 SOURCES["nvim"]="$HOME/.config/kmdot/nvim"
-SOURCES["rofi"]="$HOME/.config/kmdot/rofi"
-SOURCES["waybar"]="$HOME/.config/kmdot/waybar"
 
 echo "Select apps to uninstall:"
 echo ""

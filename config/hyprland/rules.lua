@@ -1,11 +1,5 @@
 -- Window rules
 
--- Make rofi float
-hl.window_rule({
-	match = { class = "rofi" },
-	float = true,
-})
-
 -- Transcription window of Handy: float, pin, never steal focus, no border/blur
 hl.window_rule({
 	match = { class = "^(Handy)$", title = "^(Recording)$" },

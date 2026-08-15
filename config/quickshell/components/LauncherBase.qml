@@ -4,7 +4,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs
 
-// Generic rofi-dmenu-style picker. One instance per launcher; subclasses configure
+// Generic single-pane picker. One instance per launcher; subclasses configure
 // sockName/title/items and override filterAndSort()/refreshItems() and handle activated().
 Item {
   id: root

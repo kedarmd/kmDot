@@ -4,7 +4,7 @@ Dotfiles for CachyOS + Hyprland. Source of truth is this repo; sync copies confi
 
 ## Apps
 
-fish · ghostty · hyprland · nvim · rofi · starship · swaync · waybar · tmux · xdg-desktop-portal · theme-switcher · battery
+fish · ghostty · hyprland · nvim · starship · swaync · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
 
 ## Screenshots
 
