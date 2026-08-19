@@ -144,10 +144,8 @@ PanelWindow {
       id: card
       width: 340
       height: body.implicitHeight + 32
-      radius: 12
-      color: Colors.surface
-      border.color: Colors.border
-      border.width: 1
+      radius: 20
+      color: Tokens.surfaceContainerHigh
 
       anchors {
         top: parent.top
@@ -221,6 +219,8 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             width: 64
             active: root.muted
+            fillColor: Tokens.errorContainer
+            activeTextColor: Tokens.on_error_container
             glyph: root.muted ? "\uEEE8" : "\uf026"
             glyphSize: 11
             text: root.muted ? "Mute" : "Sound"
@@ -232,7 +232,7 @@ PanelWindow {
         Rectangle {
           width: parent.width
           height: 1
-          color: Colors.border
+          color: Tokens.divider
         }
 
         Text {
@@ -300,8 +300,8 @@ PanelWindow {
 
             Rectangle {
               anchors.fill: parent
-              radius: 8
-              color: row.active ? Colors.surface_alt : "transparent"
+              radius: 14
+              color: row.active ? Tokens.primaryContainer : "transparent"
             }
 
             MouseArea {
@@ -332,7 +332,7 @@ PanelWindow {
                   text: row.typeGlyph
                   font.family: "JetBrainsMono Nerd Font Propo"
                   font.pixelSize: 15
-                  color: row.active ? Colors.primary : Colors.muted
+                  color: row.active ? Tokens.on_primary_container : Colors.muted
                 }
 
                 Rectangle {
@@ -341,7 +341,7 @@ PanelWindow {
                   width: 6
                   height: 6
                   radius: 3
-                  color: Colors.primary
+                  color: Tokens.primary
                 }
 
                 Text {
@@ -350,7 +350,7 @@ PanelWindow {
                   text: row.name
                   font.family: "JetBrainsMono Nerd Font Propo"
                   font.pixelSize: 12
-                  color: row.active ? Colors.primary : Colors.text_alt
+                  color: row.active ? Tokens.on_primary_container : Colors.text_alt
                   elide: Text.ElideMiddle
                 }
 
@@ -372,7 +372,7 @@ PanelWindow {
                   width: parent.width - 26
                   height: 11
                   barRadius: 3
-                  trackColor: row.active ? Colors.border : Colors.surface_alt
+                  trackColor: row.active ? Tokens.outlineVariant : Colors.surface_alt
                   value: row.vol
                   onChanged: if (row.aud) row.aud.volume = v
                 }

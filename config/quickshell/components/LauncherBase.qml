@@ -295,10 +295,8 @@ Item {
       width: 560
       height: 520
       anchors.centerIn: parent
-      radius: 12
-      color: Colors.surface
-      border.color: Colors.border
-      border.width: 1
+      radius: 20
+      color: Tokens.surfaceContainerHigh
 
       MouseArea {
         id: cardClick
@@ -313,9 +311,11 @@ Item {
           right: parent.right
           margins: 12
         }
-        height: 44
-        radius: 8
-        color: Colors.surface_alt
+        height: 48
+        radius: 24
+        color: Tokens.surfaceContainerHighest
+        border.width: searchInput.activeFocus ? 1.5 : 0
+        border.color: Tokens.primary
 
         Row {
           anchors {
@@ -404,6 +404,8 @@ Item {
           left: parent.left
           right: parent.right
           bottom: footer.top
+          leftMargin: 12
+          rightMargin: 12
           topMargin: 8
           bottomMargin: 8
         }
@@ -419,8 +421,8 @@ Item {
           required property int index
           width: resultsList.width
           height: 52
-          radius: 8
-          color: root.selectedIndex === index ? Colors.surface_alt : "transparent"
+          radius: 14
+          color: root.selectedIndex === index ? Tokens.primaryContainer : "transparent"
 
           Row {
             anchors {
@@ -432,30 +434,35 @@ Item {
             }
             spacing: 12
 
-            Text {
-              width: 28
-              height: 28
+            Rectangle {
+              width: 32
+              height: 32
+              radius: 16
               anchors.verticalCenter: parent.verticalCenter
-              horizontalAlignment: Text.AlignHCenter
-              verticalAlignment: Text.AlignVCenter
-              visible: root.itemGlyph(modelData.item) !== ""
-              text: root.itemGlyph(modelData.item)
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 18
-              color: root.selectedIndex === index ? Colors.text : Colors.text_alt
-            }
+              color: root.selectedIndex === index ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
+              visible: root.itemGlyph(modelData.item) !== "" || root.itemIcon(modelData.item) !== ""
 
-            Image {
-              width: 28
-              height: 28
-              anchors.verticalCenter: parent.verticalCenter
-              visible: root.itemGlyph(modelData.item) === "" && root.itemIcon(modelData.item) !== ""
-              source: (function () {
-                const ic = root.itemIcon(modelData.item)
-                if (ic === "") return ""
-                if (ic.startsWith("/") || ic.startsWith("file://") || ic.startsWith("image://")) return ic
-                return Quickshell.iconPath(ic)
-              })()
+              Text {
+                anchors.centerIn: parent
+                visible: root.itemGlyph(modelData.item) !== ""
+                text: root.itemGlyph(modelData.item)
+                font.family: "JetBrainsMono Nerd Font Propo"
+                font.pixelSize: 16
+                color: root.selectedIndex === index ? Tokens.on_primary_container : Colors.text_alt
+              }
+
+              Image {
+                anchors.centerIn: parent
+                width: 28
+                height: 28
+                visible: root.itemGlyph(modelData.item) === "" && root.itemIcon(modelData.item) !== ""
+                source: (function () {
+                  const ic = root.itemIcon(modelData.item)
+                  if (ic === "") return ""
+                  if (ic.startsWith("/") || ic.startsWith("file://") || ic.startsWith("image://")) return ic
+                  return Quickshell.iconPath(ic)
+                })()
+              }
             }
 
             Column {
@@ -469,7 +476,7 @@ Item {
                 font.pixelSize: 14
                 font.bold: root.selectedIndex === index
                 font.family: "JetBrainsMono Nerd Font Propo"
-                color: root.selectedIndex === index ? Colors.text : Colors.text_alt
+                color: root.selectedIndex === index ? Tokens.on_primary_container : Colors.text_alt
               }
 
               Text {
@@ -478,7 +485,7 @@ Item {
                 elide: Text.ElideRight
                 font.pixelSize: 12
                 font.family: "JetBrainsMono Nerd Font Propo"
-                color: Colors.muted
+                color: root.selectedIndex === index ? Tokens.alpha(Tokens.on_primary_container, 0.75) : Colors.muted
                 visible: text !== ""
               }
             }
@@ -572,7 +579,7 @@ Item {
           bottomMargin: 1
         }
         height: 42
-        radius: 12
+        radius: 20
         color: Colors.base
 
         Rectangle {
@@ -581,7 +588,7 @@ Item {
             left: parent.left
             right: parent.right
           }
-          height: 12
+          height: 20
           color: Colors.base
         }
 
@@ -592,7 +599,7 @@ Item {
             right: parent.right
           }
           height: 1
-          color: Colors.border
+          color: Tokens.divider
         }
 
         Row {
@@ -600,8 +607,8 @@ Item {
             left: parent.left
             right: parent.right
             verticalCenter: parent.verticalCenter
-            leftMargin: 14
-            rightMargin: 14
+            leftMargin: 12
+            rightMargin: 12
           }
           spacing: 8
 
@@ -646,15 +653,15 @@ Item {
           anchors {
             right: parent.right
             verticalCenter: parent.verticalCenter
-            rightMargin: 14
+            rightMargin: 12
           }
           visible: root.footerActionText !== ""
-          height: 26
+          height: 28
           width: footerActionRow.implicitWidth + 20
-          radius: 13
-          color: root.footerActionActive ? Colors.surface_alt : "transparent"
+          radius: 14
+          color: root.footerActionActive ? Tokens.primaryContainer : "transparent"
           border.width: 1
-          border.color: Colors.border
+          border.color: root.footerActionActive ? "transparent" : Tokens.outlineVariant
 
           Row {
             id: footerActionRow
@@ -667,7 +674,7 @@ Item {
               text: root.footerActionGlyph
               font.pixelSize: 12
               font.family: "JetBrainsMono Nerd Font Propo"
-              color: root.footerActionActive ? Colors.success : Colors.muted
+              color: root.footerActionActive ? Tokens.on_primary_container : Colors.muted
             }
 
             Text {
@@ -675,11 +682,20 @@ Item {
               text: root.footerActionText
               font.pixelSize: 12
               font.family: "JetBrainsMono Nerd Font Propo"
-              color: root.footerActionActive ? Colors.text : Colors.muted
+              font.weight: root.footerActionActive ? Font.Bold : Font.Normal
+              color: root.footerActionActive ? Tokens.on_primary_container : Colors.muted
             }
           }
 
+          StateLayer {
+            anchors.fill: parent
+            radius: parent.radius
+            hovered: pillHover.containsMouse
+            pressed: pillHover.pressed
+          }
+
           MouseArea {
+            id: pillHover
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: root.footerActionClicked()

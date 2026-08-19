@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Hyprland
 import qs
+import "../components"
 
 Item {
   id: root
@@ -35,7 +36,9 @@ Item {
           width: label.implicitWidth + 26
           height: 30
           radius: 8
-          color: active ? Colors.border : "transparent"
+          color: active ? Tokens.primaryContainer
+               : urgent ? Tokens.errorContainer
+               : "transparent"
           Behavior on color {
             ColorAnimation {
               duration: 200
@@ -49,10 +52,17 @@ Item {
             font.family: "JetBrainsMono Nerd Font Propo"
             font.pixelSize: 14
             font.weight: parent.active ? Font.Bold : Font.Normal
-            color: parent.urgent ? Colors.error
-                 : parent.active ? Colors.text
+            color: parent.urgent ? Tokens.on_error_container
+                 : parent.active ? Tokens.on_primary_container
                  : mouseArea.containsMouse ? Colors.text
                  : Colors.text_alt
+          }
+
+          StateLayer {
+            anchors.fill: parent
+            radius: parent.radius
+            hovered: mouseArea.containsMouse
+            pressed: mouseArea.pressed
           }
 
           MouseArea {

@@ -1,6 +1,9 @@
 import QtQuick
 import qs
 
+// Material 3 chip: active = primaryContainer fill + bold on_primary_container
+// text (filled tonal chip); inactive = transparent + outline text with a hover
+// state layer; disabled = dimmed. Full-pill radius.
 Rectangle {
   id: root
 
@@ -10,20 +13,28 @@ Rectangle {
   property string glyph: ""
   property real glyphSize: 12
   property real textSize: 12
+  property color fillColor: Tokens.primaryContainer
+  property color activeTextColor: Tokens.on_primary_container
 
   signal clicked
 
   implicitHeight: 30
-  radius: 8
-  color: root.active ? Colors.border : "transparent"
+  radius: height / 2
+  color: root.active && root.enabled ? root.fillColor : "transparent"
 
   Behavior on color {
     ColorAnimation {
-      duration: 200
+      duration: 150
     }
   }
 
   readonly property bool hovering: mouse.containsMouse
+  readonly property bool pressed: mouse.pressed
+  readonly property color fg: !root.enabled
+    ? Tokens.stateDisabled
+    : root.active
+      ? root.activeTextColor
+      : (root.hovering ? Tokens.on_surface : Tokens.on_surface_variant)
 
   Row {
     id: row
@@ -36,7 +47,7 @@ Rectangle {
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: root.glyphSize
       font.weight: root.active ? Font.Bold : Font.Normal
-      color: root.active ? Colors.text : (root.hovering ? Colors.text : Colors.text_alt)
+      color: root.fg
     }
 
     Text {
@@ -45,8 +56,16 @@ Rectangle {
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: root.textSize
       font.weight: root.active ? Font.Bold : Font.Normal
-      color: root.active ? Colors.text : (root.hovering ? Colors.text : Colors.text_alt)
+      color: root.fg
     }
+  }
+
+  StateLayer {
+    anchors.fill: parent
+    radius: parent.radius
+    hovered: root.hovering
+    pressed: root.pressed
+    enabled: root.enabled
   }
 
   MouseArea {

@@ -195,10 +195,8 @@ PanelWindow {
       id: card
       width: 340
       height: body.implicitHeight + 32
-      radius: 12
-      color: Colors.surface
-      border.color: Colors.border
-      border.width: 1
+      radius: 20
+      color: Tokens.surfaceContainerHigh
 
       anchors {
         top: parent.top

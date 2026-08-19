@@ -188,10 +188,8 @@ PanelWindow {
       id: card
       width: 360
       height: body.implicitHeight + 32
-      radius: 12
-      color: Colors.surface
-      border.color: Colors.border
-      border.width: 1
+      radius: 20
+      color: Tokens.surfaceContainerHigh
 
       anchors {
         top: parent.top
@@ -266,6 +264,8 @@ PanelWindow {
             height: 32
             active: root.on
             enabled: !root.busy
+            fillColor: Tokens.errorContainer
+            activeTextColor: Tokens.on_error_container
             glyph: root.busyAction === "mode" ? "\uf013" : (root.on ? "\uf011" : "\uf233")
             glyphSize: 12
             text: root.busyAction === "mode" ? "Working\u2026" : (root.on ? "Turn Off" : "Turn On")
@@ -278,6 +278,8 @@ PanelWindow {
             height: 32
             active: root.on
             enabled: !root.busy
+            fillColor: Tokens.errorContainer
+            activeTextColor: Tokens.on_error_container
             glyph: root.busyAction === "mode:nosvc" ? "\uf013" : ""
             glyphSize: 12
             text: root.busyAction === "mode:nosvc" ? "Working\u2026" : (root.on ? "Mode Only: Off" : "Mode Only: On")
@@ -289,7 +291,7 @@ PanelWindow {
         Rectangle {
           width: parent.width
           height: 1
-          color: Colors.border
+          color: Tokens.divider
         }
 
         Text {
@@ -346,6 +348,8 @@ PanelWindow {
             width: 64
             enabled: !root.busy
             active: root.tailscale === "active"
+            fillColor: Tokens.errorContainer
+            activeTextColor: Tokens.on_error_container
             glyph: root.busyAction === "service:tailscale" ? "\uf013" : ""
             glyphSize: 11
             text: root.tailscale === "active" ? "Stop" : "Start"
@@ -397,6 +401,8 @@ PanelWindow {
             width: 64
             enabled: !root.busy
             active: root.jellyfin === "active"
+            fillColor: Tokens.errorContainer
+            activeTextColor: Tokens.on_error_container
             glyph: root.busyAction === "service:jellyfin" ? "\uf013" : ""
             glyphSize: 11
             text: root.jellyfin === "active" ? "Stop" : "Start"
@@ -408,7 +414,7 @@ PanelWindow {
         Rectangle {
           width: parent.width
           height: 1
-          color: Colors.border
+          color: Tokens.divider
         }
 
         Text {
@@ -434,7 +440,7 @@ PanelWindow {
         Rectangle {
           width: parent.width
           height: 1
-          color: Colors.border
+          color: Tokens.divider
         }
 
         Item {
@@ -469,14 +475,22 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             width: 56
             height: 22
-            radius: 8
-            color: refreshMouse.containsMouse ? Colors.surface_alt : Colors.border
+            radius: height / 2
+            color: "transparent"
+            border.color: Tokens.outlineVariant
+            border.width: 1
             Text {
               anchors.centerIn: parent
               text: "\uf021"
               font.family: "JetBrainsMono Nerd Font Propo"
               font.pixelSize: 12
-              color: Colors.text
+              color: Colors.text_alt
+            }
+            StateLayer {
+              anchors.fill: parent
+              radius: parent.radius
+              hovered: refreshMouse.containsMouse
+              pressed: refreshMouse.pressed
             }
             MouseArea {
               id: refreshMouse

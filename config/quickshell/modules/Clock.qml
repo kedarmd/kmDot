@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs
+import "../components"
 
 Item {
   id: root
@@ -13,16 +14,26 @@ Item {
     precision: SystemClock.Minutes
   }
 
-  Text {
-    id: label
+  ModulePill {
+    id: pill
     anchors.centerIn: parent
-    text: root.formatClock(clock.date)
-    font.family: "JetBrainsMono Nerd Font Propo"
-    font.pixelSize: 14
-    color: Colors.text_alt
+    width: label.implicitWidth + 20
+    height: 30
+    hovered: mouse.containsMouse
+    pressed: mouse.pressed
+
+    Text {
+      id: label
+      anchors.centerIn: parent
+      text: root.formatClock(clock.date)
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 14
+      color: Colors.text_alt
+    }
   }
 
   MouseArea {
+    id: mouse
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor

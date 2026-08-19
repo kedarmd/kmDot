@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Io
 import qs
+import "../components"
 
 Item {
   id: root
@@ -87,16 +88,26 @@ Item {
     }
   }
 
-  Text {
-    id: label
+  ModulePill {
+    id: pill
     anchors.centerIn: parent
-    text: root.text
-    font.family: "JetBrainsMono Nerd Font Propo"
-    font.pixelSize: 14
-    color: Colors.text_alt
+    width: label.implicitWidth + 20
+    height: 30
+    hovered: mouse.containsMouse
+    pressed: mouse.pressed
+
+    Text {
+      id: label
+      anchors.centerIn: parent
+      text: root.text
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 14
+      color: Colors.text_alt
+    }
   }
 
   MouseArea {
+    id: mouse
     anchors.fill: parent
     cursorShape: Qt.PointingHandCursor
     onClicked: toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-brightness"])

@@ -1,5 +1,6 @@
 import QtQuick
 import qs
+import "../components"
 
 Item {
   id: root
@@ -29,11 +30,16 @@ Item {
     NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
   }
 
-  Item {
+  Rectangle {
     id: chevronBox
     width: root.chevronWidth
     height: 30
+    radius: height / 2
     anchors.verticalCenter: parent.verticalCenter
+    color: root.open ? Tokens.primaryContainer : "transparent"
+    Behavior on color {
+      ColorAnimation { duration: 180 }
+    }
 
     Text {
       id: chevronGlyph
@@ -41,7 +47,14 @@ Item {
       text: root.open ? "\uf105" : "\uf104"
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 14
-      color: Colors.text_alt
+      color: root.open ? Tokens.on_primary_container : Colors.text_alt
+    }
+
+    StateLayer {
+      anchors.fill: parent
+      radius: parent.radius
+      hovered: hoverArea.containsMouse
+      pressed: hoverArea.pressed
     }
   }
 

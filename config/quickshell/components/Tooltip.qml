@@ -21,10 +21,8 @@ PopupWindow {
 
   Rectangle {
     anchors.fill: parent
-    radius: 12
-    color: Colors.surface_alt
-    border.color: Colors.border
-    border.width: 1
+    radius: 8
+    color: Tokens.surfaceContainerHigh
 
     Text {
       id: label

@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Services.Pipewire
 import Quickshell.Io
 import qs
+import "../components"
 
 Item {
   id: root
@@ -30,17 +31,28 @@ Item {
     ? icon + " Mute"
     : icon + " " + Math.round(volume * 100) + "%"
 
-  Text {
-    id: label
+  ModulePill {
+    id: pill
     anchors.centerIn: parent
-    text: root.text
-    font.family: "JetBrainsMono Nerd Font Propo"
-    font.pixelSize: 14
-    color: Colors.text_alt
-    opacity: root.muted ? 0.4 : 1.0
+    width: label.implicitWidth + 20
+    height: 30
+    active: root.muted
+    fill: Tokens.warningContainer
+    hovered: mouse.containsMouse
+    pressed: mouse.pressed
+
+    Text {
+      id: label
+      anchors.centerIn: parent
+      text: root.text
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 14
+      color: root.muted ? Tokens.on_warning_container : Colors.text_alt
+    }
   }
 
   MouseArea {
+    id: mouse
     anchors.fill: parent
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton

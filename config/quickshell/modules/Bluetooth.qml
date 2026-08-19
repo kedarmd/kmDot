@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Bluetooth
 import Quickshell.Io
 import qs
+import "../components"
 
 Item {
   id: root
@@ -45,17 +46,29 @@ Item {
     return "Bluetooth: " + (btEnabled ? "on" : "off")
   }
 
-  Text {
-    id: label
+  ModulePill {
+    id: pill
     anchors.centerIn: parent
-    text: root.btEnabled ? "󰂯" : "󰂲"
-    font.family: "JetBrainsMono Nerd Font Propo"
-    font.pixelSize: 14
-    color: root.connectedCount > 0 ? Colors.text : Colors.text_alt
-    opacity: root.btEnabled ? 1.0 : 0.4
+    width: label.implicitWidth + 20
+    height: 30
+    active: root.btEnabled && root.connectedCount > 0
+    fill: Tokens.primaryContainer
+    hovered: mouse.containsMouse
+    pressed: mouse.pressed
+
+    Text {
+      id: label
+      anchors.centerIn: parent
+      text: root.btEnabled ? "󰂯" : "󰂲"
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 14
+      color: root.btEnabled && root.connectedCount > 0 ? Tokens.on_primary_container : Colors.text_alt
+      opacity: root.btEnabled ? 1.0 : 0.4
+    }
   }
 
   MouseArea {
+    id: mouse
     anchors.fill: parent
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton

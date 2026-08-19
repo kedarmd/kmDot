@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Io
 import Quickshell.Services.UPower
 import qs
+import "../components"
 
 Item {
   id: root
@@ -66,19 +67,33 @@ Item {
     }
   }
 
-  Text {
-    id: label
+  ModulePill {
+    id: pill
     anchors.centerIn: parent
-    text: root.text
-    font.family: "JetBrainsMono Nerd Font Propo"
-    font.pixelSize: 14
-    color: charging ? Colors.success
-         : capacity <= 15 ? Colors.error
-         : capacity <= 30 ? Colors.warning
-         : Colors.text_alt
+    width: label.implicitWidth + 20
+    height: 30
+    active: root.charging || root.capacity <= 30
+    fill: root.charging ? Tokens.successContainer
+        : root.capacity <= 15 ? Tokens.errorContainer
+        : Tokens.warningContainer
+    hovered: mouse.containsMouse
+    pressed: mouse.pressed
+
+    Text {
+      id: label
+      anchors.centerIn: parent
+      text: root.text
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 14
+      color: root.charging ? Tokens.on_success_container
+           : root.capacity <= 15 ? Tokens.on_error_container
+           : root.capacity <= 30 ? Tokens.on_warning_container
+           : Colors.text_alt
+    }
   }
 
   MouseArea {
+    id: mouse
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor

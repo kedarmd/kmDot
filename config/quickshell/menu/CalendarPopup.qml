@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs
+import "../components"
 
 PanelWindow {
   id: root
@@ -311,10 +312,8 @@ PanelWindow {
       id: card
       width: 340
       height: body.implicitHeight + 32
-      radius: 12
-      color: Colors.surface
-      border.color: Colors.border
-      border.width: 1
+      radius: 20
+      color: Tokens.surfaceContainerHigh
 
       anchors {
         top: parent.top
@@ -345,14 +344,20 @@ PanelWindow {
             id: prevBtn
             width: 32
             height: 32
-            radius: 6
-            color: mouse1.containsMouse ? Colors.surface_alt : "transparent"
+            radius: 16
+            color: "transparent"
             Text {
               anchors.centerIn: parent
               text: "\uf053"
               font.family: "JetBrainsMono Nerd Font Propo"
               font.pixelSize: 14
               color: Colors.text_alt
+            }
+            StateLayer {
+              anchors.fill: parent
+              radius: parent.radius
+              hovered: mouse1.containsMouse
+              pressed: mouse1.pressed
             }
             MouseArea {
               id: mouse1
@@ -388,14 +393,20 @@ PanelWindow {
             id: nextBtn
             width: 32
             height: 32
-            radius: 6
-            color: mouse2.containsMouse ? Colors.surface_alt : "transparent"
+            radius: 16
+            color: "transparent"
             Text {
               anchors.centerIn: parent
               text: "\uf054"
               font.family: "JetBrainsMono Nerd Font Propo"
               font.pixelSize: 14
               color: Colors.text_alt
+            }
+            StateLayer {
+              anchors.fill: parent
+              radius: parent.radius
+              hovered: mouse2.containsMouse
+              pressed: mouse2.pressed
             }
             MouseArea {
               id: mouse2
@@ -444,13 +455,17 @@ PanelWindow {
 
               Rectangle {
                 anchors.fill: parent
-                radius: 6
-                color: isSelected ? Colors.surface_alt
-                     : isToday ? Colors.primary
-                     : mouseArea.containsMouse && inMonth ? Colors.surface_alt
+                radius: 10
+                color: isSelected ? Tokens.primaryContainer
+                     : isToday ? Tokens.primaryContainer
                      : "transparent"
-                border.color: isSelected ? Colors.primary : "transparent"
-                border.width: 1
+              }
+
+              StateLayer {
+                anchors.fill: parent
+                radius: 10
+                hovered: mouseArea.containsMouse && inMonth && !isSelected && !isToday
+                pressed: mouseArea.pressed && inMonth
               }
 
               Text {
@@ -459,10 +474,11 @@ PanelWindow {
                 font.family: "JetBrainsMono Nerd Font Propo"
                 font.pixelSize: 12
                 color: !inMonth ? Colors.muted
-                     : isToday && !isSelected ? Colors.base
-                     : isSelected ? Colors.text
+                     : isSelected ? Tokens.on_primary_container
+                     : isToday ? Tokens.on_primary_container
                      : mouseArea.containsMouse ? Colors.text
                      : Colors.text_alt
+                font.bold: isToday
               }
 
               Rectangle {
@@ -473,7 +489,7 @@ PanelWindow {
                 height: 3
                 radius: 1.5
                 visible: hasEvents && !isToday
-                color: isSelected ? Colors.primary : Colors.primary
+                color: Tokens.primary
               }
 
               MouseArea {
@@ -493,7 +509,7 @@ PanelWindow {
         Rectangle {
           width: parent.width
           height: 1
-          color: Colors.border
+          color: Tokens.divider
         }
 
         Text {
@@ -632,14 +648,22 @@ PanelWindow {
             id: syncBtn
             width: 56
             height: 22
-            radius: 8
-            color: syncMouse.containsMouse ? Colors.surface_alt : Colors.border
+            radius: height / 2
+            color: "transparent"
+            border.color: Tokens.outlineVariant
+            border.width: 1
             Text {
               anchors.centerIn: parent
               text: root.loading ? "\uf013" : "\uf021"
               font.family: "JetBrainsMono Nerd Font Propo"
               font.pixelSize: 12
-              color: Colors.text
+              color: Colors.text_alt
+            }
+            StateLayer {
+              anchors.fill: parent
+              radius: parent.radius
+              hovered: syncMouse.containsMouse
+              pressed: syncMouse.pressed
             }
             MouseArea {
               id: syncMouse

@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell.Networking
 import Quickshell.Io
 import qs
+import "../components"
 
 Item {
   id: root
@@ -50,17 +51,29 @@ Item {
     return "󰤨"
   }
 
-  Text {
-    id: label
+  ModulePill {
+    id: pill
     anchors.centerIn: parent
-    text: icon
-    font.family: "JetBrainsMono Nerd Font Propo"
-    font.pixelSize: 14
-    color: root.connected ? Colors.text : Colors.text_alt
-    opacity: root.disabled ? 0.4 : 1.0
+    width: label.implicitWidth + 20
+    height: 30
+    active: root.connected && !root.disabled
+    fill: Tokens.primaryContainer
+    hovered: mouse.containsMouse
+    pressed: mouse.pressed
+
+    Text {
+      id: label
+      anchors.centerIn: parent
+      text: icon
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 14
+      color: root.connected && !root.disabled ? Tokens.on_primary_container : Colors.text_alt
+      opacity: root.disabled ? 0.4 : 1.0
+    }
   }
 
   MouseArea {
+    id: mouse
     anchors.fill: parent
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton

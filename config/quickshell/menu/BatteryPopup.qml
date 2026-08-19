@@ -225,10 +225,8 @@ PanelWindow {
       id: card
       width: 380
       height: body.implicitHeight + 32
-      radius: 12
-      color: Colors.surface
-      border.color: Colors.border
-      border.width: 1
+      radius: 20
+      color: Tokens.surfaceContainerHigh
 
       anchors {
         top: parent.top
@@ -309,7 +307,7 @@ PanelWindow {
         Rectangle {
           width: parent.width
           height: 1
-          color: Colors.border
+          color: Tokens.divider
         }
 
         Text {
@@ -345,7 +343,7 @@ PanelWindow {
             const Y = (p) => T + (100 - p) / 100 * h
 
             ctx.lineWidth = 1
-            ctx.strokeStyle = Colors.border
+            ctx.strokeStyle = Tokens.outlineVariant
             ctx.beginPath()
             ctx.moveTo(L, Y(50))
             ctx.lineTo(L + w, Y(50))
@@ -395,7 +393,7 @@ PanelWindow {
         Rectangle {
           width: parent.width
           height: 1
-          color: Colors.border
+          color: Tokens.divider
         }
 
         Text {

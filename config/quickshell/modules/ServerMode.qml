@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell.Io
 import qs
+import "../components"
 
 Item {
   id: root
@@ -65,19 +66,31 @@ Item {
   }
   Component.onCompleted: root.refresh()
 
-  Text {
-    id: label
+  ModulePill {
+    id: pill
     anchors.centerIn: parent
-    text: root.busy ? "\uf013" : "\uf233"
-    font.family: "JetBrainsMono Nerd Font Propo"
-    font.pixelSize: 14
-    color: root.busy ? Colors.primary : (root.active ? Colors.success : Colors.text_alt)
-    opacity: root.busy ? 1.0 : (root.active ? 1.0 : 0.4)
-    rotation: root.busy ? root.spinAngle : 0
-    transformOrigin: Item.Center
+    width: label.implicitWidth + 20
+    height: 30
+    active: root.active
+    fill: Tokens.successContainer
+    hovered: mouse.containsMouse
+    pressed: mouse.pressed
+
+    Text {
+      id: label
+      anchors.centerIn: parent
+      text: root.busy ? "\uf013" : "\uf233"
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 14
+      color: root.busy ? Tokens.primary : (root.active ? Tokens.on_success_container : Colors.text_alt)
+      opacity: root.busy ? 1.0 : (root.active ? 1.0 : 0.4)
+      rotation: root.busy ? root.spinAngle : 0
+      transformOrigin: Item.Center
+    }
   }
 
   MouseArea {
+    id: mouse
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
