@@ -12,7 +12,6 @@ Item {
   signal activated
 
   property string mode: "off"
-  property bool screenOff: false
   property real spinAngle: 0
 
   NumberAnimation on spinAngle {
@@ -26,7 +25,6 @@ Item {
   readonly property bool active: root.mode === "on"
   readonly property bool busy: root.dropdown ? root.dropdown.busy : false
   readonly property string tooltipText: "Server mode: " + (root.active ? "On" : "Off")
-    + (root.screenOff ? " \u00b7 screen off" : "")
 
   function applyStatus(text) {
     for (const line of String(text).split("\n")) {
@@ -37,7 +35,6 @@ Item {
       const k = ln.slice(0, i)
       const v = ln.slice(i + 1)
       if (k === "mode") root.mode = v
-      else if (k === "screen_off") root.screenOff = v === "yes"
     }
   }
 
@@ -75,7 +72,7 @@ Item {
     font.family: "JetBrainsMono Nerd Font Propo"
     font.pixelSize: 14
     color: root.busy ? Colors.primary : (root.active ? Colors.success : Colors.text_alt)
-    opacity: root.busy ? 1.0 : (root.active ? (root.screenOff ? 0.5 : 1.0) : 0.4)
+    opacity: root.busy ? 1.0 : (root.active ? 1.0 : 0.4)
     rotation: root.busy ? root.spinAngle : 0
     transformOrigin: Item.Center
   }

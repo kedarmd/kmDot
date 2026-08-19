@@ -3,11 +3,13 @@
 #
 # Server mode turns the laptop into a headless part-time server:
 #   * holds a logind sleep inhibitor (blocks suspend/hibernate + lid-close
-#     suspend) so Tailscale + Jellyfin keep serving while unattended
+#     suspend) so the laptop stays awake while unattended — the screen still
+#     dims/locks/offs per the normal hypridle config, but the machine never
+#     actually suspends, so Tailscale + Jellyfin keep serving
 #   * starts/stops the tailscaled + jellyfin services
 #   * suspends background apps that would otherwise drain the battery
-#   * delegates screen management (off/dim after idle, wake+exit on interaction)
-#     to server-mode-watcher.sh, which runs inside the inhibitor unit
+#   * the screen is left entirely to the normal hypridle configuration (no
+#     custom dim/lock/DPMS in server mode)
 #
 # Usage:
 #   server-mode.sh status                        print key=value status lines
@@ -22,10 +24,7 @@ CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/kmdot"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/kmdot"
 CONF_FILE="$CONF_DIR/server-mode.conf"
 MARKER="$CONF_DIR/server-mode"
-SCREEN_OFF="$CACHE_DIR/server-screen-off"
-SCREEN_BRIGHT="$CACHE_DIR/server-screen-off.brightness"
 UNIT="kmdot-server-mode"
-WATCHER="$HOME/.config/kmdot/quickshell/scripts/server-mode-watcher.sh"
 
 mkdir -p "$CONF_DIR" "$CACHE_DIR"
 
@@ -44,27 +43,16 @@ USER_SERVICES="$(conf_val user_services 'app-Handy@autostart.service app-blueman
 SYSTEM_SERVICES="$(conf_val system_services 'docker.service containerd.service')"
 PROCESSES="$(conf_val processes 'kmdot-music uvicorn')"
 
-wake_screen() {
-  local screen
-  screen="$(conf_val screen off)"
-  if [[ "$screen" == "dim" ]]; then
-    if [[ -s "$SCREEN_BRIGHT" ]]; then
-      brightnessctl set "$(cat "$SCREEN_BRIGHT")" >/dev/null 2>&1 || true
-    fi
-  else
-    hyprctl dispatch dpms on >/dev/null 2>&1 || true
-  fi
-  rm -f "$SCREEN_OFF" "$SCREEN_BRIGHT"
-}
-
 start_inhibitor() {
-  # Transient user unit wrapping the watcher with a logind inhibitor. While the
-  # watcher runs, sleep/hibernate/lid-close are blocked; when the unit stops,
-  # the inhibitor is released and the unit is garbage-collected (--collect).
+  # Transient user unit holding a logind inhibitor. While it runs,
+  # sleep/hibernate/lid-close are blocked: hypridle still dims/locks the screen
+  # per the normal config, but `systemctl suspend` is refused, so the laptop
+  # stays awake and keeps serving. `sleep infinity` is the holder process; when
+  # the unit stops the inhibitor is released and the unit is collected.
   systemd-run --user --unit="$UNIT" --collect \
     systemd-inhibit --what=sleep:handle-lid-switch --mode=block \
     --who="kmDot Server Mode" --why="Server mode active" \
-    "$WATCHER"
+    sleep infinity
 }
 
 stop_inhibitor() {
@@ -85,7 +73,7 @@ stop_background_apps() {
   for s in $SYSTEM_SERVICES; do
     systemctl stop "$s" >/dev/null 2>&1 || true
   done
-  for p in $PROCESSES hypridle; do
+  for p in $PROCESSES; do
     pkill -x "$p" >/dev/null 2>&1 || true
   done
 }
@@ -117,14 +105,6 @@ start_background_apps() {
   for s in $SYSTEM_SERVICES; do
     systemctl start "$s" >/dev/null 2>&1 || true
   done
-  if command -v hypridle >/dev/null 2>&1; then
-    if ! pgrep -x hypridle >/dev/null 2>&1; then
-      # Own transient unit so it survives when this script runs inside the
-      # kmdot-server-mode-wake unit (which gets cgroup-killed on exit).
-      systemctl --user stop kmdot-hypridle >/dev/null 2>&1 || true
-      systemd-run --user --collect --unit=kmdot-hypridle hypridle >/dev/null 2>&1 || true
-    fi
-  fi
 }
 
 cmd_status() {
@@ -138,16 +118,11 @@ cmd_status() {
   if [[ "$ts" == "active" ]]; then
     ip="$(tailscale ip -4 2>/dev/null | head -1 || true)"
   fi
-  local soff=no
-  [[ -f "$SCREEN_OFF" ]] && soff=yes
   printf 'mode=%s\n' "$mode"
   printf 'inhibitor=%s\n' "$inhibitor"
   printf 'tailscale=%s\n' "$ts"
   printf 'tailscale_ip=%s\n' "$ip"
   printf 'jellyfin=%s\n' "$jf"
-  printf 'screen_off=%s\n' "$soff"
-  printf 'screen=%s\n' "$(conf_val screen off)"
-  printf 'timeout=%s\n' "$(conf_val timeout 5)"
 }
 
 cmd_on() {
@@ -174,7 +149,6 @@ cmd_off() {
   fi
   start_background_apps
   rm -f "$MARKER"
-  wake_screen
 }
 
 cmd_service() {

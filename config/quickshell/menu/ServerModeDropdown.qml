@@ -32,9 +32,6 @@ PanelWindow {
   property string tailscale: "inactive"
   property string tailscaleIp: ""
   property string jellyfin: "inactive"
-  property bool screenOff: false
-  property string screenConfig: "off"
-  property int timeoutConfig: 5
   property string busyAction: ""
   readonly property bool busy: root.busyAction !== ""
 
@@ -58,9 +55,6 @@ PanelWindow {
       else if (k === "tailscale") root.tailscale = v
       else if (k === "tailscale_ip") root.tailscaleIp = v
       else if (k === "jellyfin") root.jellyfin = v
-      else if (k === "screen_off") root.screenOff = v === "yes"
-      else if (k === "screen") root.screenConfig = v
-      else if (k === "timeout") root.timeoutConfig = parseInt(v, 10) || 0
     }
   }
 
@@ -77,11 +71,6 @@ PanelWindow {
   function serviceAction(name, action) {
     root.busyAction = "service:" + name
     serviceProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/server-mode.sh service " + name + " " + action])
-  }
-
-  function setConfig(key, value) {
-    root.busyAction = "config:" + key
-    configProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/server-mode.sh config " + key + " " + value])
   }
 
   function pickScreen() {
@@ -157,14 +146,6 @@ PanelWindow {
 
   Process {
     id: serviceProc
-    onExited: {
-      root.busyAction = ""
-      root.refresh()
-    }
-  }
-
-  Process {
-    id: configProc
     onExited: {
       root.busyAction = ""
       root.refresh()
@@ -432,74 +413,6 @@ PanelWindow {
 
         Text {
           width: parent.width
-          text: "Screen when idle"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.muted
-        }
-
-        Row {
-          width: parent.width
-          spacing: 8
-
-          PillButton {
-            width: (parent.width - 8) / 2
-            height: 30
-            enabled: !root.busy
-            active: root.screenConfig === "off"
-            glyph: root.busyAction.startsWith("config:") ? "\uf013" : "\uf011"
-            glyphSize: 11
-            text: "Turn off"
-            textSize: 11
-            onClicked: root.setConfig("screen", "off")
-          }
-
-          PillButton {
-            width: (parent.width - 8) / 2
-            height: 30
-            enabled: !root.busy
-            active: root.screenConfig === "dim"
-            glyph: root.busyAction.startsWith("config:") ? "\uf013" : "\uf186"
-            glyphSize: 11
-            text: "Dim"
-            textSize: 11
-            onClicked: root.setConfig("screen", "dim")
-          }
-        }
-
-        Row {
-          width: parent.width
-          spacing: 8
-
-          Repeater {
-            model: [
-              { label: "1m", value: 1 },
-              { label: "5m", value: 5 },
-              { label: "10m", value: 10 },
-              { label: "Never", value: 0 }
-            ]
-            delegate: PillButton {
-              width: (parent.parent.width - 24) / 4
-              height: 30
-              enabled: !root.busy
-              active: root.timeoutConfig === modelData.value
-              glyph: root.busyAction.startsWith("config:") ? "\uf013" : ""
-              glyphSize: 11
-              text: modelData.label
-              textSize: 11
-              onClicked: root.setConfig("timeout", modelData.value)
-            }
-          }
-        }
-
-        Rectangle {
-          width: parent.width
-          height: 1
-          color: Colors.border
-        }
-
-        Text {
-          width: parent.width
           text: "Battery"
           font.family: "JetBrainsMono Nerd Font Propo"
           font.pixelSize: 12
@@ -509,8 +422,8 @@ PanelWindow {
         Text {
           width: parent.width
           text: root.on
-            ? "Background drainers suspended: docker, containerd, Handy, blueman, kmdot-music, uvicorn, hypridle. Screen " + (root.screenOff ? "off" : "on") + "."
-            : "On enter, docker, containerd, Handy, blueman, kmdot-music, uvicorn and hypridle are suspended. Edit ~/.config/kmdot/server-mode.conf to change."
+            ? "Background drainers suspended: docker, containerd, Handy, blueman, kmdot-music, uvicorn. Screen behaves per the normal hypridle config."
+            : "On enter, docker, containerd, Handy, blueman, kmdot-music and uvicorn are suspended. Edit ~/.config/kmdot/server-mode.conf to change."
           font.family: "JetBrainsMono Nerd Font Propo"
           font.pixelSize: 11
           color: Colors.muted

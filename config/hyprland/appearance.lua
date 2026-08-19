@@ -27,6 +27,14 @@ hl.config({
 	animations = {
 		enabled = true,
 	},
+
+	misc = {
+		-- Wake the panel from DPMS off on mouse movement (this Hyprland
+		-- version defaults this to false). Both hypridle's panel-off step
+		-- and the server-mode "stay awake" flow rely on the screen waking
+		-- like a normal laptop when the user returns.
+		mouse_move_enables_dpms = true,
+	},
 })
 
 -- Animations
