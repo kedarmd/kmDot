@@ -3,8 +3,8 @@ import QtQuick
 import Quickshell
 
 Singleton {
-  readonly property color base: "#1a1b26"
-  readonly property color surface: "#1f2335"
+  readonly property color base: "#16161e"
+  readonly property color surface: "#1a1b26"
   readonly property color surface_alt: "#292e42"
   readonly property color text: "#c0caf5"
   readonly property color text_alt: "#a9b1d6"
@@ -17,4 +17,11 @@ Singleton {
   readonly property color warning: "#e0af68"
   readonly property color error: "#f7768e"
   readonly property color urgent: "#f7768e"
+  readonly property color surface_high: "#292e42"
+  readonly property color surface_highest: "#3b4261"
+  readonly property color primary_container: "#283457"
+  readonly property color on_primary_container: "#c0caf5"
+  readonly property color on_primary: "#1a1b26"
+  readonly property color divider: "#3b4261"
+  readonly property color outline_variant: "#3b4261"
 }
