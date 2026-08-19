@@ -273,6 +273,9 @@ Item {
     color: Qt.rgba(0, 0, 0, 0.4)
     focusable: true
 
+    // Blur whatever is behind the launcher (ext-background-effect-v1, Hyprland).
+    BackgroundEffect.blurRegion: Region { item: launcherWin.contentItem }
+
     anchors {
       top: true
       bottom: true
