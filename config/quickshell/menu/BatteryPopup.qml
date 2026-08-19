@@ -28,6 +28,11 @@ PanelWindow {
   property var scope: null
   property var points: []
   property var _raw: []
+  // Epoch (seconds) marking where the current graph begins. Points older than
+  // this are dropped, so the graph starts fresh after a full charge or a manual
+  // clear. 0 = show the full UPower history window.
+  property var graphStartEpoch: 0
+  property bool _wasFull: false
 
   readonly property string sockPath: {
     const rt = Quickshell.env("XDG_RUNTIME_DIR")
@@ -52,6 +57,13 @@ PanelWindow {
     : root.charging || root.full ? Colors.success
     : root.discharging ? Colors.warning
     : Colors.muted
+
+  // When the battery first reaches fully-charged (100%), clear the old graph so
+  // the newer 100% point is the fresh starting point for the new charge cycle.
+  onFullChanged: {
+    if (root.full && !root._wasFull) root.clearGraph()
+    root._wasFull = root.full
+  }
 
   function isProfileActive(profile) {
     return PowerProfiles.profile === profile
@@ -112,13 +124,22 @@ PanelWindow {
     }
     root._raw = []
     pts.reverse()
-    root.points = root.downsample(pts)
+    const start = root.graphStartEpoch
+    const filtered = start > 0 ? pts.filter(p => p.epoch >= start) : pts
+    root.points = root.downsample(filtered)
     graphCanvas.requestPaint()
   }
 
   function loadHistory() {
     root._raw = []
     histProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/battery-history.sh"])
+  }
+
+  // Reset the graph so it only shows data from this moment onward (fresh start).
+  function clearGraph() {
+    root.graphStartEpoch = Math.floor(Date.now() / 1000)
+    root.points = []
+    graphCanvas.requestPaint()
   }
 
   function pickScreen() {
@@ -310,12 +331,59 @@ PanelWindow {
           color: Tokens.divider
         }
 
-        Text {
+        Row {
           width: parent.width
-          text: "Battery usage"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.muted
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Battery usage"
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 12
+            color: Colors.muted
+          }
+
+          Item { width: 1; height: 1 }
+
+          Rectangle {
+            id: clearBtn
+            anchors.verticalCenter: parent.verticalCenter
+            height: 20
+            width: clearRow.implicitWidth + 14
+            radius: height / 2
+            color: clearHover.containsMouse ? Tokens.stateHover : "transparent"
+            border.width: 1
+            border.color: Tokens.outlineVariant
+
+            Row {
+              id: clearRow
+              anchors.centerIn: parent
+              spacing: 4
+
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "\uf2ed"
+                font.family: "JetBrainsMono Nerd Font Propo"
+                font.pixelSize: 11
+                color: Colors.text_alt
+              }
+
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Clear"
+                font.family: "JetBrainsMono Nerd Font Propo"
+                font.pixelSize: 11
+                color: Colors.text_alt
+              }
+            }
+
+            MouseArea {
+              id: clearHover
+              anchors.fill: parent
+              hoverEnabled: true
+              cursorShape: Qt.PointingHandCursor
+              onClicked: root.clearGraph()
+            }
+          }
         }
 
         Canvas {
