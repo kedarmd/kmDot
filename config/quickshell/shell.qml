@@ -21,6 +21,7 @@ Scope {
   property VolumePopup volumePopup: VolumePopup { scope: shellRoot }
   property BrightnessPopup brightnessPopup: BrightnessPopup { scope: shellRoot }
   property CalendarPopup calendarPopup: CalendarPopup { scope: shellRoot }
+  property ServerModeDropdown serverModeDropdown: ServerModeDropdown { scope: shellRoot }
 
   Component.onCompleted: {
     // Force-instantiate the calendar popup at startup so its 30-min resync
@@ -85,6 +86,13 @@ Scope {
         }
         spacing: 8
 
+        HiddenModules {
+          id: hiddenTray
+          stayOpen: serverModeDropdown.opened
+          ServerMode {
+            dropdown: serverModeDropdown
+          }
+        }
         Network {
           tooltip: tooltip
         }

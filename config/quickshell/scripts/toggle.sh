@@ -8,16 +8,13 @@ SOCK_NAME="${1:?usage: toggle.sh <sockname>}"
 SOCK="${XDG_RUNTIME_DIR:-/tmp}/${SOCK_NAME}.sock"
 
 connect() {
-  python3 - "$SOCK" <<'EOF'
-import socket, sys
-path = sys.argv[1]
-s = socket.socket(socket.AF_UNIX)
-try:
-    s.settimeout(3)
-    s.connect(path)
-finally:
-    s.close()
-EOF
+  node -e '
+    const net = require("net");
+    const sock = net.connect(process.argv[1]);
+    sock.setTimeout(3000, () => { sock.destroy(); process.exit(1); });
+    sock.on("connect", () => process.exit(0));
+    sock.on("error", () => process.exit(1));
+  ' "$SOCK"
 }
 
 if [[ -S "$SOCK" ]] && connect 2>/dev/null; then

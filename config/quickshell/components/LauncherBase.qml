@@ -183,6 +183,7 @@ Item {
     if (root.scope && root.scope.volumePopup) root.scope.volumePopup.close()
     if (root.scope && root.scope.brightnessPopup) root.scope.brightnessPopup.close()
     if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
+    if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
     if (root.scope) root.scope.activeLauncher = root
     root.opened = true
   }
