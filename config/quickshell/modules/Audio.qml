@@ -7,7 +7,7 @@ import "../components"
 Item {
   id: root
   implicitHeight: 30
-  width: label.implicitWidth + 20
+  width: Math.max(30, label.implicitWidth + 20)
   required property var tooltip
 
   PwObjectTracker {
@@ -34,7 +34,7 @@ Item {
   ModulePill {
     id: pill
     anchors.centerIn: parent
-    width: label.implicitWidth + 20
+    width: Math.max(30, label.implicitWidth + 20)
     height: 30
     active: root.muted
     fill: Tokens.warningContainer

@@ -6,7 +6,7 @@ import "../components"
 Item {
   id: root
   implicitHeight: 30
-  width: label.implicitWidth + 20
+  width: Math.max(30, label.implicitWidth + 20)
   required property var tooltip
 
   property bool dndOn: false
@@ -48,7 +48,7 @@ Item {
   ModulePill {
     id: pill
     anchors.centerIn: parent
-    width: label.implicitWidth + 20
+    width: Math.max(30, label.implicitWidth + 20)
     height: 30
     active: root.dndOn
     fill: root.dndOn && root.count > 0 ? Tokens.errorContainer : Tokens.warningContainer

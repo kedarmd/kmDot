@@ -35,7 +35,7 @@ Item {
 
           width: label.implicitWidth + 26
           height: 30
-          radius: 8
+          radius: height / 2
           color: active ? Tokens.primaryContainer
                : urgent ? Tokens.errorContainer
                : "transparent"

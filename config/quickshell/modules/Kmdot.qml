@@ -6,12 +6,12 @@ import "../components"
 Item {
   id: root
   implicitHeight: 30
-  width: label.implicitWidth + 20
+  width: Math.max(30, label.implicitWidth + 20)
 
   ModulePill {
     id: pill
     anchors.centerIn: parent
-    width: label.implicitWidth + 20
+    width: Math.max(30, label.implicitWidth + 20)
     height: 30
     active: true
     fill: Tokens.primaryContainer
