@@ -46,7 +46,7 @@ Item {
       anchors.centerIn: parent
       text: root.text
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 14
+      font.pixelSize: 15
       color: root.muted ? Tokens.on_warning_container : Colors.text_alt
     }
   }

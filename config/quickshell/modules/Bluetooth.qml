@@ -61,7 +61,7 @@ Item {
       anchors.centerIn: parent
       text: root.btEnabled ? "󰂯" : "󰂲"
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 14
+      font.pixelSize: 15
       color: root.btEnabled && root.connectedCount > 0 ? Tokens.on_primary_container : Colors.text_alt
       opacity: root.btEnabled ? 1.0 : 0.4
     }

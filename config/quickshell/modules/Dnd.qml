@@ -60,7 +60,7 @@ Item {
       anchors.centerIn: parent
       text: count > 0 ? icon + " " + count : icon
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 14
+      font.pixelSize: 15
       color: dndOn && count > 0 ? Tokens.on_error_container
            : dndOn ? Tokens.on_warning_container
            : Colors.text_alt

@@ -84,7 +84,7 @@ Item {
       anchors.centerIn: parent
       text: root.text
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 14
+      font.pixelSize: 15
       color: root.charging ? Tokens.on_success_container
            : root.capacity <= 15 ? Tokens.on_error_container
            : root.capacity <= 30 ? Tokens.on_warning_container

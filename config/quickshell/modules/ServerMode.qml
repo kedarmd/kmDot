@@ -81,7 +81,7 @@ Item {
       anchors.centerIn: parent
       text: root.busy ? "\uf013" : "\uf233"
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 14
+      font.pixelSize: 15
       color: root.busy ? Tokens.primary : (root.active ? Tokens.on_success_container : Colors.text_alt)
       opacity: root.busy ? 1.0 : (root.active ? 1.0 : 0.4)
       rotation: root.busy ? root.spinAngle : 0

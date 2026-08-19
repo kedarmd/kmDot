@@ -66,7 +66,7 @@ Item {
       anchors.centerIn: parent
       text: icon
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 14
+      font.pixelSize: 15
       color: root.connected && !root.disabled ? Tokens.on_primary_container : Colors.text_alt
       opacity: root.disabled ? 0.4 : 1.0
     }

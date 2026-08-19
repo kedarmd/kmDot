@@ -50,7 +50,7 @@ Item {
             anchors.centerIn: parent
             text: wsId.toString()
             font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 14
+            font.pixelSize: 15
             font.weight: parent.active ? Font.Bold : Font.Normal
             color: parent.urgent ? Tokens.on_error_container
                  : parent.active ? Tokens.on_primary_container

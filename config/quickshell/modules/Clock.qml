@@ -27,7 +27,7 @@ Item {
       anchors.centerIn: parent
       text: root.formatClock(clock.date)
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 14
+      font.pixelSize: 15
       color: Colors.text_alt
     }
   }

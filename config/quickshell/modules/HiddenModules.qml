@@ -46,7 +46,7 @@ Item {
       anchors.centerIn: parent
       text: root.open ? "\uf105" : "\uf104"
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 14
+      font.pixelSize: 15
       color: root.open ? Tokens.on_primary_container : Colors.text_alt
     }
 

@@ -23,7 +23,7 @@ Item {
       anchors.centerIn: parent
       text: " kmDot"
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 14
+      font.pixelSize: 15
       font.weight: Font.DemiBold
       color: Tokens.on_primary_container
     }
