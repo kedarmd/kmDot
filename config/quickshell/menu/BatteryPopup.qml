@@ -97,9 +97,12 @@ PanelWindow {
 
   function hhmm(epoch) {
     const d = new Date(epoch * 1000)
-    const h = d.getHours()
+    let h = d.getHours()
     const m = d.getMinutes()
-    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m
+    const ampm = h >= 12 ? "PM" : "AM"
+    h = h % 12
+    if (h === 0) h = 12
+    return h + ":" + (m < 10 ? "0" : "") + m + " " + ampm
   }
 
   function downsample(pts) {
@@ -444,13 +447,18 @@ PanelWindow {
         Row {
           width: parent.width
           Text {
+            id: startTimeText
             text: root.points.length > 0 ? root.hhmm(root.points[0].epoch) : ""
             font.family: "JetBrainsMono Nerd Font Propo"
             font.pixelSize: 10
             color: Colors.muted
           }
-          Item { width: 1; height: 1 }
+          Item {
+            width: parent.width - startTimeText.implicitWidth - nowText.implicitWidth
+            height: 1
+          }
           Text {
+            id: nowText
             text: root.points.length > 0 ? "now" : ""
             font.family: "JetBrainsMono Nerd Font Propo"
             font.pixelSize: 10
