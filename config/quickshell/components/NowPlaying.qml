@@ -1,4 +1,5 @@
 import QtQuick
+import Qt5Compat.GraphicalEffects
 import Quickshell.Services.Mpris
 import qs
 import "../components"
@@ -15,31 +16,35 @@ Item {
   readonly property string title: root.player ? root.player.trackTitle : ""
   readonly property string artist: root.player ? root.player.trackArtist : ""
   readonly property string album: root.player ? root.player.trackAlbum : ""
-  property string videoId: ""
   property bool maxresMissing: false
+
+  readonly property string youtubeVideoId: {
+    const meta = root.player ? (root.player.metadata || {}) : {}
+    const url = String(meta["xesam:url"] || "")
+    const m = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/.exec(url)
+    return m ? m[1] : ""
+  }
 
   readonly property string artUrl: {
     if (root.player) {
-      if (root.player.trackArtUrl) return root.player.trackArtUrl
-      const meta = root.player.metadata || {}
-      const url = String(meta["xesam:url"] || "")
-      const m = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/.exec(url)
-      if (m) {
-        root.videoId = m[1]
-        return "https://i.ytimg.com/vi/" + m[1] + "/maxresdefault.jpg"
+      const direct = String(root.player.trackArtUrl || "")
+      if (direct !== "") return direct
+      if (root.youtubeVideoId !== "") {
+        return "https://i.ytimg.com/vi/" + root.youtubeVideoId + "/maxresdefault.jpg"
       }
     }
-    root.videoId = ""
     return ""
   }
 
   readonly property string hqArtUrl:
-    root.videoId !== "" ? "https://i.ytimg.com/vi/" + root.videoId + "/hqdefault.jpg" : ""
+    root.youtubeVideoId !== "" ? "https://i.ytimg.com/vi/" + root.youtubeVideoId + "/hqdefault.jpg" : ""
   readonly property bool playing: root.player ? root.player.isPlaying : false
   readonly property bool canPrev: root.player ? (root.player.canControl && root.player.canGoPrevious) : false
   readonly property bool canNext: root.player ? (root.player.canControl && root.player.canGoNext) : false
   readonly property bool canToggle: root.player ? root.player.canTogglePlaying : false
   readonly property bool showArt: root.artUrl !== ""
+
+  onArtUrlChanged: root.maxresMissing = false
 
   readonly property real artHeight:
     titleLine.implicitHeight +
@@ -93,19 +98,112 @@ Item {
       width: col.width
       spacing: 12
 
-      Image {
-        id: art
+      Item {
+        id: disc
         width: root.artHeight
         height: root.artHeight
-        visible: root.showArt
-        source: root.maxresMissing ? root.hqArtUrl : root.artUrl
-        fillMode: Image.PreserveAspectCrop
-        sourceSize: Qt.size(256, 256)
-        onStatusChanged: {
-          if (status === Image.Ready && !root.maxresMissing && root.videoId !== "" &&
-              art.implicitWidth > 0 && (art.implicitWidth / art.implicitHeight) < 1.5) {
-            root.maxresMissing = true
+        transformOrigin: Item.Center
+
+        Timer {
+          interval: 16
+          repeat: true
+          running: root.playing
+          onTriggered: {
+            if (root.playing) disc.rotation = (disc.rotation + 0.6) % 360
           }
+        }
+
+        Canvas {
+          id: fallbackDisc
+          anchors.fill: parent
+          visible: !disc.artImageReady
+
+          onPaint: {
+            const ctx = getContext("2d")
+            const cx = width / 2
+            const cy = height / 2
+            const radius = Math.min(width, height) / 2 - 1
+            ctx.clearRect(0, 0, width, height)
+
+            const gradient = ctx.createRadialGradient(cx, cy, radius * 0.08,
+                                                       cx, cy, radius)
+            gradient.addColorStop(0, Colors.primary_alt)
+            gradient.addColorStop(0.48, Colors.primary)
+            gradient.addColorStop(1, Colors.surface_alt)
+            ctx.fillStyle = gradient
+            ctx.beginPath()
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2)
+            ctx.fill()
+
+            ctx.strokeStyle = Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.22)
+            ctx.lineWidth = 1
+            for (let i = 1; i < 5; i++) {
+              ctx.beginPath()
+              ctx.arc(cx, cy, radius * (0.25 + i * 0.13), 0, Math.PI * 2)
+              ctx.stroke()
+            }
+
+            ctx.fillStyle = Colors.base
+            ctx.beginPath()
+            ctx.arc(cx, cy, Math.max(4, radius * 0.12), 0, Math.PI * 2)
+            ctx.fill()
+            ctx.strokeStyle = Colors.text
+            ctx.globalAlpha = 0.7
+            ctx.beginPath()
+            ctx.arc(cx, cy, Math.max(2, radius * 0.045), 0, Math.PI * 2)
+            ctx.stroke()
+            ctx.globalAlpha = 1
+          }
+        }
+
+        Image {
+          id: artImage
+          anchors.fill: parent
+          visible: false
+          source: root.maxresMissing ? root.hqArtUrl : root.artUrl
+          fillMode: Image.PreserveAspectCrop
+          sourceSize: Qt.size(256, 256)
+          onStatusChanged: {
+            if (status === Image.Ready && !root.maxresMissing && root.youtubeVideoId !== "" &&
+                artImage.implicitWidth > 0 &&
+                (artImage.implicitWidth / artImage.implicitHeight) < 1.5) {
+              root.maxresMissing = true
+            } else if (status === Image.Error && !root.maxresMissing && root.youtubeVideoId !== "") {
+              root.maxresMissing = true
+            }
+          }
+        }
+
+        readonly property bool artImageReady: root.showArt && artImage.status === Image.Ready
+
+        OpacityMask {
+          anchors.fill: parent
+          visible: disc.artImageReady
+          source: artImage
+          maskSource: Rectangle {
+            width: disc.width
+            height: disc.height
+            radius: width / 2
+            color: "white"
+          }
+        }
+
+        Rectangle {
+          anchors.fill: parent
+          radius: width / 2
+          color: "transparent"
+          border.width: 1
+          border.color: Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.24)
+        }
+
+        Rectangle {
+          anchors.centerIn: parent
+          width: Math.max(8, parent.width * 0.16)
+          height: width
+          radius: width / 2
+          color: Colors.base
+          border.width: 1
+          border.color: Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.55)
         }
       }
 
