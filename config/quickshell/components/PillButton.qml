@@ -8,19 +8,22 @@ Rectangle {
   id: root
 
   property bool active: false
+  property bool filled: false
   property bool enabled: true
   property string text: ""
   property string glyph: ""
   property real glyphSize: 12
   property real textSize: 12
   property color fillColor: Tokens.primaryContainer
+  property color inactiveFillColor: Tokens.surfaceContainerHighest
   property color activeTextColor: Tokens.on_primary_container
 
   signal clicked
 
   implicitHeight: 30
   radius: height / 2
-  color: root.active && root.enabled ? root.fillColor : "transparent"
+  color: root.enabled && (root.active ? root.fillColor
+                                      : root.filled ? root.inactiveFillColor : "transparent")
 
   Behavior on color {
     ColorAnimation {

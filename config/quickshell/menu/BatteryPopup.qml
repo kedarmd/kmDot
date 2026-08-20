@@ -487,6 +487,7 @@ PanelWindow {
           PillButton {
             width: (parent.width - 16) / 3
             height: 30
+            filled: true
             active: root.isProfileActive(PowerProfile.PowerSaver)
             text: "Power Saver"
             textSize: 12
@@ -496,6 +497,7 @@ PanelWindow {
           PillButton {
             width: (parent.width - 16) / 3
             height: 30
+            filled: true
             active: root.isProfileActive(PowerProfile.Balanced)
             text: "Balanced"
             textSize: 12
@@ -506,6 +508,7 @@ PanelWindow {
             width: (parent.width - 16) / 3
             height: 30
             opacity: PowerProfiles.hasPerformanceProfile ? 1.0 : 0.4
+            filled: true
             active: root.isProfileActive(PowerProfile.Performance)
             enabled: PowerProfiles.hasPerformanceProfile
             text: "Performance"

@@ -236,31 +236,44 @@ Item {
 
         Row {
           id: controlsRow
+          width: parent.width
           spacing: 6
 
           PillButton {
-            width: 30
+            width: (controlsRow.width - controlsRow.spacing * 2) / 3
             height: 30
             enabled: root.canPrev
+            filled: true
+            active: true
+            fillColor: Tokens.surfaceContainerHighest
+            activeTextColor: Colors.text
             glyph: "\uf048"
             glyphSize: 12
             onClicked: if (root.player) root.player.previous()
           }
 
           PillButton {
-            width: 30
+            width: (controlsRow.width - controlsRow.spacing * 2) / 3
             height: 30
             enabled: root.canToggle
+            filled: true
             active: root.playing
+            fillColor: Tokens.primaryContainer
+            inactiveFillColor: Tokens.surfaceContainerHighest
+            activeTextColor: root.playing ? Tokens.on_primary_container : Colors.text
             glyph: root.playing ? "\uf04c" : "\uf04b"
             glyphSize: 12
             onClicked: if (root.player) root.player.togglePlaying()
           }
 
           PillButton {
-            width: 30
+            width: (controlsRow.width - controlsRow.spacing * 2) / 3
             height: 30
             enabled: root.canNext
+            filled: true
+            active: true
+            fillColor: Tokens.surfaceContainerHighest
+            activeTextColor: Colors.text
             glyph: "\uf051"
             glyphSize: 12
             onClicked: if (root.player) root.player.next()
