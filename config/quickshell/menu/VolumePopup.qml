@@ -235,6 +235,17 @@ PanelWindow {
           color: Tokens.divider
         }
 
+        NowPlaying {
+          id: nowPlaying
+        }
+
+        Rectangle {
+          visible: nowPlaying.visible
+          width: parent.width
+          height: 1
+          color: Tokens.divider
+        }
+
         Text {
           width: parent.width
           text: "Output devices"
