@@ -8,10 +8,27 @@ fish · ghostty · hyprland · nvim · starship · swaync · tmux · xdg-desktop
 
 ## Screenshots
 
-![Setup 1](./screenshots/2026-08-13-004752_hyprshot.png)
-![Setup 2](./screenshots/2026-08-13-004809_hyprshot.png)
-![Setup 3](./screenshots/2026-08-13-004835_hyprshot.png)
-![Setup 4](./screenshots/2026-08-13-004917_hyprshot.png)
+The screenshots below were captured on an empty Workspace 3 to show the current Quickshell interface without an application window behind it.
+
+### Launchers
+
+![Application launcher](./screenshots/launcher-apps.png)
+![kmDot launcher](./screenshots/launcher-kmdot.png)
+![Connections launcher](./screenshots/launcher-connections.png)
+![Keybinds launcher](./screenshots/launcher-keybinds.png)
+![System launcher](./screenshots/launcher-system.png)
+![Theme launcher](./screenshots/launcher-themes.png)
+![Clipboard launcher](./screenshots/launcher-clipboard.png)
+
+### Topbar Menus
+
+![Wi-Fi menu](./screenshots/menu-wifi.png)
+![Bluetooth menu](./screenshots/menu-bluetooth.png)
+![Volume menu](./screenshots/menu-volume.png)
+![Brightness menu](./screenshots/menu-brightness.png)
+![Battery menu](./screenshots/menu-battery.png)
+![Calendar menu](./screenshots/menu-calendar.png)
+![Server mode menu](./screenshots/menu-server.png)
 
 ## Install
 
