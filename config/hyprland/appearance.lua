@@ -29,11 +29,16 @@ hl.config({
 	},
 
 	misc = {
-		-- Wake the panel from DPMS off on mouse movement (this Hyprland
-		-- version defaults this to false). Both hypridle's panel-off step
-		-- and the server-mode "stay awake" flow rely on the screen waking
-		-- like a normal laptop when the user returns.
+		-- Wake the panel from DPMS off on mouse movement AND key presses
+		-- (this Hyprland version defaults both to false). These are the
+		-- compositor-side wake path; hypridle's panel-off listener also has
+		-- an on-resume that re-enables DPMS as a belt-and-suspenders fallback
+		-- (mouse motion alone can be missed when the user only clicks/presses
+		-- keys — buttons and key events don't wake via these flags). Both the
+		-- normal hypridle flow and the server-mode "stay awake" flow rely on
+		-- the screen waking like a normal laptop when the user returns.
 		mouse_move_enables_dpms = true,
+		key_press_enables_dpms = true,
 	},
 })
 
