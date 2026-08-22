@@ -75,16 +75,47 @@ ConnectionDropdownBase {
       Text { id: titleText; text: "Pair Bluetooth device"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - backButton.width - bluetoothIcon.implicitWidth - titleText.implicitWidth - 30); height: 1 }
     }
-    Text { width: parent.width; text: "Select a nearby device. PIN confirmation is handled by the Bluetooth agent."; wrapMode: Text.Wrap; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
-    Text { text: "Nearby devices"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
-    Repeater {
-      model: root.devices
-      delegate: Rectangle {
-        required property var modelData
-        width: parent.width; height: 44; radius: 12; color: Tokens.surfaceContainerHighest
-        Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData.name || "Unknown device"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
-        Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; visible: root.busyPath === (modelData.dbusPath || ""); text: "\uf013"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo" }
-        MouseArea { anchors.fill: parent; enabled: !root.busyPath; onClicked: root.activate(modelData) }
+    Text { width: parent.width; text: "Select a nearby device to pair. PIN confirmation is handled by the Bluetooth agent."; wrapMode: Text.Wrap; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+    Item {
+      id: devicesViewport
+      width: parent.width
+      height: 300
+      Flickable {
+      id: devicesList
+      anchors.fill: parent
+      clip: true
+      contentWidth: width
+      contentHeight: devicesContent.implicitHeight
+      interactive: true
+      boundsBehavior: Flickable.StopAtBounds
+      Column {
+        id: devicesContent
+        width: devicesList.width - 8
+        spacing: 6
+        Repeater {
+          model: root.devices
+          delegate: Rectangle {
+            required property var modelData
+            width: parent.width; height: 44; radius: 12; color: Tokens.surfaceContainerHighest
+            Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData.name || "Unknown device"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
+            Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; visible: root.busyPath === (modelData.dbusPath || ""); text: "\uf013"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo" }
+            MouseArea { anchors.fill: parent; enabled: !root.busyPath; onClicked: root.activate(modelData) }
+          }
+        }
+        Text { visible: root.devices.length === 0; text: root.adapter && root.adapter.discovering ? "Scanning for devices..." : "No nearby devices found"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
+      }
+      }
+      Rectangle {
+        visible: devicesList.contentHeight > devicesList.height
+        width: 4
+        radius: 2
+        color: Colors.muted
+        opacity: 0.6
+        z: 2
+        anchors.right: parent.right
+        anchors.rightMargin: 1
+        y: devicesList.contentY * (devicesList.height - height) / Math.max(1, devicesList.contentHeight - devicesList.height)
+        height: Math.max(24, devicesList.height * devicesList.height / devicesList.contentHeight)
       }
     }
     Text { visible: root.resultText !== ""; width: parent.width; text: root.resultText; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }

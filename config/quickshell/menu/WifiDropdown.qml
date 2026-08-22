@@ -222,7 +222,8 @@ ConnectionDropdownBase {
       width: parent.width; spacing: 10
       Text { id: wifiIcon; text: "󰤨"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Wi-Fi"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
-      Item { width: Math.max(1, parent.width - wifiIcon.implicitWidth - titleText.implicitWidth - 72); height: 1 }
+      Item { width: Math.max(1, parent.width - wifiIcon.implicitWidth - titleText.implicitWidth - 112); height: 1 }
+      PillButton { width: 30; filled: true; glyph: "\uf021"; onClicked: root.refreshItems() }
       Rectangle {
         width: 52; height: 28; radius: 14
         anchors.verticalCenter: parent.verticalCenter
@@ -292,10 +293,6 @@ ConnectionDropdownBase {
       glyph: "\uf067"
       text: "Add Wi-Fi network"
       onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.scope.wifiAddPopup.open() }
-    }
-    Row { width: parent.width; spacing: 8
-      Item { width: parent.width - 78; height: 1 }
-      PillButton { width: 70; text: "Refresh"; onClicked: root.refreshItems() }
     }
   }
 

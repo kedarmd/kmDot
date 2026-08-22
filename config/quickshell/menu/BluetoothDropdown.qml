@@ -136,7 +136,8 @@ ConnectionDropdownBase {
       width: parent.width; spacing: 10
       Text { id: bluetoothIcon; text: "󰂯"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Bluetooth"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
-      Item { width: Math.max(1, parent.width - bluetoothIcon.implicitWidth - titleText.implicitWidth - 72); height: 1 }
+      Item { width: Math.max(1, parent.width - bluetoothIcon.implicitWidth - titleText.implicitWidth - 112); height: 1 }
+      PillButton { width: 30; filled: true; glyph: "\uf021"; onClicked: root.refreshItems() }
       Rectangle {
         width: 52; height: 28; radius: 14
         anchors.verticalCenter: parent.verticalCenter
@@ -203,10 +204,6 @@ ConnectionDropdownBase {
       glyph: "\uf067"
       text: "Pair new device"
       onClicked: { if (root.scope && root.scope.bluetoothAddPopup) { root.close(); root.scope.bluetoothAddPopup.open() } }
-    }
-    Row { width: parent.width; spacing: 8
-      Item { width: parent.width - 78; height: 1 }
-      PillButton { width: 70; text: "Refresh"; onClicked: root.refreshItems() }
     }
   }
 }
