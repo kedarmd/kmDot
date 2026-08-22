@@ -60,7 +60,7 @@ Item {
 
   Timer {
     interval: 2000
-    running: true
+    running: !root.dropdown || !root.dropdown.opened
     repeat: true
     onTriggered: root.refresh()
   }

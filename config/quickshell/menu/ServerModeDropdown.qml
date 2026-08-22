@@ -33,6 +33,7 @@ PanelWindow {
   property string tailscaleIp: ""
   property string jellyfin: "inactive"
   property string busyAction: ""
+  property string errorText: ""
   readonly property bool busy: root.busyAction !== ""
 
   readonly property bool on: root.mode === "on"
@@ -63,12 +64,14 @@ PanelWindow {
   }
 
   function toggleServerMode(noServices) {
+    root.errorText = ""
     root.busyAction = noServices ? "mode:nosvc" : "mode"
     const flag = noServices ? " --no-services" : ""
     modeProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/server-mode.sh " + (root.on ? "off" : "on") + flag])
   }
 
   function serviceAction(name, action) {
+    root.errorText = ""
     root.busyAction = "service:" + name
     serviceProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/server-mode.sh service " + name + " " + action])
   }
@@ -84,6 +87,7 @@ PanelWindow {
     if (root.scope && root.scope.brightnessPopup && root.scope.brightnessPopup !== root) root.scope.brightnessPopup.close()
     if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
     root.opened = true
+    root.errorText = ""
     root.refresh()
     root.pickScreen()
     focusTimer.start()
@@ -138,16 +142,22 @@ PanelWindow {
 
   Process {
     id: modeProc
-    onExited: {
+    stderr: StdioCollector {}
+    onExited: function(exitCode) {
       root.busyAction = ""
+      if (exitCode !== 0)
+        root.errorText = String(modeProc.stderr.text).trim() || "Could not change server mode"
       root.refresh()
     }
   }
 
   Process {
     id: serviceProc
-    onExited: {
+    stderr: StdioCollector {}
+    onExited: function(exitCode) {
       root.busyAction = ""
+      if (exitCode !== 0)
+        root.errorText = String(serviceProc.stderr.text).trim() || "Could not change service state"
       root.refresh()
     }
   }
@@ -264,8 +274,8 @@ PanelWindow {
             height: 32
             active: root.on
             enabled: !root.busy
-            fillColor: Tokens.errorContainer
-            activeTextColor: Tokens.on_error_container
+            fillColor: Tokens.primaryContainer
+            activeTextColor: Tokens.on_primary_container
             glyph: root.busyAction === "mode" ? "\uf013" : (root.on ? "\uf011" : "\uf233")
             glyphSize: 12
             text: root.busyAction === "mode" ? "Working\u2026" : (root.on ? "Turn Off" : "Turn On")
@@ -278,14 +288,24 @@ PanelWindow {
             height: 32
             active: root.on
             enabled: !root.busy
-            fillColor: Tokens.errorContainer
-            activeTextColor: Tokens.on_error_container
+            fillColor: Tokens.primaryContainer
+            activeTextColor: Tokens.on_primary_container
             glyph: root.busyAction === "mode:nosvc" ? "\uf013" : ""
             glyphSize: 12
             text: root.busyAction === "mode:nosvc" ? "Working\u2026" : (root.on ? "Mode Only: Off" : "Mode Only: On")
             textSize: 12
             onClicked: root.toggleServerMode(true)
           }
+        }
+
+        Text {
+          visible: root.errorText !== ""
+          width: parent.width
+          text: root.errorText
+          color: Colors.error
+          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 11
+          wrapMode: Text.WordWrap
         }
 
         Rectangle {
@@ -348,8 +368,8 @@ PanelWindow {
             width: 64
             enabled: !root.busy
             active: root.tailscale === "active"
-            fillColor: Tokens.errorContainer
-            activeTextColor: Tokens.on_error_container
+            fillColor: Tokens.primaryContainer
+            activeTextColor: Tokens.on_primary_container
             glyph: root.busyAction === "service:tailscale" ? "\uf013" : ""
             glyphSize: 11
             text: root.tailscale === "active" ? "Stop" : "Start"
@@ -401,8 +421,8 @@ PanelWindow {
             width: 64
             enabled: !root.busy
             active: root.jellyfin === "active"
-            fillColor: Tokens.errorContainer
-            activeTextColor: Tokens.on_error_container
+            fillColor: Tokens.primaryContainer
+            activeTextColor: Tokens.on_primary_container
             glyph: root.busyAction === "service:jellyfin" ? "\uf013" : ""
             glyphSize: 11
             text: root.jellyfin === "active" ? "Stop" : "Start"
