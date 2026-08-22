@@ -16,10 +16,15 @@ ConnectionDropdownBase {
   property bool busy: false
   property string resultText: ""
   property bool failed: false
+  // Parent dropdown gates everything on the Wi-Fi radio being enabled.
+  readonly property bool radioAllowed: {
+    const d = root.scope && root.scope.wifiDropdown ? root.scope.wifiDropdown : null
+    return !!d && d.radioEnabled
+  }
 
   function quote(s) { return "'" + s.replace(/'/g, "'\\''") + "'" }
   function connect() {
-    if (!root.ssid.trim() || root.busy) return
+    if (!root.radioAllowed || !root.ssid.trim() || root.busy) return
     root.busy = true
     root.failed = false
     root.resultText = "Connecting..."
@@ -51,6 +56,15 @@ ConnectionDropdownBase {
     }
   }
 
+  Connections {
+    id: wifiRadioWatch
+    target: root.scope && root.scope.wifiDropdown ? root.scope.wifiDropdown : null
+    // Wi-Fi switched off while the password popup is open → close it.
+    function onRadioEnabledChanged() {
+      if (wifiRadioWatch.target && !wifiRadioWatch.target.radioEnabled && root.opened) root.close()
+    }
+  }
+
   Column {
     width: parent.width; spacing: 12
     Row { width: parent.width; spacing: 10
@@ -67,7 +81,7 @@ ConnectionDropdownBase {
     Rectangle { width: parent.width; height: 34; radius: 8; color: Tokens.surfaceContainerHighest
       TextInput { id: passwordInput; anchors.fill: parent; anchors.margins: 9; echoMode: TextInput.Password; text: root.password; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; onTextChanged: root.password = text; onAccepted: root.connect() }
     }
-    PillButton { width: parent.width; filled: true; active: root.busy; text: root.busy ? "Connecting..." : "Connect"; enabled: true; onClicked: root.connect() }
+    PillButton { width: parent.width; filled: true; active: root.busy; text: root.busy ? "Connecting..." : "Connect"; enabled: root.radioAllowed; opacity: root.radioAllowed ? 1 : 0.5; onClicked: root.connect() }
     Text { visible: root.failed && root.resultText !== ""; width: parent.width; text: root.resultText; wrapMode: Text.Wrap; color: Colors.error; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
   }
 }

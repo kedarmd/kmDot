@@ -19,10 +19,67 @@ ConnectionDropdownBase {
   property var savedNames: []
   property var pendingNetwork: null
   property string forgetSsid: ""
+  property int _settleTries: 0
+  readonly property int settleMaxTries: 8
+  // Live throughput sampling (see trafficProc): interface + sysfs byte counters.
+  property string netIface: ""
+  property double lastStamp: 0
+  property real lastRx: -1
+  property real lastTx: -1
+  property real downMbps: 0
+  property real upMbps: 0
+  property bool measuring: false
+  // Live-traffic feature toggle, persisted as "1"/"0" in ~/.config/kmdot/wifi-traffic.
+  property bool trafficEnabled: true
+  readonly property bool hasLink: root.netIface !== ""
   readonly property var connectedNetworks: root.networks.filter(n => n.active)
   readonly property var availableNetworks: root.networks.filter(n => !n.active)
+  // Master gate: every secondary control is disabled unless the Wi-Fi radio is on.
+  readonly property bool radioEnabled: root.state === "enabled"
+
+  onStateChanged: {
+    if (root.state !== "enabled") {
+      root.resetTrafficSample()
+      root.busySsid = ""
+      root.busyAction = ""
+      root.pendingNetwork = null
+    }
+  }
 
   function quote(s) { return "'" + s.replace(/'/g, "'\\''") + "'" }
+
+  function fmtRate(mbps) {
+    if (mbps >= 100) return Math.round(mbps) + " Mbps"
+    if (mbps >= 10) return mbps.toFixed(1) + " Mbps"
+    if (mbps >= 1) return mbps.toFixed(2) + " Mbps"
+    return Math.round(mbps * 1000) + " Kbps"
+  }
+
+  function resetTrafficSample() {
+    root.netIface = ""
+    root.lastRx = -1
+    root.lastTx = -1
+    root.lastStamp = 0
+    root.downMbps = 0
+    root.upMbps = 0
+    root.measuring = false
+  }
+
+  function sampleTraffic() {
+    if (!root.trafficEnabled || !root.radioEnabled) return
+    trafficProc.exec(["sh", "-c",
+      "d=$(nmcli -t -f DEVICE,TYPE,STATE device status 2>/dev/null | grep -m1 ':wifi:connected' | cut -d: -f1); " +
+      "if [ -n \"$d\" ] && [ -r \"/sys/class/net/$d/statistics/rx_bytes\" ]; then " +
+      "printf 'NET:%s %s %s\\n' \"$d\" \"$(cat /sys/class/net/$d/statistics/rx_bytes)\" \"$(cat /sys/class/net/$d/statistics/tx_bytes)\"; " +
+      "else printf 'NET:none\\n'; fi"])
+  }
+
+  function setTrafficEnabled(enabled) {
+    if (!root.radioEnabled) return
+    root.trafficEnabled = enabled
+    if (!enabled) root.resetTrafficSample()
+    else root.sampleTraffic()
+  }
   function signalGlyph(signal) {
     if (signal >= 75) return "\u2588\u2588\u2588\u2588"
     if (signal >= 50) return "\u2588\u2588\u2586\u2581"
@@ -34,9 +91,16 @@ ConnectionDropdownBase {
     root.connectedSsid = ""
     root.savedNames = []
     root.scanning = true
+    root.sampleTraffic()
     activeProc.exec(["sh", "-c", "nmcli -t -f NAME,TYPE connection show --active 2>/dev/null"])
     savedProc.exec(["sh", "-c", "nmcli -t -f NAME,TYPE connection show 2>/dev/null"])
     scanProc.exec(["sh", "-c", "nmcli -t -f ACTIVE,SSID,SIGNAL,SECURITY device wifi list 2>/dev/null; printf 'STATE:%s\\n' \"$(nmcli -t -f WIFI general 2>/dev/null)\""])
+  }
+
+  function beginRadioSettle() {
+    root._settleTries = 0
+    root.refreshItems()
+    settleTimer.restart()
   }
 
   function addNetwork(network) {
@@ -61,6 +125,7 @@ ConnectionDropdownBase {
     }
   }
   function editNetwork(network) {
+    if (!root.radioEnabled) return
     root.busySsid = ""
     root.close()
     if (root.scope && root.scope.wifiAddPopup) {
@@ -73,6 +138,7 @@ ConnectionDropdownBase {
     }
   }
   function forgetNetwork(network) {
+    if (!root.radioEnabled) return
     root.forgetSsid = network.ssid
     if (root.scope && root.scope.confirmPopup) {
       root.busySsid = ""
@@ -81,6 +147,7 @@ ConnectionDropdownBase {
     }
   }
   function activate(n) {
+    if (!root.radioEnabled) return
     const saved = n.saved || root.isSaved(n.ssid)
     const network = Object.assign({}, n, { saved: saved })
     root.busySsid = n.ssid
@@ -167,6 +234,7 @@ ConnectionDropdownBase {
       required property var modelData
       readonly property bool dimmed: !!root.busySsid && root.busySsid !== modelData.ssid
       width: parent.width; height: 48; radius: 12
+      opacity: root.radioEnabled ? 1 : 0.55
       color: modelData.active || root.busySsid === modelData.ssid ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
       Row { anchors.fill: parent; anchors.margins: 10; spacing: 10
         Text { text: "󰤨"; color: modelData.active || root.busySsid === modelData.ssid ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter }
@@ -176,7 +244,7 @@ ConnectionDropdownBase {
         }
         Text { id: rowSpinner; visible: root.busySsid === modelData.ssid; text: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: 900; loops: Animation.Infinite; running: rowSpinner.visible } }
       }
-      MouseArea { anchors.fill: parent; enabled: !root.busySsid; onClicked: root.activate(modelData) }
+      MouseArea { anchors.fill: parent; enabled: root.radioEnabled && !root.busySsid; onClicked: root.activate(modelData) }
       Row {
         anchors.right: parent.right
         anchors.rightMargin: 10
@@ -191,7 +259,7 @@ ConnectionDropdownBase {
           anchors.verticalCenter: parent.verticalCenter
           MouseArea {
             anchors.fill: parent
-            enabled: !root.busySsid
+            enabled: root.radioEnabled && !root.busySsid
             cursorShape: Qt.PointingHandCursor
             onClicked: root.editNetwork(modelData)
           }
@@ -205,7 +273,7 @@ ConnectionDropdownBase {
           anchors.verticalCenter: parent.verticalCenter
           MouseArea {
             anchors.fill: parent
-            enabled: !root.busySsid
+            enabled: root.radioEnabled && !root.busySsid
             cursorShape: Qt.PointingHandCursor
             onClicked: root.forgetNetwork(modelData)
           }
@@ -250,7 +318,7 @@ ConnectionDropdownBase {
       Text { id: wifiIcon; text: "󰤨"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Wi-Fi"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - wifiIcon.implicitWidth - titleText.implicitWidth - 112); height: 1 }
-      PillButton { width: 30; filled: true; glyph: "\uf021"; onClicked: { root.errorText = ""; root.refreshItems() } }
+      PillButton { width: 30; filled: true; glyph: "\uf021"; enabled: root.radioEnabled; opacity: root.radioEnabled ? 1 : 0.5; onClicked: { root.errorText = ""; root.refreshItems() } }
       Rectangle {
         width: 52; height: 28; radius: 14
         anchors.verticalCenter: parent.verticalCenter
@@ -273,6 +341,100 @@ ConnectionDropdownBase {
       }
     }
 
+    Rectangle {
+      width: parent.width
+      height: 66
+      radius: 14
+      color: Tokens.surfaceContainerHighest
+      opacity: root.trafficEnabled && root.radioEnabled ? 1 : 0.55
+
+      Behavior on opacity { NumberAnimation { duration: 150 } }
+
+      Row {
+        anchors.fill: parent
+        anchors.margins: 12
+        spacing: 14
+
+        Column {
+          width: (parent.width - 95) / 2
+          spacing: 5
+
+          Row {
+            spacing: 6
+            Text { text: "\uf063"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: "Download"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+          }
+
+          Text {
+            width: parent.width
+            elide: Text.ElideRight
+            text: !root.radioEnabled ? "Wi-Fi off"
+              : !root.trafficEnabled ? "\u2014"
+              : !root.hasLink ? "No link"
+              : root.measuring ? "Measuring\u2026"
+              : root.fmtRate(root.downMbps)
+            color: root.radioEnabled && root.trafficEnabled && root.hasLink && !root.measuring ? Colors.text : Colors.muted
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 15
+            font.weight: Font.DemiBold
+          }
+        }
+
+        Rectangle { width: 1; height: parent.height; color: Tokens.divider }
+
+        Column {
+          width: (parent.width - 95) / 2
+          spacing: 5
+
+          Row {
+            spacing: 6
+            Text { text: "\uf062"; color: Colors.accent; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: "Upload"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+          }
+
+          Text {
+            width: parent.width
+            elide: Text.ElideRight
+            text: !root.radioEnabled ? "Wi-Fi off"
+              : !root.trafficEnabled ? "\u2014"
+              : !root.hasLink ? "No link"
+              : root.measuring ? "Measuring\u2026"
+              : root.fmtRate(root.upMbps)
+            color: root.radioEnabled && root.trafficEnabled && root.hasLink && !root.measuring ? Colors.text : Colors.muted
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 15
+            font.weight: Font.DemiBold
+          }
+        }
+
+        Rectangle {
+          width: 52
+          height: 28
+          radius: 14
+          anchors.verticalCenter: parent.verticalCenter
+          color: root.trafficEnabled ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
+          Behavior on color { ColorAnimation { duration: 150 } }
+
+          Rectangle {
+            width: 22
+            height: 22
+            radius: 11
+            anchors.verticalCenter: parent.verticalCenter
+            x: root.trafficEnabled ? parent.width - width - 3 : 3
+            color: root.trafficEnabled ? Tokens.on_primary_container : Colors.muted
+            Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+          }
+
+          MouseArea {
+            anchors.fill: parent
+            enabled: root.radioEnabled
+            cursorShape: root.radioEnabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: root.setTrafficEnabled(!root.trafficEnabled)
+          }
+        }
+      }
+    }
+
     Item {
       id: wifiViewport
       width: parent.width
@@ -290,6 +452,7 @@ ConnectionDropdownBase {
         width: wifiList.width - 8
         spacing: 6
         Text { visible: root.state === "disabled"; width: parent.width; text: "Wi-Fi is turned off"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
+        Text { visible: settleTimer.running && root.radioEnabled; width: parent.width; text: "Waiting for connection..."; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
         Text { text: "Connected"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; font.weight: Font.DemiBold }
         Repeater { model: root.connectedNetworks; delegate: networkDelegate }
         Text { visible: !root.scanning && root.connectedNetworks.length === 0; text: "No connected network"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
@@ -319,11 +482,74 @@ ConnectionDropdownBase {
       filled: true
       glyph: "\uf067"
       text: "Add Wi-Fi network"
+      enabled: root.radioEnabled
+      opacity: root.radioEnabled ? 1 : 0.5
       onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.scope.wifiAddPopup.open() }
     }
   }
 
-  Process { id: radioProc; onExited: root.refreshItems() }
+  Process { id: radioProc; onExited: root.beginRadioSettle() }
+
+  Process {
+    id: trafficProc
+    stdout: SplitParser {
+      splitMarker: "\n"
+      onRead: function(data) {
+        const line = String(data).trim()
+        if (!line.startsWith("NET:")) return
+        const parts = line.slice(4).split(" ")
+        if (parts.length < 3 || parts[0] === "none") { root.resetTrafficSample(); return }
+        const iface = parts[0]
+        const rx = parseFloat(parts[1])
+        const tx = parseFloat(parts[2])
+        if (!isFinite(rx) || !isFinite(tx)) { root.resetTrafficSample(); return }
+        const now = Date.now()
+        // Re-baseline on interface change or counter reset (reconnect/reboot);
+        // a negative lastRx marks the very first sample.
+        if (root.netIface !== iface || rx < root.lastRx || tx < root.lastTx || root.lastRx < 0) {
+          root.netIface = iface
+          root.lastRx = rx
+          root.lastTx = tx
+          root.lastStamp = now
+          root.measuring = true
+          return
+        }
+        const dt = (now - root.lastStamp) / 1000
+        if (dt <= 0) return
+        root.downMbps = Math.max(0, (rx - root.lastRx) * 8 / dt / 1e6)
+        root.upMbps = Math.max(0, (tx - root.lastTx) * 8 / dt / 1e6)
+        root.lastRx = rx
+        root.lastTx = tx
+        root.lastStamp = now
+        root.measuring = false
+      }
+    }
+  }
+
+  Timer {
+    interval: 1000
+    repeat: true
+    running: root.opened && root.trafficEnabled && root.radioEnabled
+    onTriggered: root.sampleTraffic()
+  }
+
+  Timer {
+    id: settleTimer
+    interval: 1500
+    repeat: true
+    onTriggered: {
+      if (!root.opened || !root.radioEnabled || root.connectedSsid !== "") {
+        settleTimer.stop()
+        return
+      }
+      root._settleTries++
+      if (root._settleTries > root.settleMaxTries) {
+        settleTimer.stop()
+        return
+      }
+      root.refreshItems()
+    }
+  }
 
   Process {
     id: forgetProc
@@ -339,7 +565,10 @@ ConnectionDropdownBase {
     target: root.scope ? root.scope.confirmPopup : null
     function onConfirmed() {
       if (!root.forgetSsid) return
-      forgetProc.exec(["sh", "-c", "nmcli connection delete id " + root.quote(root.forgetSsid)])
+      const ssid = root.forgetSsid
+      root.forgetSsid = ""
+      if (!root.radioEnabled) { root.open(); return }
+      forgetProc.exec(["sh", "-c", "nmcli connection delete id " + root.quote(ssid)])
     }
     function onCancelled() {
       if (!root.forgetSsid) return

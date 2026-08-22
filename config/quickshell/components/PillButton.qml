@@ -22,8 +22,9 @@ Rectangle {
 
   implicitHeight: 30
   radius: height / 2
-  color: root.enabled && (root.active ? root.fillColor
-                                      : root.filled ? root.inactiveFillColor : "transparent")
+  color: !root.enabled ? root.inactiveFillColor
+    : root.active ? root.fillColor
+    : root.filled ? root.inactiveFillColor : "transparent"
 
   Behavior on color {
     ColorAnimation {

@@ -15,6 +15,8 @@ ConnectionDropdownBase {
   property string forgetPath: ""
   readonly property var connectedDevices: root.devices.filter(d => d.connected)
   readonly property var availableDevices: root.devices.filter(d => !d.connected)
+  // Master gate: every secondary control is disabled unless the adapter is on.
+  readonly property bool radioEnabled: !!root.adapter && root.adapter.enabled
 
   function deviceGlyph(icon) {
     switch (String(icon || "").toLowerCase()) {
@@ -70,6 +72,7 @@ ConnectionDropdownBase {
   }
 
   function activate(item) {
+    if (!root.radioEnabled) return
     root.busyPath = item.path
     root.busyAction = item.connected ? "disconnect" : (item.paired ? "connect" : "pair")
     root.errorText = ""
@@ -87,6 +90,7 @@ ConnectionDropdownBase {
   }
 
   function forgetDevice(item) {
+    if (!root.radioEnabled) return
     root.forgetPath = item.path
     if (root.scope && root.scope.confirmPopup) {
       root.busyPath = ""
@@ -108,8 +112,21 @@ ConnectionDropdownBase {
   }
 
   Connections { target: Bluetooth; function onDefaultAdapterChanged() { root.refreshItems() } }
-  Connections { target: root.adapter; function onEnabledChanged() { root.refreshItems() } }
-  Connections { target: root.adapter; function onDiscoveringChanged() { root.refreshItems() } }
+  Connections {
+    target: root.adapter
+    function onEnabledChanged() {
+      // Adapter switched off: stop discovery and drop any in-flight operation.
+      if (root.adapter && !root.adapter.enabled) {
+        if (root.adapter.discovering) root.adapter.discovering = false
+        busyTimer.stop()
+        root.busyPath = ""
+        root.busyAction = ""
+        root.errorText = ""
+      }
+      root.refreshItems()
+    }
+    function onDiscoveringChanged() { root.refreshItems() }
+  }
   readonly property var adapter: Bluetooth.defaultAdapter
 
   Timer {
@@ -130,6 +147,7 @@ ConnectionDropdownBase {
       required property var modelData
       readonly property bool busy: root.busyPath === modelData.path
       width: parent.width; height: 48; radius: 12
+      opacity: root.radioEnabled ? 1 : 0.55
       color: modelData.connected || busy ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
       Row { anchors.fill: parent; anchors.margins: 10; spacing: 10
         Text { text: modelData.icon; color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter }
@@ -139,7 +157,7 @@ ConnectionDropdownBase {
         }
         Text { id: rowSpinner; visible: root.busyPath === modelData.path; text: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: 900; loops: Animation.Infinite; running: rowSpinner.visible } }
       }
-      MouseArea { anchors.fill: parent; enabled: !root.busyPath; onClicked: root.activate(modelData) }
+      MouseArea { anchors.fill: parent; enabled: root.radioEnabled && !root.busyPath; onClicked: root.activate(modelData) }
       Text {
         visible: modelData.paired && !busy
         anchors.right: parent.right
@@ -151,7 +169,7 @@ ConnectionDropdownBase {
         font.pixelSize: 13
         MouseArea {
           anchors.fill: parent
-          enabled: !root.busyPath
+          enabled: root.radioEnabled && !root.busyPath
           cursorShape: Qt.PointingHandCursor
           onClicked: root.forgetDevice(modelData)
         }
@@ -166,7 +184,7 @@ ConnectionDropdownBase {
       Text { id: bluetoothIcon; text: "󰂯"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Bluetooth"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - bluetoothIcon.implicitWidth - titleText.implicitWidth - 112); height: 1 }
-      PillButton { width: 30; filled: true; glyph: "\uf021"; onClicked: { root.errorText = ""; root.refreshItems() } }
+      PillButton { width: 30; filled: true; glyph: "\uf021"; enabled: root.radioEnabled; opacity: root.radioEnabled ? 1 : 0.5; onClicked: { root.errorText = ""; root.refreshItems() } }
       Rectangle {
         width: 52; height: 28; radius: 14
         anchors.verticalCenter: parent.verticalCenter
@@ -232,6 +250,8 @@ ConnectionDropdownBase {
       filled: true
       glyph: "\uf067"
       text: "Pair new device"
+      enabled: root.radioEnabled
+      opacity: root.radioEnabled ? 1 : 0.5
       onClicked: { if (root.scope && root.scope.bluetoothAddPopup) { root.close(); root.scope.bluetoothAddPopup.open() } }
     }
   }
@@ -241,6 +261,7 @@ ConnectionDropdownBase {
     function onConfirmed() {
       const path = root.forgetPath
       root.forgetPath = ""
+      if (!root.radioEnabled) { root.open(); return }
       const item = root.devices.find(d => d.path === path)
       if (!item || (!item.paired && !item.connected)) return
       try {

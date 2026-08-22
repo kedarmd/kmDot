@@ -15,6 +15,11 @@ ConnectionDropdownBase {
   property string busyPath: ""
   property string busyAction: ""
   property string resultText: ""
+  // Parent dropdown gates everything on the adapter being enabled.
+  readonly property bool radioAllowed: {
+    const d = root.scope && root.scope.bluetoothDropdown ? root.scope.bluetoothDropdown : null
+    return !!d && d.radioEnabled
+  }
 
   function refreshItems() {
     const values = Bluetooth.devices ? Bluetooth.devices.values : []
@@ -39,16 +44,22 @@ ConnectionDropdownBase {
         root.resultText = "Pairing failed"
       }
     }
-    if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.discovering = true
+    if (root.radioAllowed) Bluetooth.defaultAdapter.discovering = true
   }
   function activate(d) {
+    if (!root.radioAllowed) return
     root.busyPath = d.dbusPath || ""
     root.busyAction = "pair"
     root.resultText = "Pairing with " + d.name + "..."
     try { d.pair(); busyTimer.restart() } catch (e) { root.busyPath = ""; root.busyAction = ""; root.resultText = String(e) }
   }
   function openedChange() {
-    if (root.opened) { root.refreshItems(); return }
+    if (root.opened) {
+      // Never pair into a powered-off adapter: bounce straight back out.
+      if (!root.radioAllowed) { root.close(); return }
+      root.refreshItems()
+      return
+    }
     busyTimer.stop()
     root.busyPath = ""
     root.busyAction = ""
@@ -58,6 +69,14 @@ ConnectionDropdownBase {
 
   Connections { target: Bluetooth; function onDefaultAdapterChanged() { root.refreshItems() } }
   Connections { target: root.adapter; function onDiscoveringChanged() { root.refreshItems() } }
+  Connections {
+    id: bluetoothRadioWatch
+    target: root.scope && root.scope.bluetoothDropdown ? root.scope.bluetoothDropdown : null
+    // Bluetooth switched off while the pairing popup is open → close it.
+    function onRadioEnabledChanged() {
+      if (bluetoothRadioWatch.target && !bluetoothRadioWatch.target.radioEnabled && root.opened) root.close()
+    }
+  }
   readonly property var adapter: Bluetooth.defaultAdapter
 
   Timer {
@@ -103,7 +122,7 @@ ConnectionDropdownBase {
             width: parent.width; height: 44; radius: 12; color: Tokens.surfaceContainerHighest
             Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData.name || "Unknown device"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
             Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; visible: root.busyPath === (modelData.dbusPath || ""); text: "\uf013"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo" }
-            MouseArea { anchors.fill: parent; enabled: !root.busyPath; onClicked: root.activate(modelData) }
+            MouseArea { anchors.fill: parent; enabled: root.radioAllowed && !root.busyPath; onClicked: root.activate(modelData) }
           }
         }
         Text { visible: root.devices.length === 0; text: root.adapter && root.adapter.discovering ? "Scanning for devices..." : "No nearby devices found"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }

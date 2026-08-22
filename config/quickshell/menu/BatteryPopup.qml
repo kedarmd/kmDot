@@ -28,6 +28,8 @@ PanelWindow {
   property var scope: null
   property var points: []
   property var _raw: []
+  property bool graphHovered: false
+  property real graphHoverX: 0
   // Epoch (seconds) marking where the current graph begins. Points older than
   // this are dropped, so the graph starts fresh after a full charge or a manual
   // clear. 0 = show the full UPower history window.
@@ -113,6 +115,39 @@ PanelWindow {
     for (let i = 0; i < pts.length; i += step) out.push(pts[i])
     out.push(pts[pts.length - 1])
     return out
+  }
+
+  function graphEpochAtX(x) {
+    if (root.points.length < 2) return 0
+    const left = 2
+    const width = graphCanvas.width - 4
+    const first = root.points[0].epoch
+    const span = Math.max(1, root.points[root.points.length - 1].epoch - first)
+    const fraction = Math.max(0, Math.min(1, (x - left) / width))
+    return Math.round(first + fraction * span)
+  }
+
+  function graphPctAtEpoch(epoch) {
+    const pts = root.points
+    if (pts.length === 0) return 0
+    if (epoch <= pts[0].epoch) return pts[0].pct
+    for (let i = 1; i < pts.length; i++) {
+      if (pts[i].epoch >= epoch) {
+        const before = pts[i - 1]
+        const after = pts[i]
+        const span = after.epoch - before.epoch
+        if (span <= 0) return after.pct
+        const fraction = (epoch - before.epoch) / span
+        return before.pct + (after.pct - before.pct) * fraction
+      }
+    }
+    return pts[pts.length - 1].pct
+  }
+
+  function graphYForPct(pct) {
+    const top = 14
+    const height = graphCanvas.height - top - 4
+    return top + (100 - pct) / 100 * height
   }
 
   function buildHistory() {
@@ -336,8 +371,10 @@ PanelWindow {
 
         Row {
           width: parent.width
+          spacing: 8
 
           Text {
+            id: usageTitle
             anchors.verticalCenter: parent.verticalCenter
             text: "Battery usage"
             font.family: "JetBrainsMono Nerd Font Propo"
@@ -345,7 +382,10 @@ PanelWindow {
             color: Colors.muted
           }
 
-          Item { width: 1; height: 1 }
+          Item {
+            width: Math.max(0, parent.width - usageTitle.implicitWidth - clearBtn.width - 16)
+            height: 1
+          }
 
           Rectangle {
             id: clearBtn
@@ -393,6 +433,66 @@ PanelWindow {
           id: graphCanvas
           width: parent.width
           height: 120
+
+          Rectangle {
+            visible: root.graphHovered && root.points.length >= 2
+            x: root.graphHoverX
+            y: 14
+            width: 1
+            height: graphCanvas.height - 18
+            color: Colors.muted
+            opacity: 0.55
+          }
+
+          Rectangle {
+            visible: root.graphHovered && root.points.length >= 2
+            width: 8
+            height: 8
+            radius: 4
+            x: root.graphHoverX - width / 2
+            y: root.graphYForPct(root.graphPctAtEpoch(root.graphEpochAtX(root.graphHoverX))) - height / 2
+            color: Colors.primary
+            border.width: 2
+            border.color: Tokens.surfaceContainerHigh
+          }
+
+          Rectangle {
+            visible: root.graphHovered && root.points.length >= 2
+            width: hoverLabel.implicitWidth + 16
+            height: 30
+            radius: 7
+            x: Math.max(0, Math.min(graphCanvas.width - width,
+              root.graphHoverX - width / 2))
+            y: 0
+            color: Tokens.surfaceContainerHighest
+            border.width: 1
+            border.color: Tokens.outlineVariant
+            z: 2
+
+            Text {
+              id: hoverLabel
+              anchors.centerIn: parent
+              text: root.hhmm(root.graphEpochAtX(root.graphHoverX)) + "  "
+                + Math.round(root.graphPctAtEpoch(root.graphEpochAtX(root.graphHoverX))) + "%"
+              font.family: "JetBrainsMono Nerd Font Propo"
+              font.pixelSize: 11
+              color: Colors.text
+            }
+          }
+
+          MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+            onEntered: {
+              root.graphHovered = true
+              root.graphHoverX = Math.max(2, Math.min(graphCanvas.width - 2, mouseX))
+            }
+            onPositionChanged: {
+              root.graphHoverX = Math.max(2, Math.min(graphCanvas.width - 2, mouseX))
+            }
+            onExited: root.graphHovered = false
+          }
 
           onPaint: {
             const ctx = getContext("2d")
