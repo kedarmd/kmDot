@@ -77,7 +77,7 @@ LauncherBase {
       const open = !security || security === "--" || security === "NONE" || security === "OPEN"
       items.push({
         label: ssid,
-        subtitle: (active ? "active \u00b7 " : "") + (open ? "Open" : security) + " \u00b7 " + root.sigGlyph(signal),
+        subtitle: (active ? "active \u00b7 " : "") + (open ? "Open" : security) + " \u00b7 " + root.sigGlyph(signal) + " " + signal + "%",
         glyph: "\uf1eb",
         ssid: ssid,
         active: active,

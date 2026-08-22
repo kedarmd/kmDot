@@ -15,6 +15,10 @@ Scope {
   property ConnectionsLauncher connectionsLauncher: ConnectionsLauncher { scope: shellRoot }
   property WifiLauncher wifiLauncher: WifiLauncher { scope: shellRoot }
   property BluetoothLauncher bluetoothLauncher: BluetoothLauncher { scope: shellRoot }
+  property WifiDropdown wifiDropdown: WifiDropdown { scope: shellRoot }
+  property BluetoothDropdown bluetoothDropdown: BluetoothDropdown { scope: shellRoot }
+  property WifiAddPopup wifiAddPopup: WifiAddPopup { scope: shellRoot }
+  property BluetoothAddPopup bluetoothAddPopup: BluetoothAddPopup { scope: shellRoot }
   property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
   property ClipboardLauncher clipboardLauncher: ClipboardLauncher { scope: shellRoot }
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }

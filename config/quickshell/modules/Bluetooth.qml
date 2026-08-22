@@ -78,7 +78,7 @@ Item {
         if (root.adapter) root.adapter.enabled = !root.adapter.enabled
         root.refresh()
       } else {
-        toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-bluetooth"])
+        toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-bluetooth-dropdown"])
       }
     }
     onEntered: root.tooltip.show(root, root.tooltipText)
