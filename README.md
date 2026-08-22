@@ -8,7 +8,7 @@ fish · ghostty · hyprland · nvim · starship · swaync · tmux · xdg-desktop
 
 ## Screenshots
 
-The screenshots below were captured on an empty Workspace 3 to show the current Quickshell interface without an application window behind it.
+The screenshots below were captured show the current Quickshell interface without an application window behind it.
 
 ### Launchers
 
