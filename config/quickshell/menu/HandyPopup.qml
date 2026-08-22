@@ -27,6 +27,7 @@ PanelWindow {
   property int busyId: -1
   property string busyAction: ""
   readonly property bool busy: busyAction !== ""
+  readonly property real listHeight: 440
   readonly property string sockPath: {
     const rt = Quickshell.env("XDG_RUNTIME_DIR")
     return (rt ? rt : "/tmp") + "/kmdot-handy.sock"
@@ -161,7 +162,7 @@ PanelWindow {
           id: modelList
           visible: root.tab === 0
           width: parent.width
-          height: Math.min(330, Math.max(42, contentHeight))
+          height: root.listHeight
           spacing: 6
           clip: true
           interactive: contentHeight > height
@@ -181,7 +182,7 @@ PanelWindow {
           id: historyList
           visible: root.tab === 1
           width: parent.width
-          height: Math.min(440, Math.max(70, contentHeight))
+          height: root.listHeight
           spacing: 8
           clip: true
           interactive: contentHeight > height
