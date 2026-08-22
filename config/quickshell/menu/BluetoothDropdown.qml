@@ -12,6 +12,7 @@ ConnectionDropdownBase {
   property string busyPath: ""
   property string busyAction: ""
   property string errorText: ""
+  property string forgetPath: ""
   readonly property var connectedDevices: root.devices.filter(d => d.connected)
   readonly property var availableDevices: root.devices.filter(d => !d.connected)
 
@@ -85,11 +86,23 @@ ConnectionDropdownBase {
     if (root.busyPath) busyTimer.restart()
   }
 
-  function onOpenedChange() {
+  function forgetDevice(item) {
+    root.forgetPath = item.path
+    if (root.scope && root.scope.confirmPopup) {
+      root.busyPath = ""
+      root.busyAction = ""
+      busyTimer.stop()
+      root.close()
+      root.scope.confirmPopup.ask("Forget Bluetooth device", "Remove '" + item.name + "'" + (item.connected ? " and disconnect it" : "") + "? You will need to pair it again to use it.")
+    }
+  }
+
+  function openedChange() {
     if (!root.opened) {
       if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.discovering = false
       return
     }
+    root.errorText = ""
     root.refreshItems()
     if (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) Bluetooth.defaultAdapter.discovering = true
   }
@@ -115,18 +128,34 @@ ConnectionDropdownBase {
     id: deviceDelegate
     Rectangle {
       required property var modelData
-      readonly property bool dimmed: !!root.busyPath && root.busyPath !== modelData.path
+      readonly property bool busy: root.busyPath === modelData.path
       width: parent.width; height: 48; radius: 12
-      color: modelData.connected ? Tokens.primaryContainer : (dimmed ? Tokens.surfaceContainer : Tokens.surfaceContainerHighest)
+      color: modelData.connected || busy ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
       Row { anchors.fill: parent; anchors.margins: 10; spacing: 10
-        Text { text: modelData.icon; color: modelData.connected ? Tokens.on_primary_container : (dimmed ? Colors.muted : Colors.text_alt); font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter }
+        Text { text: modelData.icon; color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter }
         Column { width: parent.width - 70; anchors.verticalCenter: parent.verticalCenter
-          Text { width: parent.width; text: modelData.name; color: modelData.connected ? Tokens.on_primary_container : (dimmed ? Colors.muted : Colors.text); elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
-          Text { text: modelData.connected ? "Connected" : (modelData.paired ? "Paired" : (modelData.pairing ? "Pairing..." : "Not paired")); color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+          Text { width: parent.width; text: modelData.name; color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
+          Text { text: busy ? (root.busyAction === "disconnect" ? "Disconnecting..." : root.busyAction === "pair" ? "Pairing..." : "Connecting...") : (modelData.connected ? "Connected" : (modelData.paired ? "Paired" : (modelData.pairing ? "Pairing..." : "Not paired"))); color: modelData.connected || busy ? Tokens.on_primary_container : Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
         }
-        Text { visible: root.busyPath === modelData.path; text: "\uf013"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter }
+        Text { id: rowSpinner; visible: root.busyPath === modelData.path; text: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: 900; loops: Animation.Infinite; running: rowSpinner.visible } }
       }
       MouseArea { anchors.fill: parent; enabled: !root.busyPath; onClicked: root.activate(modelData) }
+      Text {
+        visible: modelData.paired && !busy
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        anchors.verticalCenter: parent.verticalCenter
+        text: "\uf1f8"
+        color: modelData.connected ? Tokens.on_primary_container : Colors.text_alt
+        font.family: "JetBrainsMono Nerd Font Propo"
+        font.pixelSize: 13
+        MouseArea {
+          anchors.fill: parent
+          enabled: !root.busyPath
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.forgetDevice(modelData)
+        }
+      }
     }
   }
 
@@ -137,7 +166,7 @@ ConnectionDropdownBase {
       Text { id: bluetoothIcon; text: "󰂯"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Bluetooth"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - bluetoothIcon.implicitWidth - titleText.implicitWidth - 112); height: 1 }
-      PillButton { width: 30; filled: true; glyph: "\uf021"; onClicked: root.refreshItems() }
+      PillButton { width: 30; filled: true; glyph: "\uf021"; onClicked: { root.errorText = ""; root.refreshItems() } }
       Rectangle {
         width: 52; height: 28; radius: 14
         anchors.verticalCenter: parent.verticalCenter
@@ -204,6 +233,31 @@ ConnectionDropdownBase {
       glyph: "\uf067"
       text: "Pair new device"
       onClicked: { if (root.scope && root.scope.bluetoothAddPopup) { root.close(); root.scope.bluetoothAddPopup.open() } }
+    }
+  }
+
+  Connections {
+    target: root.scope ? root.scope.confirmPopup : null
+    function onConfirmed() {
+      const path = root.forgetPath
+      root.forgetPath = ""
+      const item = root.devices.find(d => d.path === path)
+      if (!item || (!item.paired && !item.connected)) return
+      try {
+        if (item.connected) item.device.disconnect()
+        item.device.forget()
+        busyTimer.stop()
+        root.busyPath = ""
+        root.busyAction = ""
+        root.errorText = ""
+      } catch (e) { root.errorText = String(e) }
+      root.refreshItems()
+      root.open()
+    }
+    function onCancelled() {
+      if (!root.forgetPath) return
+      root.forgetPath = ""
+      root.open()
     }
   }
 }

@@ -19,6 +19,7 @@ PanelWindow {
   anchors { top: true; bottom: true; left: true; right: true }
 
   property bool opened: false
+  onOpenedChanged: root.openedChange()
   property var scope: null
   property string sockName: "kmdot-connection"
   property bool socketEnabled: true
@@ -45,6 +46,7 @@ PanelWindow {
     if (root.scope && root.scope.bluetoothDropdown && root.scope.bluetoothDropdown !== root) root.scope.bluetoothDropdown.close()
     if (root.scope && root.scope.wifiAddPopup && root.scope.wifiAddPopup !== root) root.scope.wifiAddPopup.close()
     if (root.scope && root.scope.bluetoothAddPopup && root.scope.bluetoothAddPopup !== root) root.scope.bluetoothAddPopup.close()
+    if (root.scope && root.scope.confirmPopup && root.scope.confirmPopup !== root) root.scope.confirmPopup.close()
     root.opened = true
     root.pickScreen()
     focusTimer.start()
@@ -54,6 +56,7 @@ PanelWindow {
   function close() { root.opened = false }
   function toggle() { if (root.opened) root.close(); else root.open() }
   function refreshItems() {}
+  function openedChange() {}
 
   SocketServer {
     active: root.socketEnabled

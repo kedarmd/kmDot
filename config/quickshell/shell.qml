@@ -19,6 +19,7 @@ Scope {
   property BluetoothDropdown bluetoothDropdown: BluetoothDropdown { scope: shellRoot }
   property WifiAddPopup wifiAddPopup: WifiAddPopup { scope: shellRoot }
   property BluetoothAddPopup bluetoothAddPopup: BluetoothAddPopup { scope: shellRoot }
+  property ConfirmPopup confirmPopup: ConfirmPopup { scope: shellRoot }
   property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
   property ClipboardLauncher clipboardLauncher: ClipboardLauncher { scope: shellRoot }
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }

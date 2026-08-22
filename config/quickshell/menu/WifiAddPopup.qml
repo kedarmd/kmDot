@@ -29,7 +29,7 @@ ConnectionDropdownBase {
     connectProc.exec(["sh", "-c", command + " 2>&1"])
   }
 
-  function onOpenedChange() {
+  function openedChange() {
     if (root.opened) ssidInput.forceActiveFocus()
     else if (root.scope && root.scope.wifiDropdown) root.scope.wifiDropdown.errorText = ""
   }

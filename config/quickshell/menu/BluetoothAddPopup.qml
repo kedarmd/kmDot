@@ -47,9 +47,13 @@ ConnectionDropdownBase {
     root.resultText = "Pairing with " + d.name + "..."
     try { d.pair(); busyTimer.restart() } catch (e) { root.busyPath = ""; root.busyAction = ""; root.resultText = String(e) }
   }
-  function onOpenedChange() {
-    if (root.opened) root.refreshItems()
-    else if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.discovering = false
+  function openedChange() {
+    if (root.opened) { root.refreshItems(); return }
+    busyTimer.stop()
+    root.busyPath = ""
+    root.busyAction = ""
+    root.resultText = ""
+    if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.discovering = false
   }
 
   Connections { target: Bluetooth; function onDefaultAdapterChanged() { root.refreshItems() } }

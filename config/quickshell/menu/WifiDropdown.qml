@@ -18,6 +18,7 @@ ConnectionDropdownBase {
   property string busyAction: ""
   property var savedNames: []
   property var pendingNetwork: null
+  property string forgetSsid: ""
   readonly property var connectedNetworks: root.networks.filter(n => n.active)
   readonly property var availableNetworks: root.networks.filter(n => !n.active)
 
@@ -69,6 +70,14 @@ ConnectionDropdownBase {
       root.scope.wifiAddPopup.failed = false
       root.scope.wifiAddPopup.resultText = ""
       root.scope.wifiAddPopup.open()
+    }
+  }
+  function forgetNetwork(network) {
+    root.forgetSsid = network.ssid
+    if (root.scope && root.scope.confirmPopup) {
+      root.busySsid = ""
+      root.close()
+      root.scope.confirmPopup.ask("Forget Wi-Fi network", "Forget '" + network.ssid + "'? You will need to re-enter the password to connect again.")
     }
   }
   function activate(n) {
@@ -168,20 +177,38 @@ ConnectionDropdownBase {
         Text { id: rowSpinner; visible: root.busySsid === modelData.ssid; text: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: 900; loops: Animation.Infinite; running: rowSpinner.visible } }
       }
       MouseArea { anchors.fill: parent; enabled: !root.busySsid; onClicked: root.activate(modelData) }
-      Text {
-        visible: modelData.saved && !modelData.open
+      Row {
         anchors.right: parent.right
         anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
-        text: "\uf044"
-        color: modelData.active ? Tokens.on_primary_container : Colors.text_alt
-        font.family: "JetBrainsMono Nerd Font Propo"
-        font.pixelSize: 13
-        MouseArea {
-          anchors.fill: parent
-          enabled: !root.busySsid
-          cursorShape: Qt.PointingHandCursor
-          onClicked: root.editNetwork(modelData)
+        spacing: 8
+        Text {
+          visible: modelData.saved && !modelData.open
+          text: "\uf044"
+          color: modelData.active ? Tokens.on_primary_container : Colors.text_alt
+          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 13
+          anchors.verticalCenter: parent.verticalCenter
+          MouseArea {
+            anchors.fill: parent
+            enabled: !root.busySsid
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.editNetwork(modelData)
+          }
+        }
+        Text {
+          visible: modelData.saved && !modelData.open
+          text: "\uf1f8"
+          color: modelData.active ? Tokens.on_primary_container : Colors.text_alt
+          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 13
+          anchors.verticalCenter: parent.verticalCenter
+          MouseArea {
+            anchors.fill: parent
+            enabled: !root.busySsid
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.forgetNetwork(modelData)
+          }
         }
       }
     }
@@ -223,7 +250,7 @@ ConnectionDropdownBase {
       Text { id: wifiIcon; text: "󰤨"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Wi-Fi"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - wifiIcon.implicitWidth - titleText.implicitWidth - 112); height: 1 }
-      PillButton { width: 30; filled: true; glyph: "\uf021"; onClicked: root.refreshItems() }
+      PillButton { width: 30; filled: true; glyph: "\uf021"; onClicked: { root.errorText = ""; root.refreshItems() } }
       Rectangle {
         width: 52; height: 28; radius: 14
         anchors.verticalCenter: parent.verticalCenter
@@ -297,4 +324,27 @@ ConnectionDropdownBase {
   }
 
   Process { id: radioProc; onExited: root.refreshItems() }
+
+  Process {
+    id: forgetProc
+    onExited: {
+      root.forgetSsid = ""
+      root.errorText = ""
+      root.refreshItems()
+      root.open()
+    }
+  }
+
+  Connections {
+    target: root.scope ? root.scope.confirmPopup : null
+    function onConfirmed() {
+      if (!root.forgetSsid) return
+      forgetProc.exec(["sh", "-c", "nmcli connection delete id " + root.quote(root.forgetSsid)])
+    }
+    function onCancelled() {
+      if (!root.forgetSsid) return
+      root.forgetSsid = ""
+      root.open()
+    }
+  }
 }
