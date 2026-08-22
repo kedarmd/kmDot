@@ -15,6 +15,17 @@ Item {
     return null
   }
 
+  function activateWorkspace(id) {
+    const ws = workspace(id)
+    if (ws) {
+      ws.activate()
+    } else if (Hyprland.usingLua) {
+      Hyprland.dispatch('hl.dsp.focus({ workspace = "' + id + '" })')
+    } else {
+      Hyprland.dispatch("workspace " + id)
+    }
+  }
+
   Row {
     id: row
     spacing: 0
@@ -70,7 +81,7 @@ Item {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: Hyprland.dispatch("workspace", String(wsId))
+            onClicked: root.activateWorkspace(wsId)
           }
         }
       }
