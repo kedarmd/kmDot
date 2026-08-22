@@ -28,6 +28,7 @@ Scope {
   property CalendarPopup calendarPopup: CalendarPopup { scope: shellRoot }
   property ServerModeDropdown serverModeDropdown: ServerModeDropdown { scope: shellRoot }
   property OpenCodeUsagePopup openCodeUsagePopup: OpenCodeUsagePopup { scope: shellRoot }
+  property HandyPopup handyPopup: HandyPopup { scope: shellRoot }
 
   Component.onCompleted: {
     // Force-instantiate the calendar popup at startup so its 30-min resync
@@ -94,10 +95,14 @@ Scope {
 
         HiddenModules {
           id: hiddenTray
-          stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened
+          stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened
           OpenCodeUsage {
             tooltip: tooltip
             popup: openCodeUsagePopup
+          }
+          Handy {
+            tooltip: tooltip
+            popup: handyPopup
           }
           ServerMode {
             dropdown: serverModeDropdown
