@@ -11,7 +11,9 @@ LauncherBase {
   countNoun: "app"
   footerHint: "\u2191\u2193 navigate \u00b7 \u23ce launch \u00b7 esc close"
 
-  property var apps: (function () {
+  property var apps: []
+
+  function rebuildApps() {
     const vals = DesktopEntries.applications.values
     const out = []
     for (let i = 0; i < vals.length; i++) {
@@ -20,8 +22,15 @@ LauncherBase {
       out.push(e)
     }
     out.sort((a, b) => a.name.localeCompare(b.name))
-    return out
-  })()
+    root.apps = out
+  }
+
+  Component.onCompleted: root.rebuildApps()
+
+  Connections {
+    target: DesktopEntries.applications
+    function onValuesChanged() { root.rebuildApps() }
+  }
 
   pool: root.apps
 

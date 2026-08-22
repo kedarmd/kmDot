@@ -27,6 +27,15 @@ LauncherBase {
     return "'" + s.replace(/'/g, "'\\''") + "'"
   }
 
+  function decodeNmcli(s) {
+    return String(s).replace(/\\([\\:sn])/g, function(_, code) {
+      if (code === ":") return ":"
+      if (code === "s") return " "
+      if (code === "n") return "\n"
+      return "\\"
+    })
+  }
+
   function sigGlyph(sig) {
     if (sig >= 75) return "\u2588\u2588\u2588\u2588"
     if (sig >= 50) return "\u2588\u2588\u2586\u2581"
@@ -62,7 +71,7 @@ LauncherBase {
   function buildPool() {
     const savedSet = {}
     for (const n of root._saved) {
-      const t = n.trim()
+      const t = root.decodeNmcli(n.trim())
       if (t) savedSet[t] = true
     }
     const items = []
@@ -70,7 +79,7 @@ LauncherBase {
       const parts = line.split(":")
       if (parts.length < 3) continue
       const active = parts[0] === "yes"
-      const ssid = parts.slice(1, parts.length - 2).join(":")
+      const ssid = root.decodeNmcli(parts.slice(1, parts.length - 2).join(":"))
       const signal = parseInt(parts[parts.length - 2], 10) || 0
       const security = parts[parts.length - 1] || ""
       if (!ssid) continue

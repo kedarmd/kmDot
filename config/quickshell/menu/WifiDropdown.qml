@@ -47,6 +47,14 @@ ConnectionDropdownBase {
   }
 
   function quote(s) { return "'" + s.replace(/'/g, "'\\''") + "'" }
+  function decodeNmcli(s) {
+    return String(s).replace(/\\([\\:sn])/g, function(_, code) {
+      if (code === ":") return ":"
+      if (code === "s") return " "
+      if (code === "n") return "\n"
+      return "\\"
+    })
+  }
 
   function fmtRate(mbps) {
     if (mbps >= 100) return Math.round(mbps) + " Mbps"
@@ -180,7 +188,7 @@ ConnectionDropdownBase {
         if (line.startsWith("STATE:")) { root.state = line.slice(6).trim(); return }
         const p = line.split(":")
         if (p.length < 4) return
-        const ssid = p.slice(1, p.length - 2).join(":")
+        const ssid = root.decodeNmcli(p.slice(1, p.length - 2).join(":"))
         if (!ssid) return
         const security = p[p.length - 1]
         root.addNetwork({
@@ -203,7 +211,7 @@ ConnectionDropdownBase {
       onRead: function(data) {
         const p = String(data).split(":")
         if (p.length >= 2 && p[p.length - 1] === "802-11-wireless") {
-          const name = p.slice(0, p.length - 1).join(":")
+          const name = root.decodeNmcli(p.slice(0, p.length - 1).join(":"))
           if (name && root.savedNames.indexOf(name) < 0) {
             root.savedNames = root.savedNames.concat(name)
             root.markSaved(name)
@@ -220,7 +228,7 @@ ConnectionDropdownBase {
         for (const line of String(this.text).split("\n")) {
           const p = line.trim().split(":")
           if (p.length < 2 || p[p.length - 1] !== "802-11-wireless") continue
-          root.connectedSsid = p.slice(0, p.length - 1).join(":")
+          root.connectedSsid = root.decodeNmcli(p.slice(0, p.length - 1).join(":"))
           root.addNetwork({ ssid: root.connectedSsid, active: true, signal: 0, open: false, security: "Connected" })
           return
         }

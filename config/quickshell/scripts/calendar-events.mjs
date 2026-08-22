@@ -22,7 +22,7 @@ today.setHours(0, 0, 0, 0);
 const WINDOW_START = today.getTime() - 400 * DAY_MS;
 const WINDOW_END = today.getTime() + 400 * DAY_MS;
 
-// ---- date helpers (local-time based, tz via system TZ database) ----
+// ---- date helpers (calendar arithmetic is separate from instants) ----
 
 // Parse "YYYYMMDD" or "YYYYMMDDTHHMMSS" / "...THHMM" into a Date in the given
 // IANA timezone (defaults to the local timezone). Returns {date, allDay}.
@@ -31,7 +31,9 @@ function parseDt(value, tzid) {
   if (v.startsWith(";")) v = v.split(":", 1)[1] || v;
   // date-only
   if (v.length === 8 && /^\d{8}$/.test(v)) {
-    return { date: new Date(`${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}T00:00:00`), allDay: true };
+    const iso = `${v.slice(0, 4)}-${v.slice(4, 6)}-${v.slice(6, 8)}T00:00:00`;
+    const date = tzid ? new Date(toZonedISO(iso, tzid)) : new Date(iso);
+    return { date, allDay: true };
   }
   // strip trailing Z (UTC)
   const isZ = v.endsWith("Z");
@@ -91,13 +93,39 @@ function toLocal(date) {
   return date; // Date already holds an absolute instant; formatting uses local tz
 }
 
+function zonedParts(date, tz) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+  }).formatToParts(date);
+  const read = (type) => Number(parts.find((p) => p.type === type)?.value);
+  return { y: read("year"), mo: read("month") - 1, d: read("day"),
+    h: read("hour"), m: read("minute"), s: read("second") };
+}
+
+function civilDate(y, mo, d, h = 0, m = 0, s = 0) {
+  return new Date(Date.UTC(y, mo, d, h, m, s));
+}
+
+function civilParts(date) {
+  return { y: date.getUTCFullYear(), mo: date.getUTCMonth(), d: date.getUTCDate(),
+    h: date.getUTCHours(), m: date.getUTCMinutes(), s: date.getUTCSeconds() };
+}
+
+function civilToInstant(date, tzid) {
+  const p = civilParts(date);
+  if (!tzid) return new Date(p.y, p.mo, p.d, p.h, p.m, p.s);
+  const pad = (n) => String(n).padStart(2, "0");
+  return new Date(toZonedISO(`${String(p.y).padStart(4, "0")}-${pad(p.mo + 1)}-${pad(p.d)}T${pad(p.h)}:${pad(p.m)}:${pad(p.s)}`, tzid));
+}
+
 // ---- RRULE expansion (bounded to the window) ----
 
 const DOW = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
 const DOW_NAME = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
 
 // Parse an RRULE string into a rule object.
-function parseRule(str) {
+function parseRule(str, tzid) {
   const rule = { freq: null, interval: 1, count: Infinity, until: Infinity, byday: null, bymonth: null, bymonthday: null };
   for (const part of String(str).split(";")) {
     const eq = part.indexOf("=");
@@ -107,7 +135,7 @@ function parseRule(str) {
     if (k === "FREQ") rule.freq = v.toUpperCase();
     else if (k === "INTERVAL") rule.interval = Math.max(1, parseInt(v, 10) || 1);
     else if (k === "COUNT") rule.count = parseInt(v, 10) || Infinity;
-    else if (k === "UNTIL") rule.until = parseDt(v, "").date?.getTime() ?? Infinity;
+    else if (k === "UNTIL") rule.until = parseDt(v, tzid).date?.getTime() ?? Infinity;
     else if (k === "BYDAY") rule.byday = v.split(",").map((s) => s.trim().toUpperCase());
     else if (k === "BYMONTH") rule.bymonth = v.split(",").map((s) => parseInt(s, 10));
     else if (k === "BYMONTHDAY") rule.bymonthday = v.split(",").map((s) => parseInt(s, 10));
@@ -132,9 +160,7 @@ function advance(date, freq, interval) {
   return d;
 }
 
-function weekdayOf(d) {
-  return DOW_NAME[d.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()];
-}
+function weekdayOf(d) { return d.getDay(); }
 
 // Re-apply the DTSTART's time-of-day (H:M:S) onto a candidate date.
 function atStartTime(cand, startLocal, startHMS) {
@@ -145,10 +171,14 @@ function atStartTime(cand, startLocal, startHMS) {
 
 // Expand a rule from a start date into a list of local dates (bounded).
 // Generates candidate dates per FREQ, then filters by BYDAY/BYMONTH/BYMONTHDAY.
-function expandRule(rule, start) {
+function expandRule(rule, start, tzid) {
   const out = [];
   if (!rule.freq) return [start];
-  const startLocal = new Date(start.getTime());
+  const sp = tzid ? zonedParts(start, tzid) : {
+    y: start.getFullYear(), mo: start.getMonth(), d: start.getDate(),
+    h: start.getHours(), m: start.getMinutes(), s: start.getSeconds(),
+  };
+  const startLocal = new Date(sp.y, sp.mo, sp.d, sp.h, sp.m, sp.s);
   const startHMS = { h: startLocal.getHours(), m: startLocal.getMinutes(), s: startLocal.getSeconds() };
   startLocal.setHours(0, 0, 0, 0);
   const freq = rule.freq;
@@ -240,9 +270,12 @@ function expandRule(rule, start) {
   // filter + apply COUNT/UNTIL/byday/bymonth/by-month-day
   let count = 0;
   for (const cand of candidates) {
-    if (cand.getTime() < startLocal.getTime()) continue;
-    if (cand.getTime() > rule.until) break;
-    if (cand.getTime() > WINDOW_END) break;
+    const instant = tzid
+      ? civilToInstant(civilDate(cand.getFullYear(), cand.getMonth(), cand.getDate(), cand.getHours(), cand.getMinutes(), cand.getSeconds()), tzid)
+      : cand;
+    if (instant.getTime() < start.getTime()) continue;
+    if (instant.getTime() > rule.until) break;
+    if (instant.getTime() > WINDOW_END) break;
     if (byday && freq !== "WEEKLY" && freq !== "MONTHLY") {
       const wd = weekdayOf(cand);
       if (!byday.some((b) => b.day === wd)) continue;
@@ -252,7 +285,7 @@ function expandRule(rule, start) {
       if (!byday.some((b) => b.day === wd)) continue;
     }
     if (rule.bymonth && !rule.bymonth.includes(cand.getMonth() + 1)) continue;
-    if (cand.getTime() >= WINDOW_START) out.push(new Date(cand.getTime()));
+    if (instant.getTime() >= WINDOW_START) out.push(new Date(instant.getTime()));
     count++;
     if (rule.count !== Infinity && count >= rule.count) break;
   }
@@ -279,7 +312,12 @@ function splitValue(line) {
 function parseEvents(icsText) {
   const blocks = [];
   let current = null;
+  const unfolded = [];
   for (const raw of String(icsText).replace(/\r\n/g, "\n").split("\n")) {
+    if (/^[ \t]/.test(raw) && unfolded.length) unfolded[unfolded.length - 1] += raw.slice(1);
+    else unfolded.push(raw);
+  }
+  for (const raw of unfolded) {
     const line = raw.trim();
     if (!line) continue;
     if (line === "BEGIN:VEVENT") { current = {}; continue; }
@@ -287,7 +325,8 @@ function parseEvents(icsText) {
     if (current) {
       const { name, params, value } = splitValue(line);
       if (["DTSTART", "DTEND", "DTSTAMP", "SUMMARY", "RRULE", "EXDATE", "UID", "DESCRIPTION", "LOCATION"].includes(name)) {
-        current[name] = { params, value };
+        if (name === "EXDATE") (current.EXDATE ??= []).push({ params, value });
+        else current[name] = { params, value };
       }
     }
   }
@@ -313,15 +352,18 @@ function parseEvents(icsText) {
 
     let occs = [startDt];
     if (blk.RRULE) {
-      const rule = parseRule(blk.RRULE.value);
-      occs = expandRule(rule, startDt);
+      const rule = parseRule(blk.RRULE.value, tzid);
+      occs = expandRule(rule, startDt, tzid);
     }
 
     const exdates = new Set();
     if (blk.EXDATE) {
-      for (const part of blk.EXDATE.value.split(",")) {
-        const d = parseDt(part, tzid).date;
-        if (d) exdates.add(d.getTime());
+      for (const entry of blk.EXDATE) {
+        const exTzid = entry.params.TZID || tzid;
+        for (const part of entry.value.split(",")) {
+          const d = parseDt(part, exTzid).date;
+          if (d) exdates.add(d.getTime());
+        }
       }
     }
 
