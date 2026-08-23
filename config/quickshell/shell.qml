@@ -22,6 +22,7 @@ Scope {
   property ConfirmPopup confirmPopup: ConfirmPopup { scope: shellRoot }
   property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
   property ClipboardLauncher clipboardLauncher: ClipboardLauncher { scope: shellRoot }
+  property HandyLauncher handyLauncher: HandyLauncher { scope: shellRoot }
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }
   property VolumePopup volumePopup: VolumePopup { scope: shellRoot }
   property BrightnessPopup brightnessPopup: BrightnessPopup { scope: shellRoot }

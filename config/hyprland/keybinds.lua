@@ -11,7 +11,9 @@ hl.bind(mod .. " + B", hl.dsp.exec_cmd("zen-browser")) -- Open Zen browser
 hl.bind(mod .. " + F", hl.dsp.exec_cmd("/usr/bin/nautilus")) -- Open file manager
 hl.bind(mod .. " + SPACE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/launcher.sh'")) -- Application launcher (quickshell)
 hl.bind(mod .. " + T", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-theme'")) -- Theme switcher (quickshell)
-hl.bind(mod .. " + V", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-clipboard'")) -- Clipboard history (quickshell)
+ hl.bind(mod .. " + V", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-clipboard'")) -- Clipboard history (quickshell)
+
+hl.bind(mod .. " + H", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-handy-launcher'")) -- Handy launcher (quickshell)
 hl.bind(mod .. " + W", hl.dsp.window.close()) -- Close window
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exit()) -- Exit Hyprland
 hl.bind(mod .. " + L", hl.dsp.exec_cmd("hyprlock")) -- Lock screen

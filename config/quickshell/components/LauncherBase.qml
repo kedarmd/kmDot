@@ -61,6 +61,18 @@ Item {
 
   signal activated(var item)
   signal footerActionClicked()
+  signal itemAction(var action, var item)
+  // Optional per-item modifier chords (e.g. Ctrl+R retry): each entry is
+  // { key: int, ctrl: bool, hint: string }. A chord match on the search input
+  // emits itemAction(action, selectedItem); hints are appended to the footer.
+  // Bare keys must stay reserved for typing — chords only.
+  property var itemActions: []
+
+  readonly property string fullFooterHint: {
+    const parts = [root.footerHint]
+    for (const i in root.itemActions) parts.push(root.itemActions[i].hint || "")
+    return parts.filter(p => p !== "").join(" \u00b7 ")
+  }
 
   onQueryChanged: root.recompute()
   onPoolChanged: root.recompute()
@@ -74,6 +86,30 @@ Item {
   function itemSubtitle(item) { return item.subtitle || item.genericName || item.comment || "" }
   function itemGlyph(item) { return item.glyph || "" }
   function itemIcon(item) { return item.icon || "" }
+  // Row-local extras (all default no-ops so existing launchers render unchanged):
+  // statusGlyph = right-edge glyph (✓ selected, ▶/⏸ playback, spinner);
+  // subtitleLive = subtitle override that may tick live (playback/retry state);
+  // progress = 0..1 fill along the row's bottom edge;
+  // body = optional third line under the subtitle (row grows taller only when set).
+  function itemStatusGlyph(item) { return item.statusGlyph || "" }
+  function itemSubtitleLive(item) { return root.itemSubtitle(item) }
+  function itemProgress(item) { return item.progress || 0 }
+  function itemBody(item) { return item.body || "" }
+
+  function tryItemAction(event) {
+    if (root.promptMode) return false
+    const ctrl = (event.modifiers & Qt.ControlModifier) !== 0
+    for (const i in root.itemActions) {
+      const a = root.itemActions[i]
+      if (a.key === event.key && !!a.ctrl === ctrl) {
+        if (root.results.length === 0 || root.selectedIndex < 0
+            || root.selectedIndex >= root.results.length) return false
+        root.itemAction(a, root.results[root.selectedIndex].item)
+        return true
+      }
+    }
+    return false
+  }
 
   // ---- matcher helpers ----
   function toStr(v) {
@@ -184,6 +220,8 @@ Item {
     if (root.scope && root.scope.brightnessPopup) root.scope.brightnessPopup.close()
     if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
     if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
+    if (root.scope && root.scope.openCodeUsagePopup) root.scope.openCodeUsagePopup.close()
+    if (root.scope && root.scope.handyPopup) root.scope.handyPopup.close()
     if (root.scope) root.scope.activeLauncher = root
     root.opened = true
   }
@@ -219,6 +257,13 @@ Item {
     if (root.results.length === 0) return
     root.selectedIndex = (root.selectedIndex + delta + root.results.length) % root.results.length
     resultsList.positionViewAtIndex(root.selectedIndex, ListView.Center)
+  }
+
+  // Clear the query both logically and visually (subclasses can't reach the
+  // private search input).
+  function resetQuery() {
+    root.query = ""
+    searchInput.text = ""
   }
 
   function activate() {
@@ -381,6 +426,7 @@ Item {
             Keys.onPressed: function(event) {
               if (event.key === Qt.Key_PageUp) { root.step(10); event.accepted = true }
               else if (event.key === Qt.Key_PageDown) { root.step(-10); event.accepted = true }
+              else if (root.tryItemAction(event)) event.accepted = true
             }
             Keys.onEscapePressed: function(event) {
               if (root.promptMode) {
@@ -423,7 +469,7 @@ Item {
           required property var modelData
           required property int index
           width: resultsList.width
-          height: 52
+          height: bodyText.visible ? bodyText.height + 56 : 52
           radius: 14
           color: root.selectedIndex === index ? Tokens.primaryContainer : "transparent"
 
@@ -470,7 +516,7 @@ Item {
 
             Column {
               anchors.verticalCenter: parent.verticalCenter
-              width: parent.width - 40
+              width: parent.width - 40 - (statusGlyphText.visible ? statusGlyphText.implicitWidth + 14 : 0)
 
               Text {
                 width: parent.width
@@ -484,14 +530,49 @@ Item {
 
               Text {
                 width: parent.width
-                text: root.itemSubtitle(modelData.item)
+                text: root.itemSubtitleLive(modelData.item)
                 elide: Text.ElideRight
                 font.pixelSize: 12
                 font.family: "JetBrainsMono Nerd Font Propo"
                 color: root.selectedIndex === index ? Tokens.alpha(Tokens.on_primary_container, 0.75) : Colors.muted
                 visible: text !== ""
               }
+
+              Text {
+                id: bodyText
+                width: parent.width
+                visible: root.itemBody(modelData.item) !== ""
+                text: root.itemBody(modelData.item)
+                wrapMode: Text.Wrap
+                font.pixelSize: 11
+                font.family: "JetBrainsMono Nerd Font Propo"
+                color: root.selectedIndex === index ? Tokens.alpha(Tokens.on_primary_container, 0.6) : Colors.text_alt
+              }
             }
+          }
+
+          Text {
+            id: statusGlyphText
+            anchors.right: parent.right
+            anchors.rightMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.itemStatusGlyph(modelData.item) !== ""
+            text: root.itemStatusGlyph(modelData.item)
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 14
+            color: root.selectedIndex === index ? Tokens.on_primary_container : Colors.primary
+          }
+
+          Rectangle {
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 6
+            anchors.left: parent.left
+            anchors.leftMargin: 12
+            width: (parent.width - 24) * Math.min(1, Math.max(0, root.itemProgress(modelData.item)))
+            height: 3
+            radius: 1
+            color: Colors.primary
+            visible: width > 0
           }
 
           MouseArea {
@@ -618,7 +699,7 @@ Item {
           Text {
             id: footerHintText
             anchors.verticalCenter: parent.verticalCenter
-            text: root.promptMode ? root.promptHint : root.footerHint
+            text: root.promptMode ? root.promptHint : root.fullFooterHint
             font.pixelSize: 12
             font.family: "JetBrainsMono Nerd Font Propo"
             color: Colors.muted
