@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import QtMultimedia
 import qs
 import "../components"
 
@@ -28,6 +29,10 @@ PanelWindow {
   property string busyAction: ""
   readonly property bool busy: busyAction !== ""
   readonly property real listHeight: 440
+  property int playingId: -1
+  property real progress: 0
+  property bool playbackStopping: false
+  readonly property string recordingsDir: Quickshell.env("HOME") + "/.local/share/com.pais.handy/recordings"
   readonly property string sockPath: {
     const rt = Quickshell.env("XDG_RUNTIME_DIR")
     return (rt ? rt : "/tmp") + "/kmdot-handy.sock"
@@ -51,16 +56,46 @@ PanelWindow {
     refresh()
     focusTimer.start()
   }
-  function close() { opened = false; busyAction = ""; busyId = -1 }
+  function close() { stopPlayback(); opened = false; busyAction = ""; busyId = -1 }
   function toggle() { opened ? close() : open() }
   function pickScreen() { posProc.exec(["sh", "-c", "hyprctl cursorpos"]) }
   function refresh() {
+    stopPlayback()
     errorText = ""
     run("models")
     run("history")
   }
   function fmtTime(epoch) {
     return new Date(epoch * 1000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+  }
+  function fmtDur(ms) {
+    const total = Math.max(0, Math.floor(Number(ms || 0) / 1000))
+    return Math.floor(total / 60) + ":" + String(total % 60).padStart(2, "0")
+  }
+  function syncProgress() {
+    progress = playingId >= 0 && player.duration > 0 ? Math.min(1, player.position / player.duration) : 0
+  }
+  function stopPlayback() {
+    playingId = -1
+    progress = 0
+    if (player.playbackState === MediaPlayer.PlayingState || player.source.toString() !== "") {
+      playbackStopping = true
+      player.stop()
+      player.source = ""
+      playbackStopping = false
+    }
+  }
+  function togglePlay(row) {
+    if (playingId === row.id) { stopPlayback(); return }
+    if (!row.audioAvailable) return
+    playingId = row.id
+    progress = 0
+    errorText = ""
+    playbackStopping = true
+    player.stop()
+    player.source = "file://" + recordingsDir + "/" + row.fileName
+    playbackStopping = false
+    player.play()
   }
   function applyResult(text) {
     try {
@@ -107,6 +142,17 @@ PanelWindow {
     stdout: StdioCollector { onStreamFinished: root.applyResult(String(this.text)) }
   }
   Process { id: copyProc }
+  MediaPlayer {
+    id: player
+    audioOutput: AudioOutput {}
+    onPositionChanged: root.syncProgress()
+    onDurationChanged: root.syncProgress()
+    onPlaybackStateChanged: if (playbackState === MediaPlayer.StoppedState && !root.playbackStopping) root.stopPlayback()
+    onErrorOccurred: {
+      if (root.playingId >= 0) root.errorText = "Could not play recording"
+      root.stopPlayback()
+    }
+  }
   Process {
     id: posProc
     stdout: StdioCollector {
@@ -190,21 +236,60 @@ PanelWindow {
           delegate: Rectangle {
             id: historyRow
             required property var modelData
-            width: historyList.width - 8; height: editor.implicitHeight + 58; radius: 8
+            readonly property bool isPlaying: root.playingId === modelData.id
+            width: historyList.width - 8; height: Math.max(editor.implicitHeight, 36) + (modelData.audioAvailable ? 76 : 44); radius: 8
             color: Tokens.surfaceContainerHighest
-            Text { anchors.left: parent.left; anchors.leftMargin: 10; anchors.top: parent.top; anchors.topMargin: 7; text: modelData.title; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10; elide: Text.ElideRight; width: parent.width - 20 }
-            TextEdit {
-              id: editor
-              anchors.left: parent.left; anchors.leftMargin: 10; anchors.right: parent.right; anchors.rightMargin: 10; anchors.top: parent.top; anchors.topMargin: 25
-              width: parent.width - 20; height: Math.max(36, implicitHeight); text: modelData.text; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; wrapMode: TextEdit.Wrap; selectByMouse: true; persistentSelection: true
-              readOnly: root.busy && root.busyId !== modelData.id
+            Text {
+              anchors.left: parent.left; anchors.leftMargin: 10; anchors.verticalCenter: actionsRow.verticalCenter
+              text: root.fmtTime(modelData.timestamp); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10; width: 105; elide: Text.ElideRight
             }
             Row {
-              anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom; anchors.bottomMargin: 7; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 8
-              Text { anchors.verticalCenter: parent.verticalCenter; text: root.fmtTime(modelData.timestamp); color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10; width: 105; elide: Text.ElideRight }
+              id: actionsRow
+              anchors.right: parent.right; anchors.rightMargin: 10; anchors.top: parent.top; anchors.topMargin: 7; spacing: 8
               PillButton { width: 62; height: 24; text: "Save"; glyph: "\uf0c7"; glyphSize: 10; textSize: 10; enabled: !root.busy; onClicked: root.save(modelData, editor.text) }
               PillButton { width: 66; height: 24; text: "Copy"; glyph: "\uf0c5"; glyphSize: 10; textSize: 10; enabled: !root.busy; onClicked: root.copy(editor.text) }
               PillButton { width: 84; height: 24; text: root.busyId === modelData.id && root.busyAction === "retry" ? "Retrying" : (modelData.audioAvailable ? "Retry" : "No audio"); glyph: modelData.audioAvailable ? "\uf2f1" : "\uf071"; glyphSize: 10; textSize: 10; enabled: !root.busy && modelData.audioAvailable; onClicked: root.retry(modelData) }
+            }
+            TextEdit {
+              id: editor
+              anchors.left: parent.left; anchors.leftMargin: 10; anchors.right: parent.right; anchors.rightMargin: 10; anchors.top: actionsRow.bottom; anchors.topMargin: 5
+              width: parent.width - 20; height: Math.max(36, implicitHeight); text: modelData.text; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; wrapMode: TextEdit.Wrap; selectByMouse: true; persistentSelection: true
+              readOnly: root.busy && root.busyId !== modelData.id
+            }
+            Item {
+              visible: modelData.audioAvailable
+              anchors { left: parent.left; right: parent.right; margins: 10; top: editor.bottom; topMargin: 7 }
+              height: 24
+              PillButton {
+                id: playButton
+                anchors { left: parent.left; verticalCenter: parent.verticalCenter }
+                width: 30; height: 24; active: historyRow.isPlaying
+                glyph: historyRow.isPlaying ? "\uf04d" : "\uf04b"; glyphSize: 11
+                enabled: !root.busy && modelData.audioAvailable
+                onClicked: root.togglePlay(modelData)
+              }
+              Text {
+                id: timeText
+                anchors { left: playButton.right; leftMargin: 8; verticalCenter: parent.verticalCenter }
+                width: 78
+                horizontalAlignment: Text.AlignHCenter
+                text: (historyRow.isPlaying ? root.fmtDur(player.position) : "0:00")
+                  + " / "
+                  + ((historyRow.isPlaying && player.duration > 0) ? root.fmtDur(player.duration)
+                    : (modelData.durationMs != null ? root.fmtDur(modelData.durationMs) : "--:--"))
+                color: historyRow.isPlaying ? Colors.text : Colors.text_alt
+                font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10
+              }
+              Rectangle {
+                anchors { left: timeText.right; leftMargin: 8; right: parent.right; verticalCenter: parent.verticalCenter }
+                height: 6; radius: 3; color: Colors.muted
+                Rectangle {
+                  anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                  width: parent.width * (historyRow.isPlaying ? root.progress : 0)
+                  radius: 3; color: Colors.primary
+                  Behavior on width { NumberAnimation { duration: 120 } }
+                }
+              }
             }
           }
         }

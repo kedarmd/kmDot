@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, readSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -33,6 +33,37 @@ function settings() {
   return JSON.parse(readFileSync(settingsFile, "utf8"));
 }
 
+function wavDurationMs(path) {
+  try {
+    const fd = openSync(path, "r");
+    try {
+      const header = Buffer.alloc(12);
+      if (readSync(fd, header, 0, 12, 0) !== 12) return null;
+      if (header.toString("ascii", 0, 4) !== "RIFF" || header.toString("ascii", 8, 12) !== "WAVE") return null;
+      const chunkHeader = Buffer.alloc(8);
+      const format = Buffer.alloc(16);
+      let byteRate = 0;
+      let offset = 12;
+      while (readSync(fd, chunkHeader, 0, 8, offset) === 8) {
+        const id = chunkHeader.toString("ascii", 0, 4);
+        const size = chunkHeader.readUInt32LE(4);
+        if (id === "fmt " && size >= 16) {
+          readSync(fd, format, 0, 16, offset + 8);
+          byteRate = format.readUInt32LE(8);
+        } else if (id === "data" && byteRate > 0) {
+          return Math.round((size / byteRate) * 1000);
+        }
+        offset += 8 + size + (size % 2);
+      }
+      return null;
+    } finally {
+      closeSync(fd);
+    }
+  } catch {
+    return null;
+  }
+}
+
 function writeSettings(data) {
   const temporary = settingsFile + ".kmdot-tmp-" + process.pid;
   writeFileSync(temporary, JSON.stringify(data, null, 2) + "\n", { mode: 0o600 });
@@ -61,18 +92,23 @@ function listHistory() {
   const raw = sqlite(`SELECT id, file_name, timestamp, title, transcription_text,
     post_processed_text, post_process_requested
     FROM transcription_history ORDER BY timestamp DESC LIMIT 5;`);
-  const rows = JSON.parse(raw || "[]").map(row => ({
-    id: Number(row.id),
-    fileName: String(row.file_name || ""),
-    timestamp: Number(row.timestamp || 0),
-    title: String(row.title || ""),
-    text: String(row.post_processed_text ?? row.transcription_text ?? ""),
-    rawText: String(row.transcription_text ?? ""),
-    failed: !String(row.transcription_text ?? "").trim(),
-    audioAvailable: existsSync(join(recordingsDir, String(row.file_name || ""))),
-    postProcessed: row.post_processed_text != null,
-    postProcessRequested: Boolean(Number(row.post_process_requested || 0))
-  }));
+  const rows = JSON.parse(raw || "[]").map(row => {
+    const fileName = String(row.file_name || "");
+    const audioAvailable = existsSync(join(recordingsDir, fileName));
+    return {
+      id: Number(row.id),
+      fileName,
+      timestamp: Number(row.timestamp || 0),
+      title: String(row.title || ""),
+      text: String(row.post_processed_text ?? row.transcription_text ?? ""),
+      rawText: String(row.transcription_text ?? ""),
+      failed: !String(row.transcription_text ?? "").trim(),
+      audioAvailable,
+      durationMs: audioAvailable ? wavDurationMs(join(recordingsDir, fileName)) : null,
+      postProcessed: row.post_processed_text != null,
+      postProcessRequested: Boolean(Number(row.post_process_requested || 0))
+    };
+  });
   return { ok: true, history: rows };
 }
 
