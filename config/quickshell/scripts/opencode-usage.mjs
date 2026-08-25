@@ -5,7 +5,19 @@ import { execFileSync } from "node:child_process";
 const now = new Date();
 const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
 const startMs = start.getTime();
-const sql = `SELECT data FROM message WHERE time_created >= ${startMs} ORDER BY time_created ASC`;
+const sql = [
+  "SELECT date(time_created / 1000, 'unixepoch', 'localtime') AS day,",
+  "json_extract(data, '$.providerID') || '/' || json_extract(data, '$.modelID') AS model,",
+  "SUM(COALESCE(json_extract(data, '$.tokens.input'), 0)",
+  " + COALESCE(json_extract(data, '$.tokens.output'), 0)",
+  " + COALESCE(json_extract(data, '$.tokens.reasoning'), 0)",
+  " + COALESCE(json_extract(data, '$.tokens.cache.read'), 0)",
+  " + COALESCE(json_extract(data, '$.tokens.cache.write'), 0)) AS tokens,",
+  "SUM(COALESCE(json_extract(data, '$.cost'), 0)) AS cost",
+  "FROM message",
+  `WHERE time_created >= ${startMs} AND json_extract(data, '$.role') = 'assistant'`,
+  "GROUP BY day, model"
+].join(" ");
 
 const dayKey = date => {
   const y = date.getFullYear();
@@ -15,13 +27,6 @@ const dayKey = date => {
 };
 
 const emptyTotals = () => ({ tokens: 0, cost: 0 });
-const addTokens = (data, totals) => {
-  const tokens = data.tokens || {};
-  const cache = tokens.cache || {};
-  totals.tokens += Number(tokens.input || 0) + Number(tokens.output || 0)
-    + Number(tokens.reasoning || 0) + Number(cache.read || 0) + Number(cache.write || 0);
-  totals.cost += Number(data.cost || 0);
-};
 
 const days = [];
 for (let i = 0; i < 7; i++) {
@@ -33,7 +38,7 @@ for (let i = 0; i < 7; i++) {
 try {
   const raw = execFileSync("opencode", ["db", sql, "--format", "json"], {
     encoding: "utf8",
-    maxBuffer: 32 * 1024 * 1024,
+    maxBuffer: 8 * 1024 * 1024,
     stdio: ["ignore", "pipe", "pipe"]
   });
   const rows = JSON.parse(raw);
@@ -41,20 +46,18 @@ try {
   const byModel = new Map();
 
   for (const row of rows) {
-    let data;
-    try { data = JSON.parse(row.data); } catch { continue; }
-    if (data.role !== "assistant") continue;
-    const timestamp = Number(data.time?.created || 0);
-    const date = new Date(timestamp || Number(row.time_created || 0));
-    const day = byDay[dayKey(date)];
-    if (!day) continue;
-
-    addTokens(data, day);
-    const provider = String(data.providerID || "unknown");
-    const model = String(data.modelID || "unknown");
-    const key = `${provider}/${model}`;
+    const tokens = Number(row.tokens || 0);
+    const cost = Number(row.cost || 0);
+    const day = byDay[row.day];
+    if (day) {
+      day.tokens += tokens;
+      day.cost += cost;
+    }
+    const key = String(row.model || "unknown/unknown");
     if (!byModel.has(key)) byModel.set(key, { model: key, ...emptyTotals() });
-    addTokens(data, byModel.get(key));
+    const bucket = byModel.get(key);
+    bucket.tokens += tokens;
+    bucket.cost += cost;
   }
 
   const total = days.reduce((sum, day) => ({
@@ -69,8 +72,11 @@ try {
     generatedAt: Date.now()
   }));
 } catch (error) {
+  const detail = error.stderr ? String(error.stderr).split("\n").find(Boolean) : "";
   process.stdout.write(JSON.stringify({
     ok: false,
-    error: error.code === "ENOENT" ? "OpenCode CLI not found" : "Could not read OpenCode usage"
+    error: error.code === "ENOENT"
+      ? "OpenCode CLI not found"
+      : "Could not read OpenCode usage" + (detail ? ` (${detail.slice(0, 120)})` : "")
   }));
 }

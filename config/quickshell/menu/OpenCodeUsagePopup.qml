@@ -43,7 +43,10 @@ PanelWindow {
 
   function close() { opened = false }
   function toggle() { opened ? close() : open() }
-  function refresh() { usageProc.exec(["sh", "-c", "node \"$HOME/.config/kmdot/quickshell/scripts/opencode-usage.mjs\""]) }
+  function refresh() {
+    if (usageProc.running) return
+    usageProc.exec(["sh", "-c", "node \"$HOME/.config/kmdot/quickshell/scripts/opencode-usage.mjs\""])
+  }
   function pickScreen() { posProc.exec(["sh", "-c", "hyprctl cursorpos"]) }
   function formatTokens(value) {
     if (value >= 1000000000) return (value / 1000000000).toFixed(1) + "B"
@@ -53,8 +56,10 @@ PanelWindow {
   }
   function formatCost(value) { return "$" + Number(value || 0).toFixed(2) }
   function applyReport(text) {
+    const trimmed = String(text).trim()
+    if (trimmed === "") return
     try {
-      const parsed = JSON.parse(String(text))
+      const parsed = JSON.parse(trimmed)
       report = parsed.ok ? parsed : null
       errorText = parsed.ok ? "" : (parsed.error || "Could not load usage")
     } catch (e) {
@@ -178,15 +183,15 @@ PanelWindow {
           interactive: contentHeight > height
           clip: true
           model: root.report ? root.report.models : []
-          delegate: Item {
+          delegate: Rectangle {
             required property var modelData
-            required property int index
             width: modelList.width - 8
             height: 48
-            Text { anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; text: modelData.model; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; elide: Text.ElideMiddle }
-            Text { anchors.left: parent.left; anchors.bottom: parent.bottom; anchors.bottomMargin: 5; text: root.formatTokens(modelData.tokens) + " tokens"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
-            Text { anchors.right: parent.right; anchors.bottom: parent.bottom; anchors.bottomMargin: 5; text: root.formatCost(modelData.cost); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
-            Rectangle { anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom; height: 1; color: Tokens.divider; visible: index < (root.report ? root.report.models.length - 1 : -1) }
+            radius: 8
+            color: Tokens.surfaceContainerHighest
+            Text { anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.topMargin: 8; anchors.leftMargin: 12; anchors.rightMargin: 12; text: modelData.model; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; elide: Text.ElideMiddle }
+            Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.bottom: parent.bottom; anchors.bottomMargin: 7; text: root.formatTokens(modelData.tokens) + " tokens"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+            Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.bottom: parent.bottom; anchors.bottomMargin: 7; text: root.formatCost(modelData.cost); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
           }
           Rectangle {
             visible: modelList.contentHeight > modelList.height
@@ -212,7 +217,7 @@ PanelWindow {
             Text { text: "7-day total"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
             Text { text: root.report ? root.formatTokens(root.report.total.tokens) + " tokens · " + root.formatCost(root.report.total.cost) : "—"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14; font.weight: Font.DemiBold }
           }
-          PillButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: 74; text: "Refresh"; glyph: "\uf021"; onClicked: root.refresh() }
+          PillButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: 74; text: "Refresh"; glyph: "\uf021"; enabled: !usageProc.running; onClicked: root.refresh() }
         }
         Text { width: parent.width; text: "Quota unavailable from the OpenCode CLI"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10 }
       }
