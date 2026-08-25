@@ -44,6 +44,9 @@ PanelWindow {
   property int playingId: -1
   property real progress: 0
   property bool playbackStopping: false
+  // Two-click delete confirm: first click arms the row's pill ("Sure?"), the
+  // second (within 3s) deletes.
+  property int confirmId: -1
   readonly property string recordingsDir: Quickshell.env("HOME") + "/.local/share/com.pais.handy/recordings"
   readonly property string sockPath: {
     const rt = Quickshell.env("XDG_RUNTIME_DIR")
@@ -68,14 +71,21 @@ PanelWindow {
     refresh()
     focusTimer.start()
   }
-  function close() { stopPlayback(); opened = false; busyAction = ""; busyId = -1 }
+  function close() { stopPlayback(); confirmId = -1; opened = false; busyAction = ""; busyId = -1 }
   function toggle() { opened ? close() : open() }
   function pickScreen() { posProc.exec(["sh", "-c", "hyprctl cursorpos"]) }
   function refresh() {
     stopPlayback()
+    confirmId = -1
     errorText = ""
     run("models")
     run("history")
+  }
+  function remove(row) {
+    if (playingId === row.id) stopPlayback()
+    busyId = row.id
+    busyAction = "delete"
+    run("delete", [String(row.id)])
   }
   function fmtTime(epoch) {
     return new Date(epoch * 1000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
@@ -116,6 +126,7 @@ PanelWindow {
       if (result.models) { models = result.models; selectedModel = result.selected || "" }
       if (result.history) history = result.history
       if (result.selected) selectedModel = result.selected
+      if (result.deleted !== undefined) { confirmId = -1; run("history") }
       if (result.text !== undefined) refresh()
     } catch (e) { errorText = "Could not parse Handy response" }
   }
@@ -138,6 +149,11 @@ PanelWindow {
       content.forceActiveFocus()
       if (content.activeFocus) stop()
     }
+  }
+  Timer {
+    id: confirmTimer
+    interval: 3000
+    onTriggered: root.confirmId = -1
   }
   Process {
     id: controlProc
@@ -261,6 +277,20 @@ PanelWindow {
               PillButton { width: 62; height: 24; text: "Save"; glyph: "\uf0c7"; glyphSize: 10; textSize: 10; enabled: !root.busy; onClicked: root.save(modelData, editor.text) }
               PillButton { width: 66; height: 24; text: "Copy"; glyph: "\uf0c5"; glyphSize: 10; textSize: 10; enabled: !root.busy; onClicked: root.copy(editor.text) }
               PillButton { width: 84; height: 24; text: root.busyId === modelData.id && root.busyAction === "retry" ? "Retrying" : (modelData.audioAvailable ? "Retry" : "No audio"); glyph: modelData.audioAvailable ? "\uf2f1" : "\uf071"; glyphSize: 10; textSize: 10; enabled: !root.busy && modelData.audioAvailable; onClicked: root.retry(modelData) }
+              PillButton {
+                width: 62; height: 24
+                readonly property bool armed: root.confirmId === modelData.id
+                readonly property bool deleting: root.busyId === modelData.id && root.busyAction === "delete"
+                text: deleting ? "Deleting" : (armed ? "Sure?" : "Delete")
+                glyph: deleting ? "\uf110" : (armed ? "\uf071" : "\uf2ed")
+                glyphSize: 10; textSize: 10
+                active: armed
+                enabled: !root.busy
+                onClicked: {
+                  if (armed) { confirmTimer.stop(); root.remove(modelData) }
+                  else { root.confirmId = modelData.id; confirmTimer.restart() }
+                }
+              }
             }
             TextEdit {
               id: editor

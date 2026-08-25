@@ -13,6 +13,11 @@ LauncherBase {
   countShown: false
   loadingText: "Loading Handy\u2026"
   emptyText: root.mode === 0 ? "No installed models" : "No recordings yet"
+  // History view drops the search bar so bare keys (Delete/Backspace) reach
+  // the list; a title row takes its slot.
+  searchEnabled: root.mode === 0
+  headerGlyph: "\uf130"
+  headerText: "Handy History"
 
   // Mode pill: shows the current mode; Tab or click flips it.
   footerActionGlyph: "\uf0ec"
@@ -20,12 +25,20 @@ LauncherBase {
   footerActionText: root.mode === 0 ? "Models" : "History"
   footerHint: root.mode === 0
     ? "\u2191\u2193 navigate \u00b7 \u23ce select \u00b7 esc close"
-    : "\u2191\u2193 navigate \u00b7 \u23ce copy \u00b7 esc close"
+    : (root.confirmId >= 0
+      ? "Del again to confirm"
+      : "\u2191\u2193 navigate \u00b7 \u23ce copy \u00b7 esc close")
   // Secondary chords are History-only (retry/play); empty in Models mode so
   // the auto-appended hints disappear too.
   itemActions: root.mode === 1 ? [
     { key: Qt.Key_R, ctrl: true, hint: "^R retry" },
     { key: Qt.Key_P, ctrl: true, hint: "^P play" }
+  ] : []
+  // Bare Delete/Backspace delete the selected recording (History-only; the
+  // searchless nav surface is what makes bare keys safe here).
+  bareKeyActions: root.mode === 1 ? [
+    { key: Qt.Key_Delete, hint: "Del delete" },
+    { key: Qt.Key_Backspace, hint: "\u232b delete" }
   ] : []
 
   // 0 = Models, 1 = History. Opens on Models to mirror the tray popup's tabs.
@@ -41,6 +54,9 @@ LauncherBase {
   property bool historyPending: false
   property int playingId: -1
   property bool playbackStopping: false
+  // Two-click delete confirm: first click arms the row's trash glyph, the
+  // second (within 3s) deletes; anything else disarms via the timer.
+  property int confirmId: -1
   readonly property string recordingsDir: Quickshell.env("HOME") + "/.local/share/com.pais.handy/recordings"
 
   function script() { return Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/handy-control.mjs" }
@@ -63,6 +79,7 @@ LauncherBase {
     root.busyAction = ""
     root.busyId = -1
     root.pendingCommand = ""
+    root.confirmId = -1
     root.mode = 0
     root.modelsPending = true
     root.historyPending = true
@@ -136,11 +153,14 @@ LauncherBase {
   function itemStatusGlyph(item) {
     if (item.kind === "model") return item.modelId === root.selectedModel ? "\uf00c" : ""
     if (root.busyId === item.row.id && root.busyAction === "retry") return "\uf110"
+    if (root.confirmId === item.row.id) return "\uf071"
+    if (root.busyId === item.row.id && root.busyAction === "delete") return "\uf110"
     if (root.playingId === item.row.id) return "\uf04c"
     return item.row.audioAvailable ? "\uf04b" : ""
   }
   function itemSubtitleLive(item) {
     if (item.kind !== "history") return itemSubtitle(item)
+    if (root.confirmId === item.row.id) return "Press Del again to delete"
     if (root.busyId === item.row.id && root.busyAction === "retry") return "Retrying\u2026"
     if (root.playingId === item.row.id) {
       const total = player.duration > 0 ? player.duration
@@ -156,6 +176,34 @@ LauncherBase {
   }
 
   // ---- actions ----
+  onItemAction: function(action, item) {
+    if (item.kind !== "history" || root.busy) return
+    if (action.key === Qt.Key_R) startRetry(item)
+    else if (action.key === Qt.Key_P) togglePlay(item)
+    else if (action.key === Qt.Key_Delete || action.key === Qt.Key_Backspace) handleDeleteKey(item)
+  }
+
+  // Two-click confirm on the keyboard: first Delete/Backspace arms the row,
+  // the second (within 3s) deletes; anything else disarms via the timer.
+  function handleDeleteKey(item) {
+    if (root.confirmId !== item.row.id) {
+      root.confirmId = item.row.id
+      confirmTimer.restart()
+      return
+    }
+    confirmTimer.stop()
+    startDelete(item)
+  }
+
+  function startDelete(item) {
+    root.confirmId = -1
+    if (root.playingId === item.row.id) root.stopPlayback()
+    root.busyId = item.row.id
+    root.busyAction = "delete"
+    root.pendingCommand = "delete"
+    actionProc.exec(["node", root.script(), "delete", String(item.row.id)])
+  }
+
   onActivated: function(item) {
     if (item.kind === "model") {
       if (root.busy || item.modelId === root.selectedModel) return
@@ -167,18 +215,19 @@ LauncherBase {
     }
   }
 
-  onItemAction: function(action, item) {
-    if (item.kind !== "history" || root.busy) return
-    if (action.key === Qt.Key_R) startRetry(item)
-    else if (action.key === Qt.Key_P) togglePlay(item)
-  }
-
   onFooterActionClicked: {
     root.mode = root.mode === 0 ? 1 : 0
+    root.confirmId = -1
     root.resetQuery()
     root.selectedIndex = 0
     root.rebuildPool()
     root.recompute()
+  }
+
+  Timer {
+    id: confirmTimer
+    interval: 3000
+    onTriggered: root.confirmId = -1
   }
 
   function startRetry(item) {
@@ -227,6 +276,7 @@ LauncherBase {
     stdout: StdioCollector {
       onStreamFinished: {
         const wasRetry = root.pendingCommand === "retry"
+        const wasDelete = root.pendingCommand === "delete"
         root.pendingCommand = ""
         root.busyAction = ""
         root.busyId = -1
@@ -234,7 +284,7 @@ LauncherBase {
           const result = JSON.parse(String(this.text))
           if (!result.ok) console.warn("handy-launcher:", result.error || "operation failed")
         } catch (e) { console.warn("handy-launcher: unparseable action response") }
-        if (wasRetry) {
+        if (wasRetry || wasDelete) {
           root.historyPending = true
           historyProc.exec(["node", root.script(), "history"])
         }

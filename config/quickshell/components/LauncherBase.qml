@@ -12,6 +12,10 @@ Item {
   // ---- configuration ----
   property string sockName: "kmdot-launcher"
   property string title: "Search"
+  // Title row shown in the search bar's slot when searchEnabled is false
+  // (e.g. "Handy History"). Empty = no header row.
+  property string headerText: ""
+  property string headerGlyph: ""
   property var items: []
   property string footerHint: "\u2191\u2193 navigate \u00b7 \u23ce select \u00b7 esc close"
   property bool countShown: true
@@ -67,10 +71,18 @@ Item {
   // emits itemAction(action, selectedItem); hints are appended to the footer.
   // Bare keys must stay reserved for typing — chords only.
   property var itemActions: []
+  // When false the search bar collapses and keyboard focus moves to an invisible
+  // nav Item (up/down/page/enter/esc/tab + chords). Only that surface honors
+  // bareKeyActions — the search input never consumes bare keys.
+  property bool searchEnabled: true
+  // Bare (modifier-less) key actions for the no-search surface, e.g. Delete on
+  // a list view. Entries: { key, hint }; hints are appended to the footer.
+  property var bareKeyActions: []
 
   readonly property string fullFooterHint: {
     const parts = [root.footerHint]
     for (const i in root.itemActions) parts.push(root.itemActions[i].hint || "")
+    for (const i in root.bareKeyActions) parts.push(root.bareKeyActions[i].hint || "")
     return parts.filter(p => p !== "").join(" \u00b7 ")
   }
 
@@ -80,6 +92,8 @@ Item {
     if (root.opened) focusTimer.start()
     root.onOpenedChange()
   }
+  // Mode flips (e.g. Models ↔ History) swap the focus target.
+  onSearchEnabledChanged: if (root.opened) focusTimer.restart()
 
   // ---- item accessors (menu items vs DesktopEntry apps) ----
   function itemLabel(item) { return item.label || item.name || "" }
@@ -105,6 +119,32 @@ Item {
         if (root.results.length === 0 || root.selectedIndex < 0
             || root.selectedIndex >= root.results.length) return false
         root.itemAction(a, root.results[root.selectedIndex].item)
+        return true
+      }
+    }
+    return false
+  }
+
+  // Keyboard handler for the no-search nav surface: bareKeyActions match
+  // modifier-less presses; itemActions chords still work here.
+  function tryNavItemAction(event) {
+    const ctrl = (event.modifiers & Qt.ControlModifier) !== 0
+    const selected = root.results.length > 0 && root.selectedIndex >= 0
+      && root.selectedIndex < root.results.length
+      ? root.results[root.selectedIndex].item : null
+    for (const i in root.bareKeyActions) {
+      const a = root.bareKeyActions[i]
+      if (!ctrl && a.key === event.key) {
+        if (!selected) return false
+        root.itemAction(a, selected)
+        return true
+      }
+    }
+    for (const i in root.itemActions) {
+      const a = root.itemActions[i]
+      if (a.key === event.key && !!a.ctrl === ctrl) {
+        if (!selected) return false
+        root.itemAction(a, selected)
         return true
       }
     }
@@ -296,8 +336,9 @@ Item {
         focusTimer.stop()
         return
       }
-      searchInput.forceActiveFocus()
-      if (searchInput.activeFocus) focusTimer.stop()
+      const target = root.searchEnabled ? searchInput : navKeys
+      target.forceActiveFocus()
+      if (target.activeFocus) focusTimer.stop()
     }
   }
 
@@ -353,8 +394,33 @@ Item {
         anchors.fill: parent
       }
 
-      Rectangle {
-        id: searchBar
+      // Invisible key-catcher for searchless views (e.g. Handy History): owns
+      // keyboard focus so bare keys reach the list instead of a text input.
+      Item {
+        id: navKeys
+        anchors.fill: parent
+        visible: !root.searchEnabled
+
+        Keys.onPressed: function(event) {
+          if (event.key === Qt.Key_Down) { root.step(1); event.accepted = true }
+          else if (event.key === Qt.Key_Up) { root.step(-1); event.accepted = true }
+          else if (event.key === Qt.Key_PageUp) { root.step(10); event.accepted = true }
+          else if (event.key === Qt.Key_PageDown) { root.step(-10); event.accepted = true }
+          else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) { root.activate(); event.accepted = true }
+          else if (event.key === Qt.Key_Escape) { root.closeLauncher(); event.accepted = true }
+          else if (event.key === Qt.Key_Tab) {
+            if (root.footerActionText !== "") root.footerActionClicked()
+            event.accepted = true
+          }
+          else if (root.tryNavItemAction(event)) event.accepted = true
+        }
+      }
+
+      // Title row for searchless views: occupies the search bar's exact slot
+      // (12px margins, 48px tall) so the list layout is unchanged.
+      Item {
+        id: listHeader
+        visible: !root.searchEnabled && root.headerText !== ""
         anchors {
           top: parent.top
           left: parent.left
@@ -362,6 +428,50 @@ Item {
           margins: 12
         }
         height: 48
+
+        Row {
+          anchors {
+            left: parent.left
+            right: parent.right
+            verticalCenter: parent.verticalCenter
+            leftMargin: 14
+            rightMargin: 14
+          }
+          spacing: 10
+
+          Text {
+            id: headerGlyphText
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.headerGlyph !== ""
+            text: root.headerGlyph
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 15
+            color: Colors.primary
+          }
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            width: parent.width - (headerGlyphText.visible ? headerGlyphText.width + parent.spacing : 0)
+            text: root.headerText
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 15
+            font.weight: Font.DemiBold
+            color: Colors.text
+            elide: Text.ElideRight
+          }
+        }
+      }
+
+      Rectangle {
+        id: searchBar
+        visible: root.searchEnabled
+        anchors {
+          top: parent.top
+          left: parent.left
+          right: parent.right
+          margins: root.searchEnabled ? 12 : 0
+        }
+        height: root.searchEnabled ? 48 : 0
         radius: 24
         color: Tokens.surfaceContainerHighest
         border.width: searchInput.activeFocus ? 1.5 : 0
@@ -451,7 +561,7 @@ Item {
       ListView {
         id: resultsList
         anchors {
-          top: searchBar.bottom
+          top: listHeader.visible ? listHeader.bottom : searchBar.bottom
           left: parent.left
           right: parent.right
           bottom: footer.top

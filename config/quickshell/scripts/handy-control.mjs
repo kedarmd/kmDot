@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { execFileSync, spawn } from "node:child_process";
-import { closeSync, existsSync, openSync, readFileSync, readSync, renameSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, readSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 const home = homedir();
 const dataDir = join(home, ".local", "share", "com.pais.handy");
@@ -138,6 +138,26 @@ COMMIT;`, true);
   return { ok: true };
 }
 
+function deleteEntry(id) {
+  const raw = sqlite(`SELECT file_name FROM transcription_history WHERE id=${Number(id)} LIMIT 1;`);
+  if (!raw.trim()) throw new Error("Recording not found");
+  const rows = JSON.parse(raw);
+  if (!rows.length) throw new Error("Recording not found");
+  const fileName = String(rows[0].file_name || "");
+  if (fileName) {
+    if (basename(fileName) !== fileName) throw new Error("Refusing to delete outside recordings directory");
+    try {
+      unlinkSync(join(recordingsDir, fileName));
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+  sqlite(`BEGIN IMMEDIATE;
+DELETE FROM transcription_history WHERE id=${Number(id)};
+COMMIT;`, true);
+  return { ok: true, deleted: Number(id) };
+}
+
 function retry(id, model) {
   const rows = JSON.parse(sqlite(`SELECT file_name FROM transcription_history WHERE id=${Number(id)} LIMIT 1;`));
   if (!rows.length) throw new Error("Recording not found");
@@ -162,7 +182,8 @@ try {
   else if (command === "select-model" && args[0]) output(selectModel(args[0]));
   else if (command === "save" && args[0] !== undefined) output(updateText(args[0], args.slice(1).join("\n")));
   else if (command === "retry" && args[0]) output(retry(args[0], args[1]));
-  else throw new Error("Usage: handy-control.mjs models|history|select-model ID|save ID TEXT|retry ID [MODEL]");
+  else if (command === "delete" && args[0]) output(deleteEntry(args[0]));
+  else throw new Error("Usage: handy-control.mjs models|history|select-model ID|save ID TEXT|retry ID [MODEL]|delete ID");
 } catch (error) {
   fail(error);
 }
