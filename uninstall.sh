@@ -24,26 +24,47 @@ echo '
 echo "Welcome to kmDot uninstaller!"
 echo ""
 
+# sddm is intentionally absent: sync/sddm.sh installs into system paths
+# (/usr/share/sddm/themes, /usr/share/backgrounds) which only root can remove.
 APPS=(
+  "battery"
+  "fish"
   "ghostty"
   "herdr"
   "hyprland"
   "nvim"
+  "quickshell"
   "starship"
+  "swaync"
+  "theme-switcher"
+  "tmux"
+  "xdg-desktop-portal"
 )
 
 declare -A TARGETS
+TARGETS["battery"]="$HOME/.config/systemd/user/battery-monitor.service $HOME/.config/systemd/user/battery-monitor.timer"
+TARGETS["fish"]="$HOME/.config/fish"
 TARGETS["ghostty"]="$HOME/.config/ghostty"
 TARGETS["herdr"]="$HOME/.config/herdr"
 TARGETS["hyprland"]="$HOME/.config/hypr"
 TARGETS["nvim"]="$HOME/.config/nvim"
+TARGETS["quickshell"]="$HOME/.config/quickshell"
 TARGETS["starship"]="$HOME/.config/starship.toml"
+TARGETS["swaync"]="$HOME/.config/swaync"
+TARGETS["theme-switcher"]="$HOME/.config/kmdot/theme-switcher $HOME/.config/kmdot/themes"
+TARGETS["tmux"]="$HOME/.config/tmux $HOME/.tmux.conf"
+TARGETS["xdg-desktop-portal"]="$HOME/.config/xdg-desktop-portal"
 
 declare -A SOURCES
+SOURCES["fish"]="$HOME/.config/kmdot/fish"
 SOURCES["ghostty"]="$HOME/.config/kmdot/ghostty"
 SOURCES["herdr"]="$HOME/.config/kmdot/herdr"
 SOURCES["hyprland"]="$HOME/.config/kmdot/hyprland"
 SOURCES["nvim"]="$HOME/.config/kmdot/nvim"
+SOURCES["quickshell"]="$HOME/.config/kmdot/quickshell"
+SOURCES["swaync"]="$HOME/.config/kmdot/swaync"
+SOURCES["tmux"]="$HOME/.config/kmdot/tmux"
+SOURCES["xdg-desktop-portal"]="$HOME/.config/kmdot/xdg-desktop-portal"
 
 echo "Select apps to uninstall:"
 echo ""
@@ -57,7 +78,7 @@ done < <(
     --unselected-prefix="[ ] " \
     --selected-prefix="[x] " \
     --no-limit \
-    --height=12 \
+    --height=$(( ${#APPS[@]} + 2 )) \
     "${APPS[@]}"
 )
 
@@ -72,15 +93,18 @@ echo ""
 
 for app in "${SELECTED[@]}"; do
   echo "Uninstalling $app..."
-  target="${TARGETS[$app]}"
-  source="${SOURCES[$app]}"
-  
-  if [ -n "$target" ]; then
-    rm -rf "$target"
-  fi
-  if [ -n "$source" ]; then
-    rm -rf "$source"
-  fi
+  target="${TARGETS[$app]:-}"
+  source="${SOURCES[$app]:-}"
+
+  # TARGETS/SOURCES may hold space-separated path lists (e.g. tmux links both
+  # ~/.config/tmux and ~/.tmux.conf); word splitting is intentional — managed
+  # paths never contain spaces.
+  for p in $target; do
+    rm -rf "$p"
+  done
+  for p in $source; do
+    rm -rf "$p"
+  done
 done
 
 echo ""

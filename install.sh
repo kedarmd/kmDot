@@ -35,6 +35,7 @@ APPS=(
   "hyprland"
   "nvim"
   "quickshell"
+  "sddm"
   "starship"
   "swaync"
   "theme-switcher"
@@ -51,7 +52,7 @@ done < <(
     --unselected-prefix="[ ] " \
     --selected-prefix="[x] " \
     --no-limit \
-    --height=12 \
+    --height=$(( ${#APPS[@]} + 2 )) \
     "${APPS[@]}"
 )
 
