@@ -78,6 +78,9 @@ Scope {
         }
         spacing: 8
 
+        AttentionMode {
+          tooltip: tooltip
+        }
         Kmdot {}
         Clock {}
         Dnd {
