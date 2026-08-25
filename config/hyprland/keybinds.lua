@@ -75,6 +75,12 @@ hl.bind(
 hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("pactl set-sink-volume @DEFAULT_SINK@ -5%"), { repeating = true }) -- Lower volume
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd("pactl set-sink-mute @DEFAULT_SINK@ toggle")) -- Mute volume
 
+-- Media controls
+hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause")) -- Play/pause media
+hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause")) -- Pause media
+hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next")) -- Next track
+hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous")) -- Previous track
+
 -- Screenshots
 hl.bind(mod .. " + PRINT", hl.dsp.exec_cmd("hyprshot -m window")) -- Screenshot window
 hl.bind(mod .. " + SHIFT + PRINT", hl.dsp.exec_cmd("hyprshot -m output")) -- Screenshot monitor
