@@ -344,7 +344,9 @@ Item {
       height: 520
       anchors.centerIn: parent
       radius: 20
-      color: Tokens.surfaceContainerHigh
+      color: Tokens.surfaceContainerLow
+      border.width: 1
+      border.color: Tokens.divider
 
       MouseArea {
         id: cardClick
