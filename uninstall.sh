@@ -26,6 +26,7 @@ echo ""
 
 APPS=(
   "ghostty"
+  "herdr"
   "hyprland"
   "nvim"
   "starship"
@@ -33,12 +34,14 @@ APPS=(
 
 declare -A TARGETS
 TARGETS["ghostty"]="$HOME/.config/ghostty"
+TARGETS["herdr"]="$HOME/.config/herdr"
 TARGETS["hyprland"]="$HOME/.config/hypr"
 TARGETS["nvim"]="$HOME/.config/nvim"
 TARGETS["starship"]="$HOME/.config/starship.toml"
 
 declare -A SOURCES
 SOURCES["ghostty"]="$HOME/.config/kmdot/ghostty"
+SOURCES["herdr"]="$HOME/.config/kmdot/herdr"
 SOURCES["hyprland"]="$HOME/.config/kmdot/hyprland"
 SOURCES["nvim"]="$HOME/.config/kmdot/nvim"
 

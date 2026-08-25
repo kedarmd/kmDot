@@ -31,6 +31,7 @@ APPS=(
   "battery"
   "fish"
   "ghostty"
+  "herdr"
   "hyprland"
   "nvim"
   "quickshell"

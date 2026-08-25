@@ -1,0 +1,9 @@
+# Herdr config — kmDot-managed.
+# Deployed by sync/herdr.sh: ~/.config/herdr -> ~/.config/kmdot/herdr
+# The [theme] section is owned by the theme switcher
+# (theme-switcher/hooks/herdr.sh rewrites only [theme]/[theme.custom]).
+# Herdr itself upserts this file on onboarding/Settings changes; that is fine,
+# it merges around these keys.
+
+[theme]
+name = "tokyo-night"
