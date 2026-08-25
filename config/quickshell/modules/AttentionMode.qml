@@ -36,7 +36,10 @@ Item {
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 15
       color: root.attentionOn ? Tokens.on_primary_container : Colors.text_alt
-      opacity: root.attentionOn ? 1.0 : 0.4
+      opacity: root.attentionOn || mouse.containsMouse ? 1.0 : 0.0
+      Behavior on opacity {
+        NumberAnimation { duration: 120 }
+      }
     }
   }
 
