@@ -89,7 +89,7 @@ For a popup or dropdown:
 - Follow the existing `PanelWindow` overlay pattern in the closest popup.
 - Add the socket using the `kmdot-<name>` naming convention and toggle it through `config/quickshell/scripts/toggle.sh`.
 - Register the popup on the `shell.qml` scope and wire cross-closing with launchers and other popups.
-- Use `pickScreen()` when the popup should appear on the monitor containing the clicked module.
+- Wire the `anchorItem` seam so the card centers under the clicked module: give the module a `popup`/`dropdown` property from `shell.qml`, set `<popup>.anchorItem = root` before exec'ing `toggle.sh`, and position the card via `components/popuppos.js` (`applyAnchor()` + the `anchorGX` x-binding, see any existing popup). Sub-popups opened from it inherit by copying `anchorGX` before `.open()`.
 - Keep the card, scrim, focus, Escape handling, and scrolling behavior consistent with the closest existing component. Do not put `clip: true` on a rounded popup card.
 - Use `LauncherBase` only when the feature is genuinely a picker/search flow; use the popup patterns for controls and status panels.
 

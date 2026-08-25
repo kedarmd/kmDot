@@ -142,6 +142,7 @@ ConnectionDropdownBase {
       root.scope.wifiAddPopup.editingExisting = true
       root.scope.wifiAddPopup.failed = false
       root.scope.wifiAddPopup.resultText = ""
+      root.scope.wifiAddPopup.anchorGX = root.anchorGX
       root.scope.wifiAddPopup.open()
     }
   }
@@ -151,6 +152,7 @@ ConnectionDropdownBase {
     if (root.scope && root.scope.confirmPopup) {
       root.busySsid = ""
       root.close()
+      root.scope.confirmPopup.anchorGX = root.anchorGX
       root.scope.confirmPopup.ask("Forget Wi-Fi network", "Forget '" + network.ssid + "'? You will need to re-enter the password to connect again.")
     }
   }
@@ -172,6 +174,7 @@ ConnectionDropdownBase {
         root.scope.wifiAddPopup.editingExisting = false
         root.scope.wifiAddPopup.failed = false
         root.scope.wifiAddPopup.resultText = ""
+        root.scope.wifiAddPopup.anchorGX = root.anchorGX
         root.scope.wifiAddPopup.open()
       }
       return
@@ -305,6 +308,7 @@ ConnectionDropdownBase {
         root.scope.wifiAddPopup.editingExisting = !!pending.saved
         root.scope.wifiAddPopup.failed = true
         root.scope.wifiAddPopup.resultText = root.errorText || "Connection failed"
+        root.scope.wifiAddPopup.anchorGX = root.anchorGX
         root.scope.wifiAddPopup.open()
         return
       }
@@ -492,7 +496,7 @@ ConnectionDropdownBase {
       text: "Add Wi-Fi network"
       enabled: root.radioEnabled
       opacity: root.radioEnabled ? 1 : 0.5
-      onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.scope.wifiAddPopup.open() }
+      onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.scope.wifiAddPopup.anchorGX = root.anchorGX; root.scope.wifiAddPopup.open() }
     }
   }
 

@@ -35,7 +35,10 @@ Item {
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton
     cursorShape: Qt.PointingHandCursor
-    onClicked: root.popup.toggle()
+    onClicked: {
+      root.popup.anchorItem = root
+      root.popup.toggle()
+    }
     onEntered: root.tooltip.show(root, "Handy transcription \u00b7 Super+H")
     onExited: root.tooltip.hide()
   }

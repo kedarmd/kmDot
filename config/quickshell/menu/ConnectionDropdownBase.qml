@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs
+import "../components/popuppos.js" as Pos
 
 PanelWindow {
   id: root
@@ -33,6 +34,11 @@ PanelWindow {
   property bool opened: false
   onOpenedChanged: root.openedChange()
   property var scope: null
+  // anchorItem seam: the bar module sets this to itself right before toggling
+  // so the card centers under that module (see applyAnchor). anchorGX is the
+  // consumed global center X; sub-popups inherit it by copying it before open().
+  property var anchorItem: null
+  property real anchorGX: -1
   property string sockName: "kmdot-connection"
   property bool socketEnabled: true
   property string title: "Connections"
@@ -47,6 +53,21 @@ PanelWindow {
 
   function pickScreen() { posProc.exec(["sh", "-c", "hyprctl cursorpos"]) }
 
+  function applyAnchor() {
+    if (root.anchorItem) {
+      const gx = Pos.globalCenterX(root.anchorItem)
+      root.anchorItem = null
+      if (gx >= 0) root.anchorGX = gx
+    }
+    if (root.anchorGX >= 0) {
+      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
+      if (s) root.screen = s
+      else root.pickScreen()
+    } else {
+      root.pickScreen()
+    }
+  }
+
   function open() {
     if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
     if (root.scope && root.scope.batteryPopup) root.scope.batteryPopup.close()
@@ -60,7 +81,7 @@ PanelWindow {
     if (root.scope && root.scope.bluetoothAddPopup && root.scope.bluetoothAddPopup !== root) root.scope.bluetoothAddPopup.close()
     if (root.scope && root.scope.confirmPopup && root.scope.confirmPopup !== root) root.scope.confirmPopup.close()
     root.opened = true
-    root.pickScreen()
+    root.applyAnchor()
     focusTimer.start()
     root.refreshItems()
   }
@@ -124,7 +145,10 @@ PanelWindow {
       height: body.implicitHeight + 32
       radius: 20
       color: Tokens.surfaceContainerLow
-      anchors { top: parent.top; topMargin: 48; right: parent.right; rightMargin: 10 }
+      anchors { top: parent.top; topMargin: 48 }
+      x: root.anchorGX >= 0
+        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
+        : parent.width - card.width - 10
 
       MouseArea { anchors.fill: parent }
 

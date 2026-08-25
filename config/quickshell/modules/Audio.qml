@@ -9,6 +9,7 @@ Item {
   implicitHeight: 30
   width: Math.max(30, label.implicitWidth + 20)
   required property var tooltip
+  property var popup
 
   PwObjectTracker {
     objects: Pipewire.defaultAudioSink ? [Pipewire.defaultAudioSink] : []
@@ -61,6 +62,7 @@ Item {
       if (mouse.button === Qt.RightButton) {
         if (root.audio) root.audio.muted = !root.audio.muted
       } else {
+        if (root.popup) root.popup.anchorItem = root
         toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-volume"])
       }
     }

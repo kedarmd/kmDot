@@ -8,6 +8,7 @@ Item {
   id: root
   implicitHeight: 30
   width: Math.max(30, label.implicitWidth + 20)
+  property var popup
 
   SystemClock {
     id: clock
@@ -37,7 +38,10 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onClicked: toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-calendar"])
+    onClicked: {
+      if (root.popup) root.popup.anchorItem = root
+      toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-calendar"])
+    }
   }
 
   Process {

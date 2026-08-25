@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs
 import "../components"
+import "../components/popuppos.js" as Pos
 
 PanelWindow {
   id: root
@@ -37,7 +38,9 @@ PanelWindow {
 
   property bool opened: false
   property var scope: null
-  property real cardX: 0
+  // anchorItem seam: set by the bar module before toggling (see ConnectionDropdownBase).
+  property var anchorItem: null
+  property real anchorGX: -1
 
   property string mode: "off"
   property string inhibitor: "inactive"
@@ -92,6 +95,21 @@ PanelWindow {
     posProc.exec(["sh", "-c", "hyprctl cursorpos"])
   }
 
+  function applyAnchor() {
+    if (root.anchorItem) {
+      const gx = Pos.globalCenterX(root.anchorItem)
+      root.anchorItem = null
+      if (gx >= 0) root.anchorGX = gx
+    }
+    if (root.anchorGX >= 0) {
+      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
+      if (s) root.screen = s
+      else root.pickScreen()
+    } else {
+      root.pickScreen()
+    }
+  }
+
   function open() {
     if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
     if (root.scope && root.scope.batteryPopup && root.scope.batteryPopup !== root) root.scope.batteryPopup.close()
@@ -101,7 +119,7 @@ PanelWindow {
     root.opened = true
     root.errorText = ""
     root.refresh()
-    root.pickScreen()
+    root.applyAnchor()
     focusTimer.start()
   }
 
@@ -217,13 +235,9 @@ PanelWindow {
         top: parent.top
         topMargin: 48
       }
-      x: {
-        const w = card.width
-        const s = root.screen
-        const sX = s ? s.x : 0
-        const cx = root.cardX > 0 ? (root.cardX - sX) : parent.width / 2
-        return Math.max(10, Math.min(parent.width - w - 10, cx - w / 2))
-      }
+      x: root.anchorGX >= 0
+        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
+        : parent.width - card.width - 10
 
       MouseArea {
         anchors.fill: parent

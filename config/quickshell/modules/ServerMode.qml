@@ -44,17 +44,7 @@ Item {
   }
 
   function openDropdown() {
-    var cx = 0
-    try {
-      cx = root.mapToGlobal(root.width / 2, 0).x
-    } catch (e) {
-      var win = root.Window.window
-      if (win) {
-        var pos = root.mapToItem(win.contentItem, root.width / 2, 0)
-        cx = (win.x || 0) + pos.x
-      }
-    }
-    root.dropdown.cardX = cx
+    root.dropdown.anchorItem = root
     root.dropdown.open()
   }
 

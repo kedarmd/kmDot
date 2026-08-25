@@ -97,6 +97,7 @@ ConnectionDropdownBase {
       root.busyAction = ""
       busyTimer.stop()
       root.close()
+      root.scope.confirmPopup.anchorGX = root.anchorGX
       root.scope.confirmPopup.ask("Forget Bluetooth device", "Remove '" + item.name + "'" + (item.connected ? " and disconnect it" : "") + "? You will need to pair it again to use it.")
     }
   }
@@ -252,7 +253,7 @@ ConnectionDropdownBase {
       text: "Pair new device"
       enabled: root.radioEnabled
       opacity: root.radioEnabled ? 1 : 0.5
-      onClicked: { if (root.scope && root.scope.bluetoothAddPopup) { root.close(); root.scope.bluetoothAddPopup.open() } }
+      onClicked: { if (root.scope && root.scope.bluetoothAddPopup) { root.close(); root.scope.bluetoothAddPopup.anchorGX = root.anchorGX; root.scope.bluetoothAddPopup.open() } }
     }
   }
 

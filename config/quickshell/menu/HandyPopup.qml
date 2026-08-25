@@ -5,6 +5,7 @@ import Quickshell.Wayland
 import QtMultimedia
 import qs
 import "../components"
+import "../components/popuppos.js" as Pos
 
 PanelWindow {
   id: root
@@ -32,6 +33,9 @@ PanelWindow {
 
   property bool opened: false
   property var scope: null
+  // anchorItem seam: set by the bar module before toggling (see ConnectionDropdownBase).
+  property var anchorItem: null
+  property real anchorGX: -1
   property int tab: 0
   property var models: []
   property var history: []
@@ -67,13 +71,27 @@ PanelWindow {
     if (scope && scope.serverModeDropdown) scope.serverModeDropdown.close()
     if (scope && scope.openCodeUsagePopup) scope.openCodeUsagePopup.close()
     opened = true
-    pickScreen()
+    applyAnchor()
     refresh()
     focusTimer.start()
   }
   function close() { stopPlayback(); confirmId = -1; opened = false; busyAction = ""; busyId = -1 }
   function toggle() { opened ? close() : open() }
   function pickScreen() { posProc.exec(["sh", "-c", "hyprctl cursorpos"]) }
+  function applyAnchor() {
+    if (root.anchorItem) {
+      const gx = Pos.globalCenterX(root.anchorItem)
+      root.anchorItem = null
+      if (gx >= 0) root.anchorGX = gx
+    }
+    if (root.anchorGX >= 0) {
+      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
+      if (s) root.screen = s
+      else root.pickScreen()
+    } else {
+      root.pickScreen()
+    }
+  }
   function refresh() {
     stopPlayback()
     confirmId = -1
@@ -210,7 +228,10 @@ PanelWindow {
       height: body.implicitHeight + 32
       radius: 20
       color: Tokens.surfaceContainerLow
-      anchors { top: parent.top; topMargin: 48; right: parent.right; rightMargin: 10 }
+      anchors { top: parent.top; topMargin: 48 }
+      x: root.anchorGX >= 0
+        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
+        : parent.width - card.width - 10
       MouseArea { anchors.fill: parent }
 
       Column {

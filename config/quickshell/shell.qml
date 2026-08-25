@@ -82,7 +82,9 @@ Scope {
           tooltip: tooltip
         }
         Kmdot {}
-        Clock {}
+        Clock {
+          popup: calendarPopup
+        }
         Dnd {
           tooltip: tooltip
         }
@@ -114,16 +116,22 @@ Scope {
         }
         Network {
           tooltip: tooltip
+          dropdown: wifiDropdown
         }
         Bluetooth {
           tooltip: tooltip
+          dropdown: bluetoothDropdown
         }
         Audio {
           tooltip: tooltip
+          popup: volumePopup
         }
-        Backlight {}
+        Backlight {
+          popup: brightnessPopup
+        }
         Battery {
           tooltip: tooltip
+          popup: batteryPopup
         }
       }
     }

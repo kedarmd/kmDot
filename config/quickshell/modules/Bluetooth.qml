@@ -9,6 +9,7 @@ Item {
   implicitHeight: 30
   width: Math.max(30, label.implicitWidth + 20)
   required property var tooltip
+  property var dropdown
 
   readonly property var adapter: Bluetooth.defaultAdapter
 
@@ -78,6 +79,7 @@ Item {
         if (root.adapter) root.adapter.enabled = !root.adapter.enabled
         root.refresh()
       } else {
+        if (root.dropdown) root.dropdown.anchorItem = root
         toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-bluetooth-dropdown"])
       }
     }

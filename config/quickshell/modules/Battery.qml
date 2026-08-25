@@ -9,6 +9,7 @@ Item {
   implicitHeight: 30
   width: Math.max(30, label.implicitWidth + 20)
   required property var tooltip
+  property var popup
 
   readonly property var battery: UPower.displayDevice
   function batteryPercent(dev) {
@@ -102,6 +103,7 @@ Item {
       if (mouse.button === Qt.RightButton) {
         root.cycleProfile()
       } else {
+        if (root.popup) root.popup.anchorItem = root
         toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-battery"])
       }
     }

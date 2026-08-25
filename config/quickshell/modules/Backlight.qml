@@ -7,6 +7,7 @@ Item {
   id: root
   implicitHeight: 30
   width: Math.max(30, label.implicitWidth + 20)
+  property var popup
 
   property int cur: 0
   property int max: 1
@@ -110,7 +111,10 @@ Item {
     id: mouse
     anchors.fill: parent
     cursorShape: Qt.PointingHandCursor
-    onClicked: toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-brightness"])
+    onClicked: {
+      if (root.popup) root.popup.anchorItem = root
+      toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-brightness"])
+    }
     onWheel: {
       const step = Math.max(1, Math.round(root.max * 0.02))
       root.apply(wheel.angleDelta.y > 0 ? root.cur + step : root.cur - step)
