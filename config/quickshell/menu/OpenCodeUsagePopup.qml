@@ -250,9 +250,9 @@ PanelWindow {
             Text { text: "7-day total"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
             Text { text: root.report ? root.formatTokens(root.report.total.tokens) + " tokens · " + root.formatCost(root.report.total.cost) : "—"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14; font.weight: Font.DemiBold }
           }
-          PillButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: 74; text: "Refresh"; glyph: "\uf021"; enabled: !usageProc.running; onClicked: root.refresh() }
+          PillButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: "Refresh"; glyph: "\uf021"; enabled: !usageProc.running; onClicked: root.refresh() }
         }
-        Text { width: parent.width; text: "Quota unavailable from the OpenCode CLI"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10 }
+        
       }
     }
   }

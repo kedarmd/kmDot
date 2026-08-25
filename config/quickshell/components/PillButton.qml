@@ -20,7 +20,10 @@ Rectangle {
 
   signal clicked
 
+  property real horizontalPadding: 12
+
   implicitHeight: 30
+  implicitWidth: row.implicitWidth + horizontalPadding * 2
   radius: height / 2
   color: !root.enabled ? root.inactiveFillColor
     : root.active ? root.fillColor
