@@ -10,6 +10,18 @@ PanelWindow {
   visible: opened
   color: Qt.rgba(0, 0, 0, 0)
   focusable: true
+
+  BackgroundEffect.blurRegion: Region {
+    item: root.contentItem
+
+    Region {
+      intersection: Intersection.Subtract
+      x: 0
+      y: 0
+      width: root.width
+      height: 42
+    }
+  }
   screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
 
   WlrLayershell.layer: WlrLayer.Overlay
@@ -123,7 +135,7 @@ PanelWindow {
       width: 430
       height: body.implicitHeight + 32
       radius: 20
-      color: Tokens.surfaceContainerHigh
+      color: Tokens.surfaceContainerLow
       anchors { top: parent.top; topMargin: 48; right: parent.right; rightMargin: 10 }
       MouseArea { anchors.fill: parent }
 
