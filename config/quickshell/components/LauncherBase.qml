@@ -100,6 +100,9 @@ Item {
   function itemSubtitle(item) { return item.subtitle || item.genericName || item.comment || "" }
   function itemGlyph(item) { return item.glyph || "" }
   function itemIcon(item) { return item.icon || "" }
+  // Row title seam: defaults to itemLabel so subclasses can compose breadcrumbs
+  // (e.g. "Section → Item") for nested search results without touching scoring.
+  function itemTitle(item) { return root.itemLabel(item) }
   // Row-local extras (all default no-ops so existing launchers render unchanged):
   // statusGlyph = right-edge glyph (✓ selected, ▶/⏸ playback, spinner);
   // subtitleLive = subtitle override that may tick live (playback/retry state);
@@ -632,7 +635,7 @@ Item {
 
               Text {
                 width: parent.width
-                text: root.itemLabel(modelData.item)
+                text: root.itemTitle(modelData.item)
                 elide: Text.ElideRight
                 font.pixelSize: 14
                 font.bold: root.selectedIndex === index
