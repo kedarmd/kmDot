@@ -16,7 +16,7 @@ THEME="$1"
 . "$SCRIPT_DIR/hooks/herdr.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/quickshell.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/quickshell.sh" "$THEME"
-. "$SCRIPT_DIR/hooks/swaync.sh" "$THEME"
+# . "$SCRIPT_DIR/hooks/swaync.sh" "$THEME"  -- disabled: Quickshell NotificationServer
 . "$SCRIPT_DIR/hooks/hyprland.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/wallpapers.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/btop.sh" "$THEME"

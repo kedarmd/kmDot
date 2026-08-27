@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# DISABLED: Quickshell NotificationServer now owns org.freedesktop.Notifications
+# Kept for rollback only — do not run unless reverting the notification migration
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"

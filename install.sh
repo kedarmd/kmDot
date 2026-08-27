@@ -37,7 +37,6 @@ APPS=(
   "quickshell"
   "sddm"
   "starship"
-  "swaync"
   "theme-switcher"
   "tmux"
   "xdg-desktop-portal"
