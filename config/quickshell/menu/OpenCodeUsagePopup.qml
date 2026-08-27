@@ -48,9 +48,9 @@ PanelWindow {
     if (scope && scope.activeLauncher) scope.activeLauncher.closeLauncher()
     if (scope && scope.batteryPopup) scope.batteryPopup.close()
     if (scope && scope.volumePopup) scope.volumePopup.close()
-    if (scope && scope.brightnessPopup) scope.brightnessPopup.close()
     if (scope && scope.calendarPopup) scope.calendarPopup.close()
     if (scope && scope.serverModeDropdown) scope.serverModeDropdown.close()
+    if (scope && scope.displayPopup) scope.displayPopup.close()
     opened = true
     applyAnchor()
     refresh()
