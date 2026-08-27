@@ -1,5 +1,7 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
+import Quickshell.Services.Notifications
 import "components"
 import "menu"
 import "modules"
@@ -30,6 +32,28 @@ Scope {
   property OpenCodeUsagePopup openCodeUsagePopup: OpenCodeUsagePopup { scope: shellRoot }
   property HandyPopup handyPopup: HandyPopup { scope: shellRoot }
   property DisplayPopup displayPopup: DisplayPopup { scope: shellRoot }
+  property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
+  property NotificationPopup notificationPopup: NotificationPopup { scope: shellRoot }
+
+  NotificationServer {
+    id: notifServer
+    keepOnReload: true
+    actionsSupported: true
+    bodySupported: true
+    imageSupported: true
+    inlineReplySupported: true
+    bodyMarkupSupported: false
+    bodyHyperlinksSupported: false
+    bodyImagesSupported: false
+    actionIconsSupported: false
+
+    onNotification: notification => {
+      notification.tracked = true
+      shellRoot.notificationPopup.addNotification(notification)
+      if (shellRoot.notificationCenter)
+        shellRoot.notificationCenter.addToHistory(notification)
+    }
+  }
 
   Component.onCompleted: {
     // Force-instantiate the calendar popup at startup so its 30-min resync
@@ -56,6 +80,33 @@ Scope {
 
       Tooltip {
         id: tooltip
+      }
+
+      IpcHandler {
+        target: "notifications"
+
+        function togglePanel(): void {
+          shellRoot.notificationCenter.toggle()
+        }
+
+        function toggleDnd(): void {
+          DnDState.dndEnabled = !DnDState.dndEnabled
+        }
+
+        function clearAll(): void {
+          shellRoot.notificationCenter.clearAll()
+        }
+
+        function dismiss(id: string): void {
+          const n = NotificationServer.trackedNotifications.values
+          for (let i = 0; i < n.length; i++) {
+            if (String(n[i].id) === id) { n[i].dismiss(); break }
+          }
+        }
+
+        function isDnd(): bool {
+          return DnDState.dndEnabled
+        }
       }
 
       Row {

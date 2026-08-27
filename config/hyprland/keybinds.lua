@@ -24,6 +24,10 @@ hl.bind(mod .. " + L", hl.dsp.exec_cmd("hyprlock")) -- Lock screen
 hl.bind(mod .. " + ESCAPE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-system'")) -- System menu (quickshell)
 hl.bind(mod .. " + K", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-kmdot'")) -- kmDot menu (quickshell)
 
+-- Notification controls (Quickshell IpcHandler)
+hl.bind(mod .. " + N", hl.dsp.exec_cmd("qs ipc call notifications togglePanel")) -- Toggle notification center
+hl.bind(mod .. " + SHIFT + N", hl.dsp.exec_cmd("qs ipc call notifications toggleDnd")) -- Toggle Do Not Disturb
+
 -- Focus with arrow keys
 hl.bind(mod .. " + left", hl.dsp.focus({ direction = "left" })) -- Focus window left
 hl.bind(mod .. " + right", hl.dsp.focus({ direction = "right" })) -- Focus window right

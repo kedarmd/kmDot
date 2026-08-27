@@ -9,41 +9,13 @@ Item {
   width: Math.max(30, label.implicitWidth + 20)
   required property var tooltip
 
-  property bool dndOn: false
-  property int count: 0
+  readonly property bool dndOn: DnDState.dndEnabled
+  readonly property int count: 0
 
   readonly property string icon: dndOn ? "󰂛" : "󰂚"
   readonly property string tooltipText: dndOn
     ? ("Do Not Disturb enabled" + (count > 0 ? " • " + count + " pending notifications" : ""))
     : "Do Not Disturb disabled"
-
-  Process {
-    id: stateProc
-    command: ["sh", "-c", "swaync-client -D -sw"]
-    running: true
-    stdout: StdioCollector {
-      onStreamFinished: root.dndOn = this.text.trim() === "true"
-    }
-  }
-
-  Process {
-    id: countProc
-    command: ["sh", "-c", "swaync-client -c -sw"]
-    running: true
-    stdout: StdioCollector {
-      onStreamFinished: root.count = parseInt(this.text.trim()) || 0
-    }
-  }
-
-  Timer {
-    interval: 3000
-    running: true
-    repeat: true
-    onTriggered: {
-      stateProc.running = true
-      countProc.running = true
-    }
-  }
 
   ModulePill {
     id: pill
@@ -75,10 +47,11 @@ Item {
     cursorShape: Qt.PointingHandCursor
     onClicked: {
       if (mouse.button === Qt.RightButton) {
-        toggleProc.exec(["sh", "-c", "swaync-client -d -sw"])
-        stateProc.running = true
+        DnDState.dndEnabled = !DnDState.dndEnabled
       } else {
-        panelProc.exec(["sh", "-c", "swaync-client -t -sw"])
+        notifCenterProc.exec(["sh", "-c",
+          "qs ipc call notifications togglePanel 2>/dev/null || " +
+          "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-notifications"])
       }
     }
     onEntered: root.tooltip.show(root, root.tooltipText)
@@ -86,10 +59,6 @@ Item {
   }
 
   Process {
-    id: toggleProc
-  }
-
-  Process {
-    id: panelProc
+    id: notifCenterProc
   }
 }
