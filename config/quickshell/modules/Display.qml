@@ -7,30 +7,42 @@ Item {
   id: root
   implicitHeight: 30
   width: Math.max(30, label.implicitWidth + 20)
+  required property var tooltip
   property var popup
 
   property int cur: 0
   property int max: 1
   property bool _applying: false
   property int _pending: -1
+  property string activeDevice: ""
+  property bool hasBacklight: false
 
   readonly property int percent: max > 0 ? Math.round(cur * 100 / max) : 0
   readonly property int _min: Math.round(max * 5 / 100)
-  readonly property string icon: {
-    if (percent <= 25) return "󰃞"
-    if (percent <= 50) return "󰃝"
-    if (percent <= 75) return "󰃟"
-    return "󰃠"
+  readonly property string icon: "\uf26c"
+  readonly property string text: icon
+
+  readonly property string tooltipText: {
+    if (!hasBacklight) return "Display (no backlight)"
+    return "Brightness: " + percent + "%"
   }
-  readonly property string text: icon + " " + percent + "%"
+
+  function detectBacklightDevice() {
+    detectProc.exec(["sh", "-c",
+      "for dev in /sys/class/backlight/*/; do " +
+      "name=$(basename \"$dev\"); " +
+      "target=$(readlink -f \"${dev}device\" 2>/dev/null); " +
+      "connector=$(echo \"$target\" | grep -oP 'card\\d+-\\K[A-Za-z0-9-]+$'); " +
+      "[ -n \"$connector\" ] && echo \"$connector $name\"; " +
+      "done"])
+  }
 
   function poll() {
-    curProc.exec(["sh", "-c", "brightnessctl get"])
+    if (root.activeDevice) {
+      curProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " get"])
+    }
   }
 
-  // Optimistic + coalesced: update the display immediately from the cached value,
-  // and while a brightnessctl set is in flight just remember the latest target so
-  // fast wheel scrolling never drops steps (a fresh shell process per tick would).
   function apply(target) {
     const t = Math.max(root._min, Math.min(root.max, target))
     root.cur = t
@@ -40,12 +52,11 @@ Item {
     }
     root._applying = true
     root._pending = -1
-    setProc.exec(["sh", "-c", "brightnessctl set " + t])
+    setProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " set " + t])
   }
 
   Component.onCompleted: {
-    maxProc.exec(["sh", "-c", "brightnessctl max"])
-    root.poll()
+    detectBacklightDevice()
   }
 
   Timer {
@@ -56,12 +67,31 @@ Item {
   }
 
   Process {
+    id: detectProc
+    stdout: StdioCollector {
+      onStreamFinished: {
+        const lines = this.text.trim().split("\n")
+        for (let i = 0; i < lines.length; i++) {
+          const parts = lines[i].split(" ")
+          if (parts.length >= 2) {
+            root.activeDevice = parts[1]
+            root.hasBacklight = true
+            maxProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " max"])
+            root.poll()
+            return
+          }
+        }
+        root.hasBacklight = false
+        root.activeDevice = ""
+      }
+    }
+  }
+
+  Process {
     id: curProc
     stdout: StdioCollector {
       onStreamFinished: {
         const v = parseInt(this.text.replace(/[^0-9]/g, "")) || 0
-        // While a set is in flight the actual value is mid-transition; keep the
-        // optimistic display until it settles.
         if (!root._applying) root.cur = v
       }
     }
@@ -82,7 +112,7 @@ Item {
         const t = root._pending
         root._pending = -1
         root._applying = true
-        setProc.exec(["sh", "-c", "brightnessctl set " + t])
+        setProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " set " + t])
       } else {
         root.poll()
       }
@@ -110,15 +140,14 @@ Item {
   MouseArea {
     id: mouse
     anchors.fill: parent
+    hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
     onClicked: {
       if (root.popup) root.popup.anchorItem = root
-      toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-brightness"])
+      toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-display"])
     }
-    onWheel: {
-      const step = Math.max(1, Math.round(root.max * 0.02))
-      root.apply(wheel.angleDelta.y > 0 ? root.cur + step : root.cur - step)
-    }
+    onEntered: root.tooltip.show(root, root.tooltipText)
+    onExited: root.tooltip.hide()
   }
 
   Process {

@@ -25,11 +25,11 @@ Scope {
   property HandyLauncher handyLauncher: HandyLauncher { scope: shellRoot }
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }
   property VolumePopup volumePopup: VolumePopup { scope: shellRoot }
-  property BrightnessPopup brightnessPopup: BrightnessPopup { scope: shellRoot }
   property CalendarPopup calendarPopup: CalendarPopup { scope: shellRoot }
   property ServerModeDropdown serverModeDropdown: ServerModeDropdown { scope: shellRoot }
   property OpenCodeUsagePopup openCodeUsagePopup: OpenCodeUsagePopup { scope: shellRoot }
   property HandyPopup handyPopup: HandyPopup { scope: shellRoot }
+  property DisplayPopup displayPopup: DisplayPopup { scope: shellRoot }
 
   Component.onCompleted: {
     // Force-instantiate the calendar popup at startup so its 30-min resync
@@ -126,12 +126,13 @@ Scope {
           tooltip: tooltip
           popup: volumePopup
         }
-        Backlight {
-          popup: brightnessPopup
-        }
         Battery {
           tooltip: tooltip
           popup: batteryPopup
+        }
+        Display {
+          tooltip: tooltip
+          popup: displayPopup
         }
       }
     }

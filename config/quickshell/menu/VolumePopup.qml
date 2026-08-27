@@ -90,9 +90,9 @@ PanelWindow {
     if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
     if (root.scope && root.scope.batteryPopup) root.scope.batteryPopup.close()
     if (root.scope && root.scope.volumePopup && root.scope.volumePopup !== root) root.scope.volumePopup.close()
-    if (root.scope && root.scope.brightnessPopup && root.scope.brightnessPopup !== root) root.scope.brightnessPopup.close()
     if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
     if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
+    if (root.scope && root.scope.displayPopup) root.scope.displayPopup.close()
     root.opened = true
     root.rebuildSinks()
     root.applyAnchor()

@@ -1,8 +1,8 @@
 import QtQuick
 import qs
 
-// Uniform Material 3 pill for every bar module (Audio, Backlight, Battery,
-// Bluetooth, Clock, Dnd, Kmdot, Network, ServerMode). Transparent when idle,
+// Uniform Material 3 pill for every bar module (Audio, Battery,
+// Bluetooth, Clock, Display, Dnd, Kmdot, Network, ServerMode). Transparent when idle,
 // container-fill when `active`, hover/press state layer on top. Modules wrap
 // their label + MouseArea around this and drive hovered/pressed.
 Rectangle {

@@ -72,7 +72,6 @@ PanelWindow {
     if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
     if (root.scope && root.scope.batteryPopup) root.scope.batteryPopup.close()
     if (root.scope && root.scope.volumePopup) root.scope.volumePopup.close()
-    if (root.scope && root.scope.brightnessPopup) root.scope.brightnessPopup.close()
     if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
     if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
     if (root.scope && root.scope.wifiDropdown && root.scope.wifiDropdown !== root) root.scope.wifiDropdown.close()
@@ -80,6 +79,7 @@ PanelWindow {
     if (root.scope && root.scope.wifiAddPopup && root.scope.wifiAddPopup !== root) root.scope.wifiAddPopup.close()
     if (root.scope && root.scope.bluetoothAddPopup && root.scope.bluetoothAddPopup !== root) root.scope.bluetoothAddPopup.close()
     if (root.scope && root.scope.confirmPopup && root.scope.confirmPopup !== root) root.scope.confirmPopup.close()
+    if (root.scope && root.scope.displayPopup) root.scope.displayPopup.close()
     root.opened = true
     root.applyAnchor()
     focusTimer.start()
