@@ -8,10 +8,9 @@ Item {
   implicitHeight: 30
   width: Math.max(30, label.implicitWidth + 20)
   required property var tooltip
+  property int count: 0
 
   readonly property bool dndOn: DnDState.dndEnabled
-  readonly property int count: 0
-
   readonly property string icon: dndOn ? "󰂛" : "󰂚"
   readonly property string tooltipText: dndOn
     ? ("Do Not Disturb enabled" + (count > 0 ? " • " + count + " pending notifications" : ""))

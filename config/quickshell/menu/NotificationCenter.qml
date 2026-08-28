@@ -96,7 +96,7 @@ PanelWindow {
   }
 
   function syncFromServer() {
-    const tracked = shellRoot.notifServer.trackedNotifications.values || []
+    const tracked = scope.notifServer.trackedNotifications.values || []
     for (let i = 0; i < tracked.length; i++) {
       const n = tracked[i]
       let found = false
@@ -144,7 +144,7 @@ PanelWindow {
   }
 
   function clearAll() {
-    const tracked = shellRoot.notifServer.trackedNotifications.values || []
+    const tracked = scope.notifServer.trackedNotifications.values || []
     for (let i = 0; i < tracked.length; i++)
       tracked[i].dismiss()
     historyModel.clear()

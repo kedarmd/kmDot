@@ -64,19 +64,25 @@ Scope {
   Variants {
     model: Quickshell.screens
 
-    PanelWindow {
-      required property var modelData
-      screen: modelData
+PanelWindow {
+        required property var modelData
+        screen: modelData
 
-      anchors {
-        top: true
-        left: true
-        right: true
-      }
+        anchors {
+          top: true
+          left: true
+          right: true
+        }
 
-      color: Colors.surface
-      implicitHeight: 42
-      exclusionMode: ExclusionMode.Auto
+        color: Colors.surface
+        implicitHeight: 42
+        exclusionMode: ExclusionMode.Auto
+
+        Binding {
+          target: dndModule
+          property: "count"
+          value: notifServer.trackedNotifications.count
+        }
 
       Tooltip {
         id: tooltip
@@ -98,7 +104,7 @@ Scope {
         }
 
         function dismiss(id: string): void {
-          const n = NotificationServer.trackedNotifications.values
+          const n = notifServer.trackedNotifications.values
           for (let i = 0; i < n.length; i++) {
             if (String(n[i].id) === id) { n[i].dismiss(); break }
           }
@@ -137,7 +143,9 @@ Scope {
           popup: calendarPopup
         }
         Dnd {
+          id: dndModule
           tooltip: tooltip
+          count: 0
         }
       }
 
