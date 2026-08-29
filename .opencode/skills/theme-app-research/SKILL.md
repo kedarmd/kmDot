@@ -35,7 +35,7 @@ How the app's colors/themes are driven. Determine:
 
 1. **Mechanism classification** — pick one:
    - *pointer*: the app ships native themes kmDot can reference by name (ghostty `theme =`, btop `color_theme =`, zed `"theme":`). Identify where those native themes come from (built-in registry, extension marketplace, downloadable files) and whether installing them is a separate step.
-   - *raw-config*: colors are written into the app's own config in its native syntax (swaync.css, quickshell.conf).
+   - *raw-config*: colors are written into the app's own config in its native syntax (quickshell.conf, hyprland.lua).
    - *none / hybrid* — explain.
 2. **Exact config path(s)** under `$HOME` — the real XDG location, which may differ from the app name (hypr → hyprland). Note any non-XDG or root-owned paths.
 3. **File format and syntax** — with a minimal sample snippet showing the keys that carry colors/theme names.

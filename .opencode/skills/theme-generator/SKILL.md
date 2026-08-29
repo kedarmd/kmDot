@@ -14,7 +14,7 @@ Match the research's mechanism classification to the closest existing exemplar â
 | Mechanism | Exemplars | Shape |
 | --- | --- | --- |
 | pointer | `themes/tokyonight/ghostty.conf` (`theme = "TokyoNight Night"`), `btop.conf`, `zed.conf`, `opencode.conf` | One line naming the app's native theme for our palette |
-| raw-config | `themes/tokyonight/swaync.css`, `quickshell.conf`, `hyprland.lua`, `nvim.lua`, `tmux.conf`, `starship.toml` | Full color config in the app's native syntax |
+| raw-config | `themes/tokyonight/quickshell.conf`, `hyprland.lua`, `nvim.lua`, `tmux.conf`, `starship.toml` | Full color config in the app's native syntax |
 
 Read the exemplar in all five theme dirs before writing anything â€” per-theme file conventions (headers, comment style) live in the files themselves.
 
