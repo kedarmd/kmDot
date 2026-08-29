@@ -87,6 +87,8 @@ APPS=(
 )
 
 # --- Mode selection ---
+# Usage: ./install.sh          (interactive gum choose)
+#        ./install.sh --all    (non-interactive, install everything)
 
 MODE="interactive"
 SELECTED=()
