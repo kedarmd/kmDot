@@ -3,16 +3,11 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
-KMDOT_CONFIG_DIR="$HOME/.config/kmdot"
 
 if ! command -v gum &>/dev/null; then
-  echo "Error: gum is not installed."
-  echo ""
-  echo "Install it with:"
-  echo "  sudo pacman -S gum"
-  echo ""
-  echo "Or visit: https://github.com/charmbracelet/gum"
-  exit 1
+  echo "Installing gum..."
+  sudo pacman -S --noconfirm --needed gum
+  echo "gum installed."
 fi
 
 echo '

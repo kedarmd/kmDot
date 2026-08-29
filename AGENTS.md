@@ -18,6 +18,7 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 | Action | Command | Notes |
 |---|---|---|
 | Install selected apps | `./config-install.sh` | Requires `gum` (`pacman -S gum`). Multi-select TUI. |
+| Install packages | `./install.sh` | Installs Arch Linux packages via pacman/yay. Gum TUI + `--all` flag. |
 | Single-app sync | `./sync/<app>.sh` | E.g. `./sync/nvim.sh`. Skips the TUI picker. |
 | Uninstall | `./config-uninstall.sh` | Also requires `gum`. Removes symlink targets + kmdot copies. |
 | Switch theme (CLI) | `theme-switcher/main.sh <theme>` | Themes: catppuccin, everforest, nord, onedark, tokyonight |

@@ -61,23 +61,15 @@ PKGS["tmux"]="tmux"
 PKGS["xdg-desktop-portal"]="xdg-desktop-portal xdg-desktop-portal-hyprland"
 PKGS["battery"]=""
 PKGS["theme-switcher"]=""
-PKGS["gtk"]=""
-PKGS["qt"]=""
-PKGS["polkit"]=""
-PKGS["gum"]="gum"
 
 # Canonical order for display
 APPS=(
   "battery"
   "fish"
   "ghostty"
-  "gum"
-  "gtk"
   "herdr"
   "hyprland"
   "nvim"
-  "polkit"
-  "qt"
   "quickshell"
   "sddm"
   "starship"
@@ -138,10 +130,21 @@ for app in "${SELECTED[@]}"; do
     fi
 
     echo -n "  Installing $pkg... "
-    if yay -S --noconfirm --needed "$pkg" 2>/dev/null; then
-      echo "done."
+    # Prefer pacman for official repos, fall back to yay for AUR
+    if pacman -Si "$pkg" &>/dev/null; then
+      if err=$(sudo pacman -S --noconfirm --needed "$pkg" 2>&1); then
+        echo "done."
+      else
+        echo "FAILED"
+        echo "    $err" | head -5
+      fi
     else
-      echo "FAILED"
+      if err=$(yay -S --noconfirm --needed "$pkg" 2>&1); then
+        echo "done."
+      else
+        echo "FAILED"
+        echo "    $err" | head -5
+      fi
     fi
   done
 done
