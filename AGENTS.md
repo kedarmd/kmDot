@@ -17,9 +17,9 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 
 | Action | Command | Notes |
 |---|---|---|
-| Install selected apps | `./install.sh` | Requires `gum` (`pacman -S gum`). Multi-select TUI. |
+| Install selected apps | `./config-install.sh` | Requires `gum` (`pacman -S gum`). Multi-select TUI. |
 | Single-app sync | `./sync/<app>.sh` | E.g. `./sync/nvim.sh`. Skips the TUI picker. |
-| Uninstall | `./uninstall.sh` | Also requires `gum`. Removes symlink targets + kmdot copies. |
+| Uninstall | `./config-uninstall.sh` | Also requires `gum`. Removes symlink targets + kmdot copies. |
 | Switch theme (CLI) | `theme-switcher/main.sh <theme>` | Themes: catppuccin, everforest, nord, onedark, tokyonight |
 | Switch theme (quickshell launcher) | `config/quickshell/scripts/toggle.sh kmdot-theme` (Super+T) | Picks theme via quickshell launcher, calls `main.sh` (which restarts quickshell once) |
 | Quickshell sync | `./sync/quickshell.sh` | Bar config lives in `config/quickshell/`. |
@@ -30,7 +30,7 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 
 1. Create `config/<app>/` with config files.
 2. Create `sync/<app>.sh` (copy + symlink pattern — see existing scripts).
-3. Add to `APPS` array in `install.sh` (and `uninstall.sh` if supported).
+3. Add to `APPS` array in `config-install.sh` (and `config-uninstall.sh` if supported).
 
 ## Adding a Theme
 

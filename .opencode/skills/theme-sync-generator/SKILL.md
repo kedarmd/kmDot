@@ -1,6 +1,6 @@
 ---
 name: theme-sync-generator
-description: Create the kmDot deployment side for one application's theming — config/<app>/ final configs, sync/<app>.sh on the copy+symlink pattern, the theme-switcher hook with reload/restart handling, registration in main.sh, and APPS/TARGETS/SOURCES entries in install.sh and uninstall.sh. Runs in build mode (writes) or plan mode (returns full planned files, writes nothing). Used by the add-themed-app orchestrator.
+description: Create the kmDot deployment side for one application's theming — config/<app>/ final configs, sync/<app>.sh on the copy+symlink pattern, the theme-switcher hook with reload/restart handling, registration in main.sh, and APPS/TARGETS/SOURCES entries in config-install.sh and config-uninstall.sh. Runs in build mode (writes) or plan mode (returns full planned files, writes nothing). Used by the add-themed-app orchestrator.
 ---
 
 # Generate Sync, Hook, and Registration
@@ -15,7 +15,7 @@ Scripts are bash (`#!/usr/bin/env bash`, `set -e`); Node is the only exception. 
 2. `sync/<app>.sh` — deployment script
 3. `theme-switcher/hooks/<app>.sh` — theme application + reload
 4. One line in `theme-switcher/main.sh`
-5. Entries in `install.sh` and `uninstall.sh`
+5. Entries in `config-install.sh` and `config-uninstall.sh`
 6. Verification
 
 ## 1. config/<app>/
@@ -28,7 +28,7 @@ Template: copy `sync/tmux.sh` — resolve `REPO_DIR`, define the kmdot dir and t
 
 - Single-file targets: `sync/starship.sh`.
 - Copy without symlink (systemd units): `sync/battery.sh`.
-- System-rooted targets needing sudo: `sync/sddm.sh` — these apps are **excluded from uninstall.sh**; note the exclusion in a comment there.
+- System-rooted targets needing sudo: `sync/sddm.sh` — these apps are **excluded from config-uninstall.sh**; note the exclusion in a comment there.
 - Post-copy fixes (chmod inside deployed dir): `sync/quickshell.sh`.
 
 Done when: the script mirrors one exemplar exactly, adjusted only where research demands it.
@@ -51,25 +51,25 @@ Register in `theme-switcher/main.sh`: one `. "$SCRIPT_DIR/hooks/<app>.sh" "$THEM
 
 | Script | Entry | Rule |
 | --- | --- | --- |
-| `install.sh` | `"app"` in `APPS` | Alphabetical insert |
-| `uninstall.sh` | `"app"` in `APPS` | Alphabetical insert |
-| `uninstall.sh` | `TARGETS["app"]="…"` | Copied verbatim from the `ln -sf` target(s) your sync script creates — dir or single file; space-separated list for multiple links |
-| `uninstall.sh` | `SOURCES["app"]="…"` | Your script's `~/.config/kmdot/<dir>`; omit when none |
+| `config-install.sh` | `"app"` in `APPS` | Alphabetical insert |
+| `config-uninstall.sh` | `"app"` in `APPS` | Alphabetical insert |
+| `config-uninstall.sh` | `TARGETS["app"]="…"` | Copied verbatim from the `ln -sf` target(s) your sync script creates — dir or single file; space-separated list for multiple links |
+| `config-uninstall.sh` | `SOURCES["app"]="…"` | Your script's `~/.config/kmdot/<dir>`; omit when none |
 
 Invariants:
 
 - `sync/<app>.sh` is the single source of truth for both maps — extract, never retype from memory.
-- Every `uninstall.sh` APPS entry has a `TARGETS` key; every `install.sh` APPS entry has a `sync/<app>.sh`.
+- Every `config-uninstall.sh` APPS entry has a `TARGETS` key; every `config-install.sh` APPS entry has a `sync/<app>.sh`.
 - Keep the pickers' height dynamic: `--height=$(( ${#APPS[@]} + 2 ))` — re-assert after inserting.
 - System-rooted apps (sddm precedent): skip uninstall registration, leave an explanatory comment.
 
 ## 5. Verify (build mode)
 
 ```bash
-bash -n sync/<app>.sh theme-switcher/hooks/<app>.sh install.sh uninstall.sh
+bash -n sync/<app>.sh theme-switcher/hooks/<app>.sh config-install.sh config-uninstall.sh
 ./sync/<app>.sh                       # deploys cleanly
 theme-switcher/main.sh <t1> && theme-switcher/main.sh <t2>   # hook round-trip
-grep -c '"app"' install.sh uninstall.sh                       # registration present
+grep -c '"app"' config-install.sh config-uninstall.sh                       # registration present
 ```
 
 Every `APPS` entry vs `sync/` parity check stays green. Report what was verified live versus left to the user.

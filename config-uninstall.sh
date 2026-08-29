@@ -21,11 +21,12 @@ echo '
 ╚═╝ ╚═╝ ╚═╝  ╚═╝  ╚═╝ ╚═════╝   ╚═════╝     ╚═══╝
 '
 
-echo "Welcome to kmDot uninstaller!"
+echo "Welcome to kmDot config uninstaller!"
 echo ""
 
 # sddm is intentionally absent: sync/sddm.sh installs into system paths
 # (/usr/share/sddm/themes, /usr/share/backgrounds) which only root can remove.
+# These apps are excluded from config-uninstall.sh.
 APPS=(
   "battery"
   "fish"

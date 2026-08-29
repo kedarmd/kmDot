@@ -105,7 +105,7 @@ The round-trip must leave the app themed as the original theme with no hook erro
 - [ ] Hook exists, reads from `~/.config/kmdot/themes/$THEME/`, registered in `theme-switcher/main.sh`.
 - [ ] `sync/<app>.sh` executable, follows the copy+symlink pattern.
 - [ ] `config/<app>/` holds the final configs.
-- [ ] `install.sh` and `uninstall.sh` registered per the sync-generator contract.
+- [ ] `config-install.sh` and `config-uninstall.sh` registered per the sync-generator contract.
 - [ ] Theme round-trip verified, or the unverified part stated plainly.
 - [ ] Pending plan deleted (if one existed).
 - [ ] `AGENTS.md` updated only if a lasting convention or quirk emerged.

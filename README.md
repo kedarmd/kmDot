@@ -34,7 +34,7 @@ The screenshots below were captured show the current Quickshell interface withou
 
 ```bash
 sudo pacman -S gum
-./install.sh   # multi-select TUI
+./config-install.sh   # multi-select TUI
 ```
 
 Single-app re-sync: `./sync/<app>.sh` (skips TUI).
