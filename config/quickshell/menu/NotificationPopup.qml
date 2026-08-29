@@ -196,9 +196,31 @@ PanelWindow {
               width: parent.width
               spacing: 8
 
+              Image {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: {
+                  const ic = modelData.appIcon || ""
+                  return ic !== "" && !ic.startsWith("\\u")
+                }
+                source: {
+                  const ic = modelData.appIcon || ""
+                  if (ic === "") return ""
+                  if (ic.startsWith("/") || ic.startsWith("file://") || ic.startsWith("image://")) return ic
+                  return Quickshell.iconPath(ic)
+                }
+                width: 18
+                height: 18
+                sourceSize: Qt.size(18, 18)
+                smooth: true
+              }
+
               Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: modelData.appIcon ? modelData.appIcon : "\uf0f3"
+                visible: {
+                  const ic = modelData.appIcon || ""
+                  return ic === "" || ic.startsWith("\\u")
+                }
+                text: "\uf0f3"
                 font.family: "JetBrainsMono Nerd Font Propo"
                 font.pixelSize: 14
                 color: Colors.text_alt

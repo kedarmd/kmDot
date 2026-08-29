@@ -5,7 +5,6 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("quickshell &")
     hl.exec_cmd("~/.config/kmdot/quickshell/scripts/clipboard-daemon.sh &")
     hl.exec_cmd("systemctl --user start hypridle.service")
-    -- hl.exec_cmd("swaync")  -- disabled: Quickshell NotificationServer owns D-Bus
     hl.exec_cmd("nm-applet")
     hl.exec_cmd("~/.config/kmdot/hyprland/scripts/manage_workspaces.sh")
     hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
