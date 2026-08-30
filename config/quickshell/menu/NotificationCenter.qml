@@ -756,7 +756,7 @@ PanelWindow {
                           elide: Text.ElideRight
                           maximumLineCount: 2
                           wrapMode: Text.Wrap
-                          textFormat: Text.PlainText
+                          textFormat: Text.StyledText
                         }
                       }
                     }

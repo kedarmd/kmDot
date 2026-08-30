@@ -8,12 +8,12 @@ Item {
   implicitHeight: 30
   width: Math.max(30, label.implicitWidth + 20)
   required property var tooltip
-  property int count: 0
+  required property bool hasNotifications
 
   readonly property bool dndOn: DnDState.dndEnabled
   readonly property string icon: dndOn ? "󰂛" : "󰂚"
   readonly property string tooltipText: dndOn
-    ? ("Do Not Disturb enabled" + (count > 0 ? " • " + count + " pending notifications" : ""))
+    ? "Do Not Disturb enabled"
     : "Do Not Disturb disabled"
 
   ModulePill {
@@ -22,19 +22,30 @@ Item {
     width: Math.max(30, label.implicitWidth + 20)
     height: 30
     active: root.dndOn
-    fill: root.dndOn && root.count > 0 ? Tokens.errorContainer : Tokens.warningContainer
+    fill: root.dndOn ? Tokens.errorContainer : Tokens.warningContainer
     hovered: mouse.containsMouse
     pressed: mouse.pressed
 
     Text {
       id: label
       anchors.centerIn: parent
-      text: count > 0 ? icon + " " + count : icon
+      text: icon
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 15
-      color: dndOn && count > 0 ? Tokens.on_error_container
-           : dndOn ? Tokens.on_warning_container
+      color: dndOn ? Tokens.on_error_container
            : Colors.text_alt
+    }
+
+    Rectangle {
+      visible: root.hasNotifications && !root.dndOn
+      anchors.top: parent.top
+      anchors.right: parent.right
+      anchors.topMargin: 2
+      anchors.rightMargin: 2
+      width: 7
+      height: 7
+      radius: 3.5
+      color: Colors.error
     }
   }
 

@@ -10,6 +10,7 @@ Scope {
   id: shellRoot
 
   property var activeLauncher: null
+  property bool hasNotifications: false
   property AppLauncher appLauncher: AppLauncher { scope: shellRoot }
   property KmdotLauncher kmdotLauncher: KmdotLauncher { scope: shellRoot }
   property SystemLauncher systemLauncher: SystemLauncher { scope: shellRoot }
@@ -49,9 +50,28 @@ Scope {
 
     onNotification: notification => {
       notification.tracked = true
+      shellRoot.hasNotifications = true
       shellRoot.notificationPopup.addNotification(notification)
       if (shellRoot.notificationCenter)
         shellRoot.notificationCenter.addToHistory(notification)
+    }
+  }
+
+  Timer {
+    interval: 3000
+    repeat: true
+    running: true
+    onTriggered: {
+      if (shellRoot.hasNotifications && notifServer.trackedNotifications.count === 0)
+        shellRoot.hasNotifications = false
+    }
+  }
+
+  Connections {
+    target: shellRoot.notificationCenter
+    function onOpenedChanged() {
+      if (shellRoot.notificationCenter.opened)
+        shellRoot.hasNotifications = false
     }
   }
 
@@ -77,12 +97,6 @@ PanelWindow {
         color: Colors.surface
         implicitHeight: 42
         exclusionMode: ExclusionMode.Auto
-
-        Binding {
-          target: dndModule
-          property: "count"
-          value: notifServer.trackedNotifications.count
-        }
 
       Tooltip {
         id: tooltip
@@ -145,7 +159,7 @@ PanelWindow {
         Dnd {
           id: dndModule
           tooltip: tooltip
-          count: 0
+          hasNotifications: shellRoot.hasNotifications
         }
       }
 

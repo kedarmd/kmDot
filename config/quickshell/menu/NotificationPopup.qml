@@ -283,7 +283,7 @@ PanelWindow {
               elide: Text.ElideRight
               maximumLineCount: 3
               wrapMode: Text.Wrap
-              textFormat: Text.PlainText
+              textFormat: Text.StyledText
             }
 
             Row {
@@ -306,15 +306,6 @@ PanelWindow {
                   }
                 }
               }
-            }
-          }
-
-          MouseArea {
-            anchors.fill: parent
-            onDoubleClicked: {
-              if (card.modelData.hasActions && card.modelData.actions.length > 0)
-                card.modelData.actions[0].invoke()
-              root.dismissIndex(card.index)
             }
           }
         }
