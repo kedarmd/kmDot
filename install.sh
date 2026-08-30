@@ -43,6 +43,36 @@ if ! command -v gum &>/dev/null; then
   echo "gum installed."
 fi
 
+# --- Bootstrap: Node.js (required for quickshell launchers, calendar, Handy) ---
+
+if ! command -v node &>/dev/null; then
+  echo ""
+  echo "Node.js is required for kmDot (launcher toggle, calendar, Handy)."
+
+  if command -v mise &>/dev/null; then
+    echo "mise found — installing Node.js 24 via mise..."
+    mise install nodejs@24
+    echo "Node.js installed."
+  else
+    echo ""
+    echo "Node.js not found and mise is not installed."
+    echo "Install Node.js with your preferred method:"
+    echo ""
+    echo "  Recommended: mise (manages multiple Node versions)"
+    echo "    sudo pacman -S mise"
+    echo "    mise install nodejs@24"
+    echo ""
+    echo "  Alternatives:"
+    echo "    nvm:     nvm install 24"
+    echo "    fnm:     fnm install 24"
+    echo "    volta:   volta install node@24"
+    echo "    pacman:  sudo pacman -S nodejs-lts-jod"
+    echo ""
+    echo "After installing, re-run: ./install.sh"
+    exit 1
+  fi
+fi
+
 # --- Package mapping ---
 # Key = config directory name (matches sync/<name>.sh)
 # Value = pacman/yay package name(s), space-separated for multi-package entries
@@ -61,6 +91,7 @@ PKGS["tmux"]="tmux"
 PKGS["xdg-desktop-portal"]="xdg-desktop-portal xdg-desktop-portal-hyprland"
 PKGS["battery"]=""
 PKGS["theme-switcher"]=""
+PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet pipewire wireplumber pipewire-pulse bluez blueman wl-clipboard brightnessctl upower jq playerctl curl"
 
 # Canonical order for display
 APPS=(
@@ -71,6 +102,7 @@ APPS=(
   "hyprland"
   "nvim"
   "quickshell"
+  "runtime"
   "sddm"
   "starship"
   "theme-switcher"

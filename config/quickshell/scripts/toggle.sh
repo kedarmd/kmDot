@@ -3,6 +3,7 @@
 # Self-heals: if the socket is missing (quickshell live-reloaded after a theme switch
 # and unlinked it, or quickshell is not running), restarts quickshell and retries.
 set -euo pipefail
+eval "$(mise activate bash)" 2>/dev/null || true
 
 SOCK_NAME="${1:?usage: toggle.sh <sockname>}"
 SOCK="${XDG_RUNTIME_DIR:-/tmp}/${SOCK_NAME}.sock"

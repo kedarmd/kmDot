@@ -12,5 +12,6 @@ sudo install -Dm644 "$REPO_DIR/config/sddm/themes/kmd-hyprlock/theme.conf" "$SDD
 sudo install -Dm644 "$REPO_DIR/config/sddm/themes/kmd-hyprlock/Main.qml" "$SDDM_THEME_DIR/Main.qml"
 sudo install -Dm644 "$REPO_DIR/config/sddm/themes/kmd-hyprlock/metadata.desktop" "$SDDM_THEME_DIR/metadata.desktop"
 sudo install -Dm644 "$REPO_WALLPAPER" "$SDDM_WALLPAPER"
+sudo install -Dm644 "$REPO_DIR/config/sddm/sddm.conf" /etc/sddm.conf.d/kmdot.conf
 
 echo "kmDot sddm theme synced!!!"
