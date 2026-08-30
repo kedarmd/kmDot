@@ -45,6 +45,7 @@ PanelWindow {
   property var backlightMap: ({})
   property int selectedIdx: 0
   property string currentMode: "extend"
+  property string externalPosition: "right"  // "left" or "right" - where external monitor is relative to internal
 
   readonly property string sockPath: {
     const rt = Quickshell.env("XDG_RUNTIME_DIR")
@@ -129,7 +130,7 @@ PanelWindow {
   function applyMode(mode) {
     root.currentMode = mode
     if (mode === "extend") {
-      modeProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/display-mode.sh extend"])
+      modeProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/display-mode.sh extend --position " + root.externalPosition])
     } else if (mode === "mirror") {
       const primary = displays.length > 0 ? displays[0].name : "eDP-1"
       modeProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/display-mode.sh mirror " + primary])
@@ -153,7 +154,7 @@ PanelWindow {
       const m = displays[i]
       const isExternal = !(m.name in backlightMap)
       const scale = (m.name === selectedName) ? selectedScale : m.scale
-      const disabled = (currentMode === "external" && isExternal) ? "true" : "false"
+      const disabled = (currentMode === "external" && !isExternal) ? "true" : "false"
       const mirrorTarget = (currentMode === "mirror" && isExternal && displays.length > 0) ? displays[0].name : ""
       let rule = "  { output = \"" + m.name + "\", mode = \"" + m.width + "x" + m.height + "@" + m.refresh + "\", position = \"" + m.x + "x" + m.y + "\", scale = " + scale
       if (disabled === "true") rule += ", disabled = true"
@@ -163,6 +164,7 @@ PanelWindow {
       lines.push(rule)
     }
     lines.push("}")
+    lines.push("-- external_position: " + root.externalPosition)
     const luaContent = lines.join("\n")
     const tmpFile = "~/.config/kmdot/display-settings.lua.tmp"
     const targetFile = "~/.config/kmdot/display-settings.lua"
@@ -684,6 +686,52 @@ PanelWindow {
             text: "External"
             textSize: 12
             onClicked: root.applyMode("external")
+          }
+        }
+
+        // External position selector (only show in extend mode)
+        Column {
+          width: parent.width
+          visible: root.currentMode === "extend"
+          spacing: 8
+
+          Text {
+            width: parent.width
+            text: "External monitor position"
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 12
+            color: Colors.muted
+          }
+
+          Row {
+            width: parent.width
+            spacing: 8
+
+            PillButton {
+              width: (body.width - 8) / 2
+              height: 30
+              filled: true
+              active: root.externalPosition === "left"
+              text: "← Left"
+              textSize: 12
+              onClicked: {
+                root.externalPosition = "left"
+                root.applyMode("extend")
+              }
+            }
+
+            PillButton {
+              width: (body.width - 8) / 2
+              height: 30
+              filled: true
+              active: root.externalPosition === "right"
+              text: "Right →"
+              textSize: 12
+              onClicked: {
+                root.externalPosition = "right"
+                root.applyMode("extend")
+              }
+            }
           }
         }
       }
