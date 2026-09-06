@@ -4,10 +4,12 @@ import Quickshell.Networking
 import qs
 import "../components"
 
-ConnectionDropdownBase {
+PopupBase {
   id: root
   sockName: "kmdot-wifi-dropdown"
   title: "Wi-Fi"
+  // Preserve pre-PopupBase behavior: Escape does not dismiss (base default is true).
+  escapeCloses: false
 
   property var networks: []
   property string state: ""

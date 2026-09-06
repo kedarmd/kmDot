@@ -1,46 +1,15 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import qs
 import "../components"
-import "../components/popuppos.js" as Pos
 
-PanelWindow {
+PopupBase {
   id: root
-  visible: root.opened
-  color: Qt.rgba(0, 0, 0, 0)
-  focusable: true
+  sockName: "kmdot-calendar"
+  cardWidth: 340
 
-  BackgroundEffect.blurRegion: Region {
-    item: root.contentItem
-
-    Region {
-      intersection: Intersection.Subtract
-      x: 0
-      y: 0
-      width: root.width
-      height: 42
-    }
-  }
-  screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
-
-  WlrLayershell.layer: WlrLayer.Overlay
-  WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-  WlrLayershell.exclusionMode: ExclusionMode.Ignore
-
-  anchors {
-    top: true
-    bottom: true
-    left: true
-    right: true
-  }
-
-  property bool opened: false
-  property var scope: null
-  // anchorItem seam: set by the bar module before toggling (see ConnectionDropdownBase).
-  property var anchorItem: null
-  property real anchorGX: -1
+  // Positioning/focus/socket shell lives in PopupBase (anchorItem seam).
   property var events: null
   property var cells: []
   property date today: new Date()
@@ -49,11 +18,6 @@ PanelWindow {
   property int monthIndex: root.today.getMonth()
   property string syncText: ""
   property bool loading: false
-
-  readonly property string sockPath: {
-    const rt = Quickshell.env("XDG_RUNTIME_DIR")
-    return (rt ? rt : "/tmp") + "/kmdot-calendar.sock"
-  }
 
   readonly property var months: ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"]
@@ -181,47 +145,15 @@ PanelWindow {
     parseProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/calendar-events.mjs"])
   }
 
-  function pickScreen() {
-    posProc.exec(["sh", "-c", "hyprctl cursorpos"])
-  }
-
-  function applyAnchor() {
-    if (root.anchorItem) {
-      const gx = Pos.globalCenterX(root.anchorItem)
-      root.anchorItem = null
-      if (gx >= 0) root.anchorGX = gx
-    }
-    if (root.anchorGX >= 0) {
-      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
-      if (s) root.screen = s
-      else root.pickScreen()
-    } else {
-      root.pickScreen()
-    }
-  }
-
-  function open() {
-    if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
-    if (root.scope && root.scope.batteryPopup && root.scope.batteryPopup !== root) root.scope.batteryPopup.close()
-    if (root.scope && root.scope.volumePopup && root.scope.volumePopup !== root) root.scope.volumePopup.close()
-    if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
-    if (root.scope && root.scope.displayPopup) root.scope.displayPopup.close()
-    root.opened = true
-    root.applyAnchor()
+  function refreshItems() {
     root.buildCells()
     root.syncText = "Syncing\u2026"
     root.loading = true
     root.refreshNow()
-    focusTimer.start()
   }
 
-  function close() {
-    root.opened = false
-  }
-
-  function toggle() {
-    if (root.opened) root.close()
-    else root.open()
+  function openedChange() {
+    if (root.opened) nav.forceActiveFocus()
   }
 
   Component.onCompleted: {
@@ -229,35 +161,11 @@ PanelWindow {
     root.syncNow()
   }
 
-  Timer {
-    id: focusTimer
-    interval: 60
-    repeat: true
-    onTriggered: {
-      if (!root.opened) {
-        focusTimer.stop()
-        return
-      }
-      content.forceActiveFocus()
-      if (content.activeFocus) focusTimer.stop()
-    }
-  }
-
   // Periodic resync while logged in.
   Timer {
     interval: 1800000
     repeat: true
     onTriggered: root.syncNow()
-  }
-
-  SocketServer {
-    active: true
-    path: root.sockPath
-    handler: Socket {
-      onConnectedChanged: {
-        if (connected) root.toggle()
-      }
-    }
   }
 
   Process {
@@ -292,29 +200,12 @@ PanelWindow {
     }
   }
 
-  Process {
-    id: posProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const m = /(-?\d+),\s*(-?\d+)/.exec(String(this.text).trim())
-        if (!m) return
-        const X = parseInt(m[1], 10)
-        const Y = parseInt(m[2], 10)
-        const screens = Quickshell.screens.values
-        for (let i = 0; i < screens.length; i++) {
-          const s = screens[i]
-          if (X >= s.x && X < s.x + s.width && Y >= s.y && Y < s.y + s.height) {
-            root.screen = s
-            return
-          }
-        }
-      }
-    }
-  }
-
-  Item {
-    id: content
-    anchors.fill: parent
+  // Focusable nav wrapper: owns the keyboard nav (base owns its content Item,
+  // so the Keys handlers live here; openedChange() focuses it on open).
+  Column {
+    id: nav
+    width: parent.width
+    spacing: 12
     focus: true
     Keys.onEscapePressed: root.close()
     Keys.onUpPressed: root.moveSelection(0, -7)
@@ -333,379 +224,342 @@ PanelWindow {
       }
     }
 
-    MouseArea {
-      id: dismiss
-      anchors.fill: parent
-      onClicked: root.close()
+    Row {
+      width: parent.width
+      height: 32
+      spacing: 4
+
+      Rectangle {
+        id: prevBtn
+        width: 32
+        height: 32
+        radius: 16
+        color: "transparent"
+        Text {
+          anchors.centerIn: parent
+          text: "\uf053"
+          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 14
+          color: Colors.text_alt
+        }
+        StateLayer {
+          anchors.fill: parent
+          radius: parent.radius
+          hovered: mouse1.containsMouse
+          pressed: mouse1.pressed
+        }
+        MouseArea {
+          id: mouse1
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.shiftMonth(-1)
+        }
+      }
+
+      Item {
+        width: 1
+        height: 1
+      }
+
+      Text {
+        anchors.verticalCenter: parent.verticalCenter
+        text: root.monthTitle()
+        font.family: "JetBrainsMono Nerd Font Propo"
+        font.pixelSize: 14
+        font.weight: Font.DemiBold
+        color: Colors.text
+        horizontalAlignment: Text.AlignHCenter
+        elide: Text.ElideRight
+      }
+
+      Item {
+        width: 1
+        height: 1
+      }
+
+      Rectangle {
+        id: nextBtn
+        width: 32
+        height: 32
+        radius: 16
+        color: "transparent"
+        Text {
+          anchors.centerIn: parent
+          text: "\uf054"
+          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 14
+          color: Colors.text_alt
+        }
+        StateLayer {
+          anchors.fill: parent
+          radius: parent.radius
+          hovered: mouse2.containsMouse
+          pressed: mouse2.pressed
+        }
+        MouseArea {
+          id: mouse2
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.shiftMonth(1)
+        }
+      }
     }
 
-    Rectangle {
-      id: card
-      width: 340
-      height: body.implicitHeight + 32
-      radius: 20
-      color: Tokens.surfaceContainerLow
-
-      anchors {
-        top: parent.top
-        topMargin: 48
-      }
-      x: root.anchorGX >= 0
-        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
-        : (parent.width - card.width) / 2
-
-      MouseArea {
-        anchors.fill: parent
-      }
-
-      Column {
-        id: body
-        anchors {
-          top: parent.top
-          left: parent.left
-          right: parent.right
-          margins: 16
-        }
-        spacing: 12
-
-        Row {
-          width: parent.width
-          height: 32
-          spacing: 4
-
-          Rectangle {
-            id: prevBtn
-            width: 32
-            height: 32
-            radius: 16
-            color: "transparent"
-            Text {
-              anchors.centerIn: parent
-              text: "\uf053"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 14
-              color: Colors.text_alt
-            }
-            StateLayer {
-              anchors.fill: parent
-              radius: parent.radius
-              hovered: mouse1.containsMouse
-              pressed: mouse1.pressed
-            }
-            MouseArea {
-              id: mouse1
-              anchors.fill: parent
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.shiftMonth(-1)
-            }
-          }
-
-          Item {
-            width: 1
-            height: 1
-          }
-
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.monthTitle()
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 14
-            font.weight: Font.DemiBold
-            color: Colors.text
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
-          }
-
-          Item {
-            width: 1
-            height: 1
-          }
-
-          Rectangle {
-            id: nextBtn
-            width: 32
-            height: 32
-            radius: 16
-            color: "transparent"
-            Text {
-              anchors.centerIn: parent
-              text: "\uf054"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 14
-              color: Colors.text_alt
-            }
-            StateLayer {
-              anchors.fill: parent
-              radius: parent.radius
-              hovered: mouse2.containsMouse
-              pressed: mouse2.pressed
-            }
-            MouseArea {
-              id: mouse2
-              anchors.fill: parent
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.shiftMonth(1)
-            }
-          }
-        }
-
-        Row {
-          width: parent.width
-          spacing: 0
-          Repeater {
-            model: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
-            Text {
-              width: 44
-              height: 20
-              text: modelData
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 10
-              color: Colors.muted
-              horizontalAlignment: Text.AlignHCenter
-            }
-          }
-        }
-
-        Grid {
-          columns: 7
-          columnSpacing: 0
-          rowSpacing: 2
-          width: parent.width
-
-          Repeater {
-            model: root.cells
-
-            Item {
-              width: 44
-              height: 30
-
-              property bool inMonth: modelData.inMonth
-              property bool isToday: modelData.isToday
-              property bool isSelected: modelData.isSelected
-              property bool hasEvents: modelData.hasEvents
-
-              Rectangle {
-                anchors.fill: parent
-                radius: 10
-                color: isSelected ? Tokens.primaryContainer
-                     : isToday ? Tokens.primaryContainer
-                     : "transparent"
-              }
-
-              StateLayer {
-                anchors.fill: parent
-                radius: 10
-                hovered: mouseArea.containsMouse && inMonth && !isSelected && !isToday
-                pressed: mouseArea.pressed && inMonth
-              }
-
-              Text {
-                anchors.centerIn: parent
-                text: modelData.date.getDate()
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 12
-                color: !inMonth ? Colors.muted
-                     : isSelected ? Tokens.on_primary_container
-                     : isToday ? Tokens.on_primary_container
-                     : mouseArea.containsMouse ? Colors.text
-                     : Colors.text_alt
-                font.bold: isToday
-              }
-
-              Rectangle {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 3
-                width: 3
-                height: 3
-                radius: 1.5
-                visible: hasEvents && !isToday
-                color: Tokens.primary
-              }
-
-              MouseArea {
-                id: mouseArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                  root.selectedDay = modelData.date
-                  root.buildCells()
-                }
-              }
-            }
-          }
-        }
-
-        Rectangle {
-          width: parent.width
-          height: 1
-          color: Tokens.divider
-        }
-
+    Row {
+      width: parent.width
+      spacing: 0
+      Repeater {
+        model: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
         Text {
-          width: parent.width
-          text: root.selectedTitle()
+          width: 44
+          height: 20
+          text: modelData
           font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          font.weight: Font.DemiBold
-          color: Colors.text
-        }
-
-        Repeater {
-          model: root.dayEvents(root.selectedDay).slice(0, 6)
-
-          Row {
-            width: parent.width
-            height: 22
-            spacing: 10
-
-            Text {
-              width: 112
-              anchors.verticalCenter: parent.verticalCenter
-              text: root.eventTime(modelData)
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 11
-              color: modelData.a ? Colors.primary : Colors.muted
-              elide: Text.ElideRight
-            }
-
-            Item {
-              id: titleClip
-              width: parent.width - 122
-              height: parent.height
-              clip: true
-
-              property string titleText: modelData.t
-              property bool overflowing: titleTextElide.implicitWidth > titleClip.width
-              property bool marquee: false
-
-              Text {
-                id: titleTextElide
-                width: titleClip.width
-                anchors.verticalCenter: parent.verticalCenter
-                visible: !titleClip.marquee
-                text: titleClip.titleText
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 12
-                color: Colors.text_alt
-                elide: Text.ElideRight
-              }
-
-              Text {
-                id: titleMarquee
-                visible: titleClip.marquee
-                y: titleClip.height / 2 - height / 2
-                x: titleClip.width
-                text: titleClip.titleText
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 12
-                color: Colors.text_alt
-              }
-
-              property real titleMarqueeX: -titleMarquee.implicitWidth
-              property int animDur: Math.max(1000, titleMarquee.implicitWidth * 12)
-              property bool _first: true
-
-              MouseArea {
-                id: titleHover
-                anchors.fill: parent
-                hoverEnabled: true
-                onEntered: {
-                  if (titleClip.overflowing && !titleClip.marquee) {
-                    titleClip.marquee = true
-                    titleMarquee.x = titleClip.width
-                    marqueeAnim.restart()
-                  }
-                }
-                onExited: {
-                  titleClip.marquee = false
-                  marqueeAnim.stop()
-                  titleMarquee.x = titleClip.width
-                }
-              }
-
-              NumberAnimation {
-                id: marqueeAnim
-                target: titleMarquee
-                property: "x"
-                from: titleClip.width
-                to: titleClip.titleMarqueeX
-                duration: titleClip.animDur
-                easing.type: Easing.Linear
-              }
-            }
-          }
-        }
-
-        Text {
-          width: parent.width
-          visible: root.dayEvents(root.selectedDay).length === 0
-          text: "No events"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
+          font.pixelSize: 10
           color: Colors.muted
           horizontalAlignment: Text.AlignHCenter
         }
+      }
+    }
 
-        Text {
-          width: parent.width
-          visible: root.dayEvents(root.selectedDay).length > 6
-          text: "+ " + (root.dayEvents(root.selectedDay).length - 6) + " more"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 11
-          color: Colors.muted
-        }
+    Grid {
+      columns: 7
+      columnSpacing: 0
+      rowSpacing: 2
+      width: parent.width
 
-        Row {
-          width: parent.width
-          spacing: 8
+      Repeater {
+        model: root.cells
 
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.syncText
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 10
-            color: Colors.muted
-            elide: Text.ElideRight
+        Item {
+          width: 44
+          height: 30
+
+          property bool inMonth: modelData.inMonth
+          property bool isToday: modelData.isToday
+          property bool isSelected: modelData.isSelected
+          property bool hasEvents: modelData.hasEvents
+
+          Rectangle {
+            anchors.fill: parent
+            radius: 10
+            color: isSelected ? Tokens.primaryContainer
+                 : isToday ? Tokens.primaryContainer
+                 : "transparent"
           }
 
-          Item {
-            width: 1
-            height: 1
+          StateLayer {
+            anchors.fill: parent
+            radius: 10
+            hovered: mouseArea.containsMouse && inMonth && !isSelected && !isToday
+            pressed: mouseArea.pressed && inMonth
+          }
+
+          Text {
+            anchors.centerIn: parent
+            text: modelData.date.getDate()
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 12
+            color: !inMonth ? Colors.muted
+                 : isSelected ? Tokens.on_primary_container
+                 : isToday ? Tokens.on_primary_container
+                 : mouseArea.containsMouse ? Colors.text
+                 : Colors.text_alt
+            font.bold: isToday
           }
 
           Rectangle {
-            id: syncBtn
-            width: 56
-            height: 22
-            radius: height / 2
-            color: "transparent"
-            border.color: Tokens.outlineVariant
-            border.width: 1
-            Text {
-              anchors.centerIn: parent
-              text: root.loading ? "\uf013" : "\uf021"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 12
-              color: Colors.text_alt
-            }
-            StateLayer {
-              anchors.fill: parent
-              radius: parent.radius
-              hovered: syncMouse.containsMouse
-              pressed: syncMouse.pressed
-            }
-            MouseArea {
-              id: syncMouse
-              anchors.fill: parent
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.syncNow()
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 3
+            width: 3
+            height: 3
+            radius: 1.5
+            visible: hasEvents && !isToday
+            color: Tokens.primary
+          }
+
+          MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+              root.selectedDay = modelData.date
+              root.buildCells()
             }
           }
+        }
+      }
+    }
+
+    Rectangle {
+      width: parent.width
+      height: 1
+      color: Tokens.divider
+    }
+
+    Text {
+      width: parent.width
+      text: root.selectedTitle()
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 12
+      font.weight: Font.DemiBold
+      color: Colors.text
+    }
+
+    Repeater {
+      model: root.dayEvents(root.selectedDay).slice(0, 6)
+
+      Row {
+        width: parent.width
+        height: 22
+        spacing: 10
+
+        Text {
+          width: 112
+          anchors.verticalCenter: parent.verticalCenter
+          text: root.eventTime(modelData)
+          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 11
+          color: modelData.a ? Colors.primary : Colors.muted
+          elide: Text.ElideRight
+        }
+
+        Item {
+          id: titleClip
+          width: parent.width - 122
+          height: parent.height
+          clip: true
+
+          property string titleText: modelData.t
+          property bool overflowing: titleTextElide.implicitWidth > titleClip.width
+          property bool marquee: false
+
+          Text {
+            id: titleTextElide
+            width: titleClip.width
+            anchors.verticalCenter: parent.verticalCenter
+            visible: !titleClip.marquee
+            text: titleClip.titleText
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 12
+            color: Colors.text_alt
+            elide: Text.ElideRight
+          }
+
+          Text {
+            id: titleMarquee
+            visible: titleClip.marquee
+            y: titleClip.height / 2 - height / 2
+            x: titleClip.width
+            text: titleClip.titleText
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 12
+            color: Colors.text_alt
+          }
+
+          property real titleMarqueeX: -titleMarquee.implicitWidth
+          property int animDur: Math.max(1000, titleMarquee.implicitWidth * 12)
+          property bool _first: true
+
+          MouseArea {
+            id: titleHover
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: {
+              if (titleClip.overflowing && !titleClip.marquee) {
+                titleClip.marquee = true
+                titleMarquee.x = titleClip.width
+                marqueeAnim.restart()
+              }
+            }
+            onExited: {
+              titleClip.marquee = false
+              marqueeAnim.stop()
+              titleMarquee.x = titleClip.width
+            }
+          }
+
+          NumberAnimation {
+            id: marqueeAnim
+            target: titleMarquee
+            property: "x"
+            from: titleClip.width
+            to: titleClip.titleMarqueeX
+            duration: titleClip.animDur
+            easing.type: Easing.Linear
+          }
+        }
+      }
+    }
+
+    Text {
+      width: parent.width
+      visible: root.dayEvents(root.selectedDay).length === 0
+      text: "No events"
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 12
+      color: Colors.muted
+      horizontalAlignment: Text.AlignHCenter
+    }
+
+    Text {
+      width: parent.width
+      visible: root.dayEvents(root.selectedDay).length > 6
+      text: "+ " + (root.dayEvents(root.selectedDay).length - 6) + " more"
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 11
+      color: Colors.muted
+    }
+
+    Row {
+      width: parent.width
+      spacing: 8
+
+      Text {
+        anchors.verticalCenter: parent.verticalCenter
+        text: root.syncText
+        font.family: "JetBrainsMono Nerd Font Propo"
+        font.pixelSize: 10
+        color: Colors.muted
+        elide: Text.ElideRight
+      }
+
+      Item {
+        width: 1
+        height: 1
+      }
+
+      Rectangle {
+        id: syncBtn
+        width: 56
+        height: 22
+        radius: height / 2
+        color: "transparent"
+        border.color: Tokens.outlineVariant
+        border.width: 1
+        Text {
+          anchors.centerIn: parent
+          text: root.loading ? "\uf013" : "\uf021"
+          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 12
+          color: Colors.text_alt
+        }
+        StateLayer {
+          anchors.fill: parent
+          radius: parent.radius
+          hovered: syncMouse.containsMouse
+          pressed: syncMouse.pressed
+        }
+        MouseArea {
+          id: syncMouse
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.syncNow()
         }
       }
     }
