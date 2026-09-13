@@ -3,6 +3,9 @@ import Quickshell.Io
 import qs
 import "../components"
 
+// Thin view over the DisplayState singleton (issue #49): icon + tooltip +
+// click-to-open + wheel-to-adjust. No detection, no pollers, no brightness
+// Processes of its own (toggleProc only fires the popup socket).
 Item {
   id: root
   implicitHeight: 30
@@ -10,113 +13,14 @@ Item {
   required property var tooltip
   property var popup
 
-  property int cur: 0
-  property int max: 1
-  property bool _applying: false
-  property int _pending: -1
-  property string activeDevice: ""
-  property bool hasBacklight: false
-
-  readonly property int percent: max > 0 ? Math.round(cur * 100 / max) : 0
-  readonly property int _min: Math.round(max * 5 / 100)
-  readonly property string icon: "\uf26c"
+  readonly property bool hasBacklight: DisplayState.barHasBacklight
+  readonly property int percent: DisplayState.barPercent
+  readonly property string icon: ""
   readonly property string text: icon
 
   readonly property string tooltipText: {
     if (!hasBacklight) return "Display (no backlight)"
     return "Brightness: " + percent + "%"
-  }
-
-  function detectBacklightDevice() {
-    detectProc.exec(["sh", "-c",
-      "for dev in /sys/class/backlight/*/; do " +
-      "name=$(basename \"$dev\"); " +
-      "target=$(readlink -f \"${dev}device\" 2>/dev/null); " +
-      "connector=$(echo \"$target\" | grep -oP 'card\\d+-\\K[A-Za-z0-9-]+$'); " +
-      "[ -n \"$connector\" ] && echo \"$connector $name\"; " +
-      "done"])
-  }
-
-  function poll() {
-    if (root.activeDevice) {
-      curProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " get"])
-    }
-  }
-
-  function apply(target) {
-    const t = Math.max(root._min, Math.min(root.max, target))
-    root.cur = t
-    if (root._applying) {
-      root._pending = t
-      return
-    }
-    root._applying = true
-    root._pending = -1
-    setProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " set " + t])
-  }
-
-  Component.onCompleted: {
-    detectBacklightDevice()
-  }
-
-  Timer {
-    interval: 500
-    running: true
-    repeat: true
-    onTriggered: root.poll()
-  }
-
-  Process {
-    id: detectProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const lines = this.text.trim().split("\n")
-        for (let i = 0; i < lines.length; i++) {
-          const parts = lines[i].split(" ")
-          if (parts.length >= 2) {
-            root.activeDevice = parts[1]
-            root.hasBacklight = true
-            maxProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " max"])
-            root.poll()
-            return
-          }
-        }
-        root.hasBacklight = false
-        root.activeDevice = ""
-      }
-    }
-  }
-
-  Process {
-    id: curProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const v = parseInt(this.text.replace(/[^0-9]/g, "")) || 0
-        if (!root._applying) root.cur = v
-      }
-    }
-  }
-
-  Process {
-    id: maxProc
-    stdout: StdioCollector {
-      onStreamFinished: root.max = parseInt(this.text.replace(/[^0-9]/g, "")) || 1
-    }
-  }
-
-  Process {
-    id: setProc
-    onExited: {
-      root._applying = false
-      if (root._pending >= 0) {
-        const t = root._pending
-        root._pending = -1
-        root._applying = true
-        setProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " set " + t])
-      } else {
-        root.poll()
-      }
-    }
   }
 
   ModulePill {
@@ -145,6 +49,9 @@ Item {
     onClicked: {
       if (root.popup) root.popup.anchorItem = root
       toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-display"])
+    }
+    onWheel: {
+      if (root.hasBacklight) DisplayState.nudgeBar(wheel.angleDelta.y > 0 ? 1 : -1)
     }
     onEntered: root.tooltip.show(root, root.tooltipText)
     onExited: root.tooltip.hide()

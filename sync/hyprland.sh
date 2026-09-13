@@ -14,6 +14,12 @@ cp -r "$REPO_DIR/config/hyprland" "$KMDOT_HYPRLAND_CONFIG_DIR"
 
 ln -sf "$KMDOT_HYPRLAND_CONFIG_DIR" "$HYPRLAND_CONFIG_DIR"
 
+# Display settings are written at runtime by the quickshell DisplayState
+# singleton (~/.config/kmdot/display-settings.lua, consumed by
+# hyprland/monitors.lua). Link once here so the require() resolves even
+# before the first persist; dangling until then is fine (pcall fallback).
+ln -sf "$HOME/.config/kmdot/display-settings.lua" "$KMDOT_HYPRLAND_CONFIG_DIR/display-settings.lua"
+
 WAYLAND_SESSIONS_DIR="$HOME/.local/share/wayland-sessions"
 mkdir -p "$WAYLAND_SESSIONS_DIR"
 cat > "$WAYLAND_SESSIONS_DIR/hyprland.desktop" <<EOF
