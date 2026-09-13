@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs
 import "../components"
+import "../components/serverstatus.js" as ServerStatus
 import "../components/popuppos.js" as Pos
 
 PanelWindow {
@@ -59,19 +60,12 @@ PanelWindow {
   }
 
   function applyStatus(text) {
-    for (const line of String(text).split("\n")) {
-      const ln = line.trim()
-      if (!ln) continue
-      const i = ln.indexOf("=")
-      if (i < 0) continue
-      const k = ln.slice(0, i)
-      const v = ln.slice(i + 1)
-      if (k === "mode") root.mode = v
-      else if (k === "inhibitor") root.inhibitor = v
-      else if (k === "tailscale") root.tailscale = v
-      else if (k === "tailscale_ip") root.tailscaleIp = v
-      else if (k === "jellyfin") root.jellyfin = v
-    }
+    const s = ServerStatus.parseServerStatus(text)
+    root.mode = s.mode
+    root.inhibitor = s.inhibitor
+    root.tailscale = s.tailscale
+    root.tailscaleIp = s.tailscaleIp
+    root.jellyfin = s.jellyfin
   }
 
   function refresh() {

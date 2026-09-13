@@ -154,7 +154,7 @@ PanelWindow {
         }
         Kmdot {}
         Clock {
-          popup: calendarPopup
+          popupRef: calendarPopup
         }
         Dnd {
           id: dndModule
@@ -177,35 +177,35 @@ PanelWindow {
           stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened
           OpenCodeUsage {
             tooltip: tooltip
-            popup: openCodeUsagePopup
+            popupRef: openCodeUsagePopup
           }
           Handy {
             tooltip: tooltip
-            popup: handyPopup
+            popupRef: handyPopup
           }
           ServerMode {
-            dropdown: serverModeDropdown
+            popupRef: serverModeDropdown
           }
         }
         Network {
           tooltip: tooltip
-          dropdown: wifiDropdown
+          popupRef: wifiDropdown
         }
         Bluetooth {
           tooltip: tooltip
-          dropdown: bluetoothDropdown
+          popupRef: bluetoothDropdown
         }
         Audio {
           tooltip: tooltip
-          popup: volumePopup
+          popupRef: volumePopup
         }
         Battery {
           tooltip: tooltip
-          popup: batteryPopup
+          popupRef: batteryPopup
         }
         Display {
           tooltip: tooltip
-          popup: displayPopup
+          popupRef: displayPopup
         }
       }
     }
