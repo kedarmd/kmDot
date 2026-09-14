@@ -347,7 +347,7 @@ PopupBase {
 
     delegate: Column {
       id: groupCol
-      width: body.width
+      width: parent.width
       property var groupData: modelData
 
       Rectangle {
