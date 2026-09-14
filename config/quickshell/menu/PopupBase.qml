@@ -23,7 +23,11 @@ PanelWindow {
       height: 42
     }
   }
-  screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
+  // NOTE: Pos.primaryScreen (indexed), not .values — the .values snapshot does
+  // not track the model (reads empty while screens is populated), which
+  // unmapped overlays while opened stayed true. Same reason for the indexed
+  // loop in posProc.
+  screen: Pos.primaryScreen(Quickshell.screens)
 
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
@@ -43,7 +47,16 @@ PanelWindow {
   property bool socketEnabled: true
   property string title: "Connections"
   property real cardWidth: 360
-  property bool escapeCloses: false
+  // Card vertical chrome (top+bottom padding) and optional height cap (0 = uncapped).
+  // The two height-capped cards override these: Display (600), NotificationCenter (24 + root.height-80).
+  property real cardChrome: 32
+  property real cardMaxHeight: 0
+  property bool escapeCloses: true
+  // Focus seam: the item that should hold keyboard focus while open.
+  // Subclasses with their own focus owner override it (Calendar's nav Column,
+  // WifiAdd's ssidInput); the focus timer below yields to it. Defaults to the
+  // base content Item (Escape/backdrop handling).
+  property Item focusItem: content
   default property alias content: body.data
 
   readonly property string sockPath: {
@@ -60,7 +73,7 @@ PanelWindow {
       if (gx >= 0) root.anchorGX = gx
     }
     if (root.anchorGX >= 0) {
-      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
+      const s = Pos.screenFor(Quickshell.screens, root.anchorGX)
       if (s) root.screen = s
       else root.pickScreen()
     } else {
@@ -69,17 +82,7 @@ PanelWindow {
   }
 
   function open() {
-    if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
-    if (root.scope && root.scope.batteryPopup) root.scope.batteryPopup.close()
-    if (root.scope && root.scope.volumePopup) root.scope.volumePopup.close()
-    if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
-    if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
-    if (root.scope && root.scope.wifiDropdown && root.scope.wifiDropdown !== root) root.scope.wifiDropdown.close()
-    if (root.scope && root.scope.bluetoothDropdown && root.scope.bluetoothDropdown !== root) root.scope.bluetoothDropdown.close()
-    if (root.scope && root.scope.wifiAddPopup && root.scope.wifiAddPopup !== root) root.scope.wifiAddPopup.close()
-    if (root.scope && root.scope.bluetoothAddPopup && root.scope.bluetoothAddPopup !== root) root.scope.bluetoothAddPopup.close()
-    if (root.scope && root.scope.confirmPopup && root.scope.confirmPopup !== root) root.scope.confirmPopup.close()
-    if (root.scope && root.scope.displayPopup) root.scope.displayPopup.close()
+    if (root.scope && root.scope.closeAllExcept) root.scope.closeAllExcept(root)
     root.opened = true
     root.applyAnchor()
     focusTimer.start()
@@ -105,8 +108,17 @@ PanelWindow {
     repeat: true
     onTriggered: {
       if (!root.opened) { focusTimer.stop(); return }
-      content.forceActiveFocus()
-      if (content.activeFocus) focusTimer.stop()
+      // Yield to whichever item holds window focus (e.g. a subclass focusItem):
+      // only grab when nothing does. Checking content.activeFocus alone is not
+      // enough — a focused plain-Item child does not propagate activeFocus up,
+      // so the old guard stole focus back every tick (broke Calendar nav).
+      const win = content.Window.window
+      const holder = win ? win.activeFocusItem : null
+      if (holder === root.focusItem) { focusTimer.stop(); return }
+      // Anything else (nothing focused yet, or a lost race that left focus on
+      // content): steer back to the declared focus owner and keep polling
+      // until it holds.
+      root.focusItem.forceActiveFocus()
     }
   }
 
@@ -118,7 +130,8 @@ PanelWindow {
         if (!m) return
         const x = parseInt(m[1], 10)
         const y = parseInt(m[2], 10)
-        for (const s of Quickshell.screens.values) {
+        for (let i = 0; i < Quickshell.screens.length; i++) {
+          const s = Quickshell.screens[i]
           if (x >= s.x && x < s.x + s.width && y >= s.y && y < s.y + s.height) {
             root.screen = s
             return
@@ -142,7 +155,7 @@ PanelWindow {
     Rectangle {
       id: card
       width: root.cardWidth
-      height: body.implicitHeight + 32
+      height: root.cardMaxHeight > 0 ? Math.min(body.implicitHeight + root.cardChrome, root.cardMaxHeight) : body.implicitHeight + root.cardChrome
       radius: 20
       color: Tokens.surfaceContainerLow
       anchors { top: parent.top; topMargin: 48 }

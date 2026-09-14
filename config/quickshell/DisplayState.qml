@@ -281,7 +281,7 @@ Singleton {
     running: true
     repeat: true
     onTriggered: {
-      const n = Quickshell.screens.values.length
+      const n = Quickshell.screens.length // indexed, not .values (see PopupBase)
       if (root._seenScreens !== -1 && n !== root._seenScreens) {
         root.detectBacklights()
         root.refreshDisplays()

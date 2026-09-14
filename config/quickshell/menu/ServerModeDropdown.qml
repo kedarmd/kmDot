@@ -1,47 +1,14 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import qs
 import "../components"
 import "../components/serverstatus.js" as ServerStatus
-import "../components/popuppos.js" as Pos
 
-PanelWindow {
+PopupBase {
   id: root
-  visible: root.opened
-  color: Qt.rgba(0, 0, 0, 0)
-  focusable: true
-
-  BackgroundEffect.blurRegion: Region {
-    item: root.contentItem
-
-    Region {
-      intersection: Intersection.Subtract
-      x: 0
-      y: 0
-      width: root.width
-      height: 42
-    }
-  }
-  screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
-
-  WlrLayershell.layer: WlrLayer.Overlay
-  WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-  WlrLayershell.exclusionMode: ExclusionMode.Ignore
-
-  anchors {
-    top: true
-    bottom: true
-    left: true
-    right: true
-  }
-
-  property bool opened: false
-  property var scope: null
-  // anchorItem seam: set by the bar module before toggling (see ConnectionDropdownBase).
-  property var anchorItem: null
-  property real anchorGX: -1
+  sockName: "kmdot-server"
+  cardWidth: 360
 
   property string mode: "off"
   property string inhibitor: "inactive"
@@ -53,11 +20,6 @@ PanelWindow {
   readonly property bool busy: root.busyAction !== ""
 
   readonly property bool on: root.mode === "on"
-
-  readonly property string sockPath: {
-    const rt = Quickshell.env("XDG_RUNTIME_DIR")
-    return (rt ? rt : "/tmp") + "/kmdot-server.sock"
-  }
 
   function applyStatus(text) {
     const s = ServerStatus.parseServerStatus(text)
@@ -85,69 +47,9 @@ PanelWindow {
     serviceProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/server-mode.sh service " + name + " " + action])
   }
 
-  function pickScreen() {
-    posProc.exec(["sh", "-c", "hyprctl cursorpos"])
-  }
-
-  function applyAnchor() {
-    if (root.anchorItem) {
-      const gx = Pos.globalCenterX(root.anchorItem)
-      root.anchorItem = null
-      if (gx >= 0) root.anchorGX = gx
-    }
-    if (root.anchorGX >= 0) {
-      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
-      if (s) root.screen = s
-      else root.pickScreen()
-    } else {
-      root.pickScreen()
-    }
-  }
-
-  function open() {
-    if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
-    if (root.scope && root.scope.batteryPopup && root.scope.batteryPopup !== root) root.scope.batteryPopup.close()
-    if (root.scope && root.scope.volumePopup && root.scope.volumePopup !== root) root.scope.volumePopup.close()
-    if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
-    if (root.scope && root.scope.displayPopup) root.scope.displayPopup.close()
-    root.opened = true
+  function refreshItems() {
     root.errorText = ""
     root.refresh()
-    root.applyAnchor()
-    focusTimer.start()
-  }
-
-  function close() {
-    root.opened = false
-  }
-
-  function toggle() {
-    if (root.opened) root.close()
-    else root.open()
-  }
-
-  SocketServer {
-    active: true
-    path: root.sockPath
-    handler: Socket {
-      onConnectedChanged: {
-        if (connected) root.toggle()
-      }
-    }
-  }
-
-  Timer {
-    id: focusTimer
-    interval: 60
-    repeat: true
-    onTriggered: {
-      if (!root.opened) {
-        focusTimer.stop()
-        return
-      }
-      content.forceActiveFocus()
-      if (content.activeFocus) focusTimer.stop()
-    }
   }
 
   Timer {
@@ -185,67 +87,6 @@ PanelWindow {
       root.refresh()
     }
   }
-
-  Process {
-    id: posProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const m = /(-?\d+),\s*(-?\d+)/.exec(String(this.text).trim())
-        if (!m) return
-        const X = parseInt(m[1], 10)
-        const Y = parseInt(m[2], 10)
-        const screens = Quickshell.screens.values
-        for (let i = 0; i < screens.length; i++) {
-          const s = screens[i]
-          if (X >= s.x && X < s.x + s.width && Y >= s.y && Y < s.y + s.height) {
-            root.screen = s
-            return
-          }
-        }
-      }
-    }
-  }
-
-  Item {
-    id: content
-    anchors.fill: parent
-    focus: true
-    Keys.onEscapePressed: root.close()
-
-    MouseArea {
-      id: dismiss
-      anchors.fill: parent
-      onClicked: root.close()
-    }
-
-    Rectangle {
-      id: card
-      width: 360
-      height: body.implicitHeight + 32
-      radius: 20
-      color: Tokens.surfaceContainerLow
-
-      anchors {
-        top: parent.top
-        topMargin: 48
-      }
-      x: root.anchorGX >= 0
-        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
-        : parent.width - card.width - 10
-
-      MouseArea {
-        anchors.fill: parent
-      }
-
-      Column {
-        id: body
-        anchors {
-          top: parent.top
-          left: parent.left
-          right: parent.right
-          margins: 16
-        }
-        spacing: 10
 
         Item {
           width: parent.width
@@ -541,7 +382,4 @@ PanelWindow {
             }
           }
         }
-      }
-    }
-  }
 }

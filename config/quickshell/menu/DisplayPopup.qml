@@ -1,59 +1,23 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import qs
 import "../components"
-import "../components/popuppos.js" as Pos
 
-PanelWindow {
+PopupBase {
   id: root
-  visible: root.opened
-  color: Qt.rgba(0, 0, 0, 0)
-  focusable: true
+  sockName: "kmdot-display"
+  cardWidth: 340
+  cardMaxHeight: 600
 
-  BackgroundEffect.blurRegion: Region {
-    item: root.contentItem
-
-    Region {
-      intersection: Intersection.Subtract
-      x: 0
-      y: 0
-      width: root.width
-      height: 42
-    }
-  }
-  screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
-
-  WlrLayershell.layer: WlrLayer.Overlay
-  WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-  WlrLayershell.exclusionMode: ExclusionMode.Ignore
-
-  anchors {
-    top: true
-    bottom: true
-    left: true
-    right: true
-  }
-
-  property bool opened: false
-  property var scope: null
-  property var anchorItem: null
-  property real anchorGX: -1
-
+  // Positioning/focus/socket shell lives in PopupBase (anchorItem seam).
   // Pure view over the DisplayState singleton (issue #49): state binds to
-  // singleton properties, actions delegate to it. The only Process left
-  // here is posProc (popup positioning).
+  // singleton properties, actions delegate to it. No Processes of its own.
   property var displays: DisplayState.displays
   property var backlightMap: DisplayState.backlightMap
   property int selectedIdx: DisplayState.selectedIdx
   property string currentMode: DisplayState.currentMode
   property string externalPosition: DisplayState.externalPosition
-
-  readonly property string sockPath: {
-    const rt = Quickshell.env("XDG_RUNTIME_DIR")
-    return (rt ? rt : "/tmp") + "/kmdot-display.sock"
-  }
 
   readonly property var selectedDisplay: DisplayState.selectedDisplay
   readonly property string selectedName: DisplayState.selectedName
@@ -65,133 +29,14 @@ PanelWindow {
   readonly property int brightnessMax: DisplayState.maxFor(DisplayState.selectedDevice)
   readonly property int brightnessPercent: DisplayState.percentFor(DisplayState.selectedDevice)
 
-  function pickScreen() {
-    posProc.exec(["sh", "-c", "hyprctl cursorpos"])
-  }
-
-  function applyAnchor() {
-    if (root.anchorItem) {
-      const gx = Pos.globalCenterX(root.anchorItem)
-      root.anchorItem = null
-      if (gx >= 0) root.anchorGX = gx
-    }
-    if (root.anchorGX >= 0) {
-      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
-      if (s) root.screen = s
-      else root.pickScreen()
-    } else {
-      root.pickScreen()
-    }
-  }
-
-  function open() {
-    if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
-    if (root.scope && root.scope.batteryPopup) root.scope.batteryPopup.close()
-    if (root.scope && root.scope.volumePopup) root.scope.volumePopup.close()
-    if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
-    if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
-    root.opened = true
-    DisplayState.monitorsActive = true
+  function refreshItems() {
     DisplayState.refreshDisplays()
     DisplayState.detectBacklights()
-    root.applyAnchor()
-    focusTimer.start()
   }
 
-  function close() {
-    DisplayState.monitorsActive = false
-    root.opened = false
+  function openedChange() {
+    DisplayState.monitorsActive = root.opened
   }
-
-  function toggle() {
-    if (root.opened) root.close()
-    else root.open()
-  }
-
-  SocketServer {
-    active: true
-    path: root.sockPath
-    handler: Socket {
-      onConnectedChanged: {
-        if (connected) root.toggle()
-      }
-    }
-  }
-
-  Timer {
-    id: focusTimer
-    interval: 60
-    repeat: true
-    onTriggered: {
-      if (!root.opened) {
-        focusTimer.stop()
-        return
-      }
-      content.forceActiveFocus()
-      if (content.activeFocus) focusTimer.stop()
-    }
-  }
-
-  Process {
-    id: posProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const m = /(-?\d+),\s*(-?\d+)/.exec(String(this.text).trim())
-        if (!m) return
-        const X = parseInt(m[1], 10)
-        const Y = parseInt(m[2], 10)
-        const screens = Quickshell.screens.values
-        for (let i = 0; i < screens.length; i++) {
-          const s = screens[i]
-          if (X >= s.x && X < s.x + s.width && Y >= s.y && Y < s.y + s.height) {
-            root.screen = s
-            return
-          }
-        }
-      }
-    }
-  }
-
-  Item {
-    id: content
-    anchors.fill: parent
-    focus: true
-    Keys.onEscapePressed: root.close()
-
-    MouseArea {
-      id: dismiss
-      anchors.fill: parent
-      onClicked: root.close()
-    }
-
-    Rectangle {
-      id: card
-      width: 340
-      height: Math.min(body.implicitHeight + 32, 600)
-      radius: 20
-      color: Tokens.surfaceContainerLow
-
-      anchors {
-        top: parent.top
-        topMargin: 48
-      }
-      x: root.anchorGX >= 0
-        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
-        : parent.width - card.width - 10
-
-      MouseArea {
-        anchors.fill: parent
-      }
-
-      Column {
-        id: body
-        anchors {
-          top: parent.top
-          left: parent.left
-          right: parent.right
-          margins: 16
-        }
-        spacing: 14
 
         // Header
         Row {
@@ -246,7 +91,7 @@ PanelWindow {
           Rectangle {
             required property var modelData
             required property int index
-            width: body.width
+            width: parent.width
             height: 48
             radius: 12
             color: index === root.selectedIdx ? Tokens.primaryContainer : "transparent"
@@ -388,7 +233,7 @@ PanelWindow {
             PillButton {
               required property var modelData
               required property int index
-              width: (body.width - 24) / 4
+              width: (parent.width - 24) / 4
               height: 30
               filled: true
               active: root.selectedScale === modelData
@@ -433,7 +278,7 @@ PanelWindow {
           spacing: 8
 
           PillButton {
-            width: (body.width - 16) / 3
+            width: (parent.width - 16) / 3
             height: 30
             filled: true
             active: root.currentMode === "extend"
@@ -443,7 +288,7 @@ PanelWindow {
           }
 
           PillButton {
-            width: (body.width - 16) / 3
+            width: (parent.width - 16) / 3
             height: 30
             filled: true
             active: root.currentMode === "mirror"
@@ -453,7 +298,7 @@ PanelWindow {
           }
 
           PillButton {
-            width: (body.width - 16) / 3
+            width: (parent.width - 16) / 3
             height: 30
             filled: true
             active: root.currentMode === "external"
@@ -482,7 +327,7 @@ PanelWindow {
             spacing: 8
 
             PillButton {
-              width: (body.width - 8) / 2
+              width: (parent.width - 8) / 2
               height: 30
               filled: true
               active: root.externalPosition === "left"
@@ -495,7 +340,7 @@ PanelWindow {
             }
 
             PillButton {
-              width: (body.width - 8) / 2
+              width: (parent.width - 8) / 2
               height: 30
               filled: true
               active: root.externalPosition === "right"
@@ -508,7 +353,4 @@ PanelWindow {
             }
           }
         }
-      }
-    }
-  }
 }
