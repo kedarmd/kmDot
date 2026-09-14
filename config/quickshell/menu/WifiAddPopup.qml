@@ -8,6 +8,7 @@ PopupBase {
   title: "Add Wi-Fi connection"
   cardWidth: 360
   socketEnabled: false
+  focusItem: ssidInput
 
   property string ssid: ""
   property string password: ""

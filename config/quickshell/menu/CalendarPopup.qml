@@ -8,6 +8,7 @@ PopupBase {
   id: root
   sockName: "kmdot-calendar"
   cardWidth: 340
+  focusItem: nav
 
   // Positioning/focus/socket shell lives in PopupBase (anchorItem seam).
   property var events: null

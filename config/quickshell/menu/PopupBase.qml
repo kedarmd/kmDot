@@ -23,7 +23,10 @@ PanelWindow {
       height: 42
     }
   }
-  screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
+  // NOTE: indexed access, not .values — the .values snapshot does not track the
+  // model (reads empty while screens is populated), which unmapped overlays
+  // while opened stayed true. Same reason for the indexed loop in posProc.
+  screen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
 
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
@@ -48,6 +51,11 @@ PanelWindow {
   property real cardChrome: 32
   property real cardMaxHeight: 0
   property bool escapeCloses: true
+  // Focus seam: the item that should hold keyboard focus while open.
+  // Subclasses with their own focus owner override it (Calendar's nav Column,
+  // WifiAdd's ssidInput); the focus timer below yields to it. Defaults to the
+  // base content Item (Escape/backdrop handling).
+  property Item focusItem: content
   default property alias content: body.data
 
   readonly property string sockPath: {
@@ -64,7 +72,7 @@ PanelWindow {
       if (gx >= 0) root.anchorGX = gx
     }
     if (root.anchorGX >= 0) {
-      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
+      const s = Pos.screenFor(Quickshell.screens, root.anchorGX)
       if (s) root.screen = s
       else root.pickScreen()
     } else {
@@ -99,10 +107,15 @@ PanelWindow {
     repeat: true
     onTriggered: {
       if (!root.opened) { focusTimer.stop(); return }
-      // Never steal focus from a subclass item (e.g. Calendar's nav Column,
-      // WifiAdd's ssidInput): only grab when nothing in the tree holds it.
-      if (!content.activeFocus) content.forceActiveFocus()
-      if (content.activeFocus) focusTimer.stop()
+      // Yield to whichever item holds window focus (e.g. a subclass focusItem):
+      // only grab when nothing does. Checking content.activeFocus alone is not
+      // enough — a focused plain-Item child does not propagate activeFocus up,
+      // so the old guard stole focus back every tick (broke Calendar nav).
+      const win = content.Window.window
+      const holder = win ? win.activeFocusItem : null
+      if (holder === root.focusItem) { focusTimer.stop(); return }
+      if (!holder) { root.focusItem.forceActiveFocus(); return }
+      focusTimer.stop()
     }
   }
 
@@ -114,7 +127,8 @@ PanelWindow {
         if (!m) return
         const x = parseInt(m[1], 10)
         const y = parseInt(m[2], 10)
-        for (const s of Quickshell.screens.values) {
+        for (let i = 0; i < Quickshell.screens.length; i++) {
+          const s = Quickshell.screens[i]
           if (x >= s.x && x < s.x + s.width && y >= s.y && y < s.y + s.height) {
             root.screen = s
             return
