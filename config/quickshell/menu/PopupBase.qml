@@ -23,10 +23,11 @@ PanelWindow {
       height: 42
     }
   }
-  // NOTE: indexed access, not .values — the .values snapshot does not track the
-  // model (reads empty while screens is populated), which unmapped overlays
-  // while opened stayed true. Same reason for the indexed loop in posProc.
-  screen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+  // NOTE: Pos.primaryScreen (indexed), not .values — the .values snapshot does
+  // not track the model (reads empty while screens is populated), which
+  // unmapped overlays while opened stayed true. Same reason for the indexed
+  // loop in posProc.
+  screen: Pos.primaryScreen(Quickshell.screens)
 
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
@@ -114,8 +115,10 @@ PanelWindow {
       const win = content.Window.window
       const holder = win ? win.activeFocusItem : null
       if (holder === root.focusItem) { focusTimer.stop(); return }
-      if (!holder) { root.focusItem.forceActiveFocus(); return }
-      focusTimer.stop()
+      // Anything else (nothing focused yet, or a lost race that left focus on
+      // content): steer back to the declared focus owner and keep polling
+      // until it holds.
+      root.focusItem.forceActiveFocus()
     }
   }
 

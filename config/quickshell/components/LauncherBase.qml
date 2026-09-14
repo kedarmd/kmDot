@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs
+import "./popuppos.js" as Pos
 
 // Generic single-pane picker. One instance per launcher; subclasses configure
 // sockName/title/items and override filterAndSort()/refreshItems() and handle activated().
@@ -353,8 +354,8 @@ Item {
   PanelWindow {
     id: launcherWin
     visible: root.opened
-    // NOTE: indexed access, not .values (see PopupBase screen binding).
-    screen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
+    // NOTE: Pos.primaryScreen (indexed), not .values (see PopupBase screen binding).
+    screen: Pos.primaryScreen(Quickshell.screens)
     color: Qt.rgba(0, 0, 0, 0.4)
     focusable: true
 
