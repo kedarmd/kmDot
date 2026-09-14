@@ -23,7 +23,8 @@ PanelWindow {
       height: 42
     }
   }
-  screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
+  // NOTE: indexed access, not .values (see PopupBase screen binding).
+  screen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
 
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
