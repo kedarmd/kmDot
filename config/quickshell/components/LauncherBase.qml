@@ -255,16 +255,11 @@ Item {
     root.promptMode = false
     root.refreshItems()
     root.recompute()
-    if (root.scope && root.scope.activeLauncher && root.scope.activeLauncher !== root) {
-      root.scope.activeLauncher.closeLauncher()
-    }
-    if (root.scope && root.scope.batteryPopup) root.scope.batteryPopup.close()
-    if (root.scope && root.scope.volumePopup) root.scope.volumePopup.close()
-    if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
-    if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
-    if (root.scope && root.scope.openCodeUsagePopup) root.scope.openCodeUsagePopup.close()
-    if (root.scope && root.scope.handyPopup) root.scope.handyPopup.close()
-    if (root.scope && root.scope.displayPopup) root.scope.displayPopup.close()
+    // Overlay coordinator owns cross-kind closing (shell.qml closeAllExcept):
+    // one call replaces the hand-rolled sibling list (which omitted the
+    // notification center and the radio dropdowns). activeLauncher bookkeeping
+    // stays here; closeAllExcept drives the actual closing.
+    if (root.scope && root.scope.closeAllExcept) root.scope.closeAllExcept(root)
     if (root.scope) root.scope.activeLauncher = root
     root.opened = true
   }
@@ -358,7 +353,8 @@ Item {
   PanelWindow {
     id: launcherWin
     visible: root.opened
-    screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
+    // NOTE: indexed access, not .values (see PopupBase screen binding).
+    screen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
     color: Qt.rgba(0, 0, 0, 0.4)
     focusable: true
 
