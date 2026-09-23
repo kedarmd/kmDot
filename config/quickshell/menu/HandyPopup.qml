@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import QtMultimedia
 import qs
 import "../components"
 
@@ -11,48 +10,47 @@ PopupBase {
   cardWidth: 500
 
   property int tab: 0
-  // Reads AND mutations served by the HandyStore singleton (issues #52/#54):
-  // the popup binds its models/history/selection/busy/error here instead of
-  // fetching or mutating itself. The store is the single writer — select,
-  // retry, delete, and save all run through it with a history-only refetch.
-  // Delete-arm (confirmId), clipboard, and playback stay view-local.
+  // Reads, mutations, AND playback served by the HandyStore singleton
+  // (issues #52/#54/#55): the popup binds its models/history/selection/
+  // busy/error AND its playing/progress/position state here instead of
+  // fetching, mutating, or playing itself. The store owns the single player
+  // with its stop guard — this view keeps only its progress bar, time
+  // readout, and error line, all bound read-only. Delete-arm (confirmId)
+  // and clipboard stay view-local.
   property var models: HandyStore.models
   property var history: HandyStore.history
   property string selectedModel: HandyStore.selectedModel
   property int busyId: HandyStore.busyId
   property string busyAction: HandyStore.busyAction
   readonly property bool busy: HandyStore.busy
-  // View-local playback error (playback moves to the store in #55); the
-  // error line prefers the store's mutation/fetch error.
-  property string playbackError: ""
-  readonly property string effectiveError: HandyStore.errorText !== "" ? HandyStore.errorText : root.playbackError
+  readonly property int playingId: HandyStore.playingId
+  readonly property real progress: HandyStore.progress
+  readonly property real positionMs: HandyStore.positionMs
+  readonly property real durationMs: HandyStore.durationMs
+  readonly property string effectiveError: HandyStore.errorText
   readonly property real listHeight: 440
-  property int playingId: -1
-  property real progress: 0
-  property bool playbackStopping: false
   // Two-click delete confirm: first click arms the row's pill ("Sure?"), the
   // second (within 3s) deletes.
   property int confirmId: -1
-  readonly property string recordingsDir: Quickshell.env("HOME") + "/.local/share/com.pais.handy/recordings"
 
   function refreshItems() { refresh() }
+  // Closing one surface never stops playback here — audio survives switching
+  // views. The shell stops the store player once BOTH Handy surfaces are
+  // closed (playback lifecycle lives outside the store, per spec #51).
   function openedChange() {
     if (!root.opened) {
-      stopPlayback()
       confirmId = -1
     }
   }
   function refresh() {
-    stopPlayback()
     confirmId = -1
-    playbackError = ""
     HandyStore.refresh()
   }
-  // Mutations run through the store (single writer); each stops this view's
-  // own playback of the row first. Delete-arm stays per-surface: the row
-  // disarms below once the entry disappears from the shared history.
+  // Mutations run through the store (single writer, single player): the
+  // store stops playback itself when the action starts, so this view never
+  // pre-stops. Delete-arm stays per-surface: the row disarms below once the
+  // entry disappears from the shared history.
   function remove(row) {
-    if (playingId === row.id) stopPlayback()
     HandyStore.deleteEntry(row.id)
   }
   function fmtTime(epoch) {
@@ -62,30 +60,11 @@ PopupBase {
     const total = Math.max(0, Math.floor(Number(ms || 0) / 1000))
     return Math.floor(total / 60) + ":" + String(total % 60).padStart(2, "0")
   }
-  function syncProgress() {
-    progress = playingId >= 0 && player.duration > 0 ? Math.min(1, player.position / player.duration) : 0
-  }
-  function stopPlayback() {
-    playingId = -1
-    progress = 0
-    if (player.playbackState === MediaPlayer.PlayingState || player.source.toString() !== "") {
-      playbackStopping = true
-      player.stop()
-      player.source = ""
-      playbackStopping = false
-    }
-  }
+  // Playback is store-owned (issue #55): toggle delegates, never overlaps —
+  // starting a recording here switches the one shared player even if the
+  // launcher is playing, and vice versa.
   function togglePlay(row) {
-    if (playingId === row.id) { stopPlayback(); return }
-    if (!row.audioAvailable) return
-    playingId = row.id
-    progress = 0
-    playbackError = ""
-    playbackStopping = true
-    player.stop()
-    player.source = "file://" + recordingsDir + "/" + row.fileName
-    playbackStopping = false
-    player.play()
+    HandyStore.togglePlay(row)
   }
   function selectModel(id) {
     if (root.busy) return
@@ -93,12 +72,10 @@ PopupBase {
   }
   function retry(row) {
     if (root.busy || !row.audioAvailable) return
-    if (playingId === row.id) stopPlayback()
     HandyStore.retry(row.id)
   }
   function save(row, text) {
     if (root.busy) return
-    if (playingId === row.id) stopPlayback()
     HandyStore.saveText(row.id, text)
   }
   function copy(text) { copyProc.exec(["sh", "-c", "printf '%s' \"$1\" | wl-copy", "kmdot", text]) }
@@ -122,17 +99,6 @@ PopupBase {
     }
   }
   Process { id: copyProc }
-  MediaPlayer {
-    id: player
-    audioOutput: AudioOutput {}
-    onPositionChanged: root.syncProgress()
-    onDurationChanged: root.syncProgress()
-    onPlaybackStateChanged: if (playbackState === MediaPlayer.StoppedState && !root.playbackStopping) root.stopPlayback()
-    onErrorOccurred: {
-      if (root.playingId >= 0) root.playbackError = "Could not play recording"
-      root.stopPlayback()
-    }
-  }
 
         Item {
           width: parent.width; height: 34
@@ -231,9 +197,9 @@ PopupBase {
                 anchors { left: playButton.right; leftMargin: 8; verticalCenter: parent.verticalCenter }
                 width: 78
                 horizontalAlignment: Text.AlignHCenter
-                text: (historyRow.isPlaying ? root.fmtDur(player.position) : "0:00")
+                text: (historyRow.isPlaying ? root.fmtDur(root.positionMs) : "0:00")
                   + " / "
-                  + ((historyRow.isPlaying && player.duration > 0) ? root.fmtDur(player.duration)
+                  + ((historyRow.isPlaying && root.durationMs > 0) ? root.fmtDur(root.durationMs)
                     : (modelData.durationMs != null ? root.fmtDur(modelData.durationMs) : "--:--"))
                 color: historyRow.isPlaying ? Colors.text : Colors.text_alt
                 font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10

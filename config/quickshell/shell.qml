@@ -95,6 +95,35 @@ Scope {
     }
   }
 
+  // Handy playback lifecycle (issue #55, spec #51): audio survives switching
+  // between the launcher and the popup, and stops once BOTH are closed.
+  // The stop is deferred 150ms (same grace as the hidden-tray timer): a
+  // view switch closes one surface just before opening the other via
+  // closeAllExcept, so a synchronous both-closed check would misfire
+  // mid-switch and kill audio that should survive. Opening either surface
+  // cancels the pending stop.
+  Timer {
+    id: handyStopTimer
+    interval: 150
+    onTriggered: {
+      if (!shellRoot.handyPopup.opened && !shellRoot.handyLauncher.opened)
+        HandyStore.stopPlayback()
+    }
+  }
+  function stopHandyIfBothClosed() {
+    if (!shellRoot.handyPopup.opened && !shellRoot.handyLauncher.opened)
+      handyStopTimer.restart()
+    else handyStopTimer.stop()
+  }
+  Connections {
+    target: shellRoot.handyPopup
+    function onOpenedChanged() { shellRoot.stopHandyIfBothClosed() }
+  }
+  Connections {
+    target: shellRoot.handyLauncher
+    function onOpenedChanged() { shellRoot.stopHandyIfBothClosed() }
+  }
+
   Component.onCompleted: {
     // Force-instantiate the calendar popup at startup so its 30-min resync
     // timer (and the initial ICS fetch) run even if it's never opened.
