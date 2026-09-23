@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import QtMultimedia
 import "../components"
 import qs
 
@@ -47,24 +46,27 @@ LauncherBase {
 
   // 0 = Models, 1 = History. Opens on Models to mirror the tray popup's tabs.
   property int mode: 0
-  // Reads AND mutations served by the HandyStore singleton (issues #53/#54,
-  // spec #51): the launcher binds its models/history/selection/busy/error
-  // here instead of fetching or mutating itself. The store is the single
-  // writer — select, retry, and delete all run through it with a
-  // history-only refetch. Delete-arm (confirmId), clipboard, key verbs, and
-  // playback stay view-local.
+  // Reads, mutations, AND playback served by the HandyStore singleton
+  // (issues #53/#54/#55, spec #51): the launcher binds its
+  // models/history/selection/busy/error AND its playing/progress/position
+  // state here instead of fetching, mutating, or playing itself. The store
+  // owns the single player with its stop guard — the row status/subtitle/
+  // progress seams below stay, bound read-only to that shared state.
+  // Delete-arm (confirmId), clipboard, and key verbs stay view-local.
   property var models: HandyStore.models
   property var history: HandyStore.history
   property string selectedModel: HandyStore.selectedModel
   property int busyId: HandyStore.busyId
   property string busyAction: HandyStore.busyAction
   readonly property bool busy: HandyStore.busy
-  property int playingId: -1
-  property bool playbackStopping: false
-  // Two-click delete confirm: first click arms the row's trash glyph, the
-  // second (within 3s) deletes; anything else disarms via the timer.
+  readonly property int playingId: HandyStore.playingId
+  readonly property real positionMs: HandyStore.positionMs
+  readonly property real durationMs: HandyStore.durationMs
+  readonly property real playbackProgress: HandyStore.progress
+  // Two-click delete confirm: first Delete/Backspace arms the row's trash
+  // glyph, the second (within 3s) deletes; anything else disarms via the
+  // timer.
   property int confirmId: -1
-  readonly property string recordingsDir: Quickshell.env("HOME") + "/.local/share/com.pais.handy/recordings"
 
   function fmtDur(ms) {
     const total = Math.max(0, Math.floor(Number(ms || 0) / 1000))
@@ -79,10 +81,11 @@ LauncherBase {
   // ---- data (reads via HandyStore; one in-flight pair shared with popup) ----
   // Busy state is store-owned: opening the launcher never resets an
   // in-flight mutation, it only queues a coalesced refresh behind it.
+  // Opening never stops playback either — audio survives switching views;
+  // the shell stops the store player once BOTH Handy surfaces are closed.
   function refreshItems() {
     root.loading = true
     root.pool = []
-    root.stopPlayback()
     root.confirmId = -1
     root.mode = 0
     // Show cached store data instantly while the refetch runs; the store
@@ -145,15 +148,16 @@ LauncherBase {
     if (root.confirmId === item.row.id) return "Press Del again to delete"
     if (root.busyId === item.row.id && root.busyAction === "retry") return "Retrying\u2026"
     if (root.playingId === item.row.id) {
-      const total = player.duration > 0 ? player.duration
+      const total = root.durationMs > 0
+        ? root.durationMs
         : (item.row.durationMs != null ? item.row.durationMs : 0)
-      return fmtDur(player.position) + " / " + (total > 0 ? fmtDur(total) : "--:--")
+      return fmtDur(root.positionMs) + " / " + (total > 0 ? fmtDur(total) : "--:--")
     }
     return playbackSubtitle(item.row)
   }
   function itemProgress(item) {
-    if (item.kind === "history" && root.playingId === item.row.id && player.duration > 0)
-      return Math.min(1, player.position / player.duration)
+    if (item.kind === "history" && root.playingId === item.row.id)
+      return root.playbackProgress
     return 0
   }
 
@@ -179,7 +183,6 @@ LauncherBase {
 
   function startDelete(item) {
     root.confirmId = -1
-    if (root.playingId === item.row.id) root.stopPlayback()
     HandyStore.deleteEntry(item.row.id)
   }
 
@@ -209,33 +212,20 @@ LauncherBase {
 
   function startRetry(item) {
     if (!item.row.audioAvailable || root.busy) return
-    if (root.playingId === item.row.id) root.stopPlayback()
     HandyStore.retry(item.row.id)
   }
 
-  // ---- playback (mirrors HandyPopup's wiring) ----
-  function stopPlayback() {
-    playingId = -1
-    if (player.playbackState === MediaPlayer.PlayingState || player.source.toString() !== "") {
-      playbackStopping = true
-      player.stop()
-      player.source = ""
-      playbackStopping = false
-    }
-  }
+  // ---- playback (store-owned, issue #55) ----
+  // Toggle delegates to the one shared player: starting a recording here
+  // while the popup plays switches cleanly, never overlapping. No stop on
+  // close here — the shell stops the player once BOTH surfaces are closed
+  // so audio survives switching views.
   function togglePlay(item) {
-    if (root.playingId === item.row.id) { stopPlayback(); return }
-    if (!item.row.audioAvailable) return
-    root.playingId = item.row.id
-    playbackStopping = true
-    player.stop()
-    player.source = "file://" + recordingsDir + "/" + item.row.fileName
-    playbackStopping = false
-    player.play()
+    HandyStore.togglePlay(item.row)
   }
 
   function onOpenedChange() {
-    if (!root.opened) root.stopPlayback()
+    if (!root.opened) root.confirmId = -1
   }
 
   // Clears loading when the shared pair settles even if the payloads are
@@ -246,10 +236,4 @@ LauncherBase {
   }
 
   Process { id: copyProc }
-  MediaPlayer {
-    id: player
-    audioOutput: AudioOutput {}
-    onPlaybackStateChanged: if (playbackState === MediaPlayer.StoppedState && !root.playbackStopping) root.stopPlayback()
-    onErrorOccurred: root.stopPlayback()
-  }
 }

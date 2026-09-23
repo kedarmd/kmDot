@@ -3,8 +3,9 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import QtMultimedia
 
-// Shared Handy store (spec #51; reads #52/#53, mutations #54).
+// Shared Handy store (spec #51; reads #52/#53, mutations #54, player #55).
 // Owns the transcription models, the 5 most recent recordings, and the
 // selected model, plus every mutation as the single writer: select model,
 // retry a recording, delete a recording, and save an edited transcription.
@@ -12,6 +13,11 @@ import Quickshell.Io
 // refresh() coalesces concurrent callers into one in-flight fetch pair and
 // caches models (rarely changing); post-mutation refetches touch history
 // only via refreshHistory(). The handy-control.mjs verbs are unchanged.
+// Audio playback is owned once here as well: a single player, a single stop
+// guard, and single playing/progress/error state. Both views bind read-only
+// and call togglePlay/stopPlayback; playback survives switching views and
+// stops on explicit toggle, when all surfaces close (shell-level, outside
+// the store), or when a mutating action starts.
 Singleton {
   id: root
 
@@ -29,6 +35,18 @@ Singleton {
   // Pending mutation command ("select"/"retry"/"delete"/"save") for the
   // single actionProc below; only one mutation runs at a time.
   property string _pendingMutation: ""
+
+  // ---- single audio player (issue #55) ----
+  // One player, one stop guard, single playing/progress/error state. Views
+  // bind these read-only and call togglePlay/stopPlayback; they own no
+  // player of their own, so starting playback in one view while the other
+  // plays switches cleanly on this same player — never overlapping audio.
+  property int playingId: -1
+  property real progress: 0
+  property real positionMs: 0
+  property real durationMs: 0
+  property bool playbackStopping: false
+  readonly property string recordingsDir: Quickshell.env("HOME") + "/.local/share/com.pais.handy/recordings"
 
   readonly property bool refreshing: root._historyBusy || root._modelsBusy
 
@@ -115,12 +133,64 @@ Singleton {
     historyProc.exec(["node", root.script(), "history"])
   }
 
+  // ---- single audio player (issue #55) ----
+  // Explicit toggle from either view. Same id stops; a different id
+  // switches cleanly on the one player (stop-then-play, never overlapping).
+  // Views pass the history row (id/fileName/audioAvailable/durationMs).
+  function togglePlay(row) {
+    if (!row) return
+    const id = Number(row.id)
+    if (root.playingId === id) {
+      root.stopPlayback()
+      return
+    }
+    if (!row.audioAvailable || !row.fileName) return
+    root.playingId = id
+    root.progress = 0
+    root.positionMs = 0
+    root.durationMs = Number(row.durationMs || 0)
+    if (root.errorText !== "") root.errorText = ""
+    root.playbackStopping = true
+    player.stop()
+    player.source = "file://" + root.recordingsDir + "/" + row.fileName
+    root.playbackStopping = false
+    player.play()
+  }
+
+  function stopPlayback() {
+    root._resetPlaybackState()
+    if (player.playbackState === MediaPlayer.PlayingState || String(player.source) !== "") {
+      root.playbackStopping = true
+      player.stop()
+      player.source = ""
+      root.playbackStopping = false
+    }
+  }
+
+  // Shared reset for the single playback state (stop, natural end, error).
+  // Never touches errorText — the error handler sets its message after this.
+  function _resetPlaybackState() {
+    root.playingId = -1
+    root.progress = 0
+    root.positionMs = 0
+    root.durationMs = 0
+  }
+
+  function syncPlayback() {
+    root.positionMs = player.position
+    if (player.duration > 0) root.durationMs = player.duration
+    root.progress = root.playingId >= 0 && root.durationMs > 0
+      ? Math.min(1, root.positionMs / root.durationMs) : 0
+  }
+
   // ---- single-writer mutations (issue #54) ----
   // Every Handy mutation runs through here; views call these and bind
   // busy/error read-only. Only one mutation at a time — a second call while
-  // busy is ignored (views disable their controls while busy).
+  // busy is ignored (views disable their controls while busy). Each stops
+  // playback first so audio never leaks across a retry/delete/save/select.
   function selectModel(id) {
     if (root.busyAction !== "") return
+    root.stopPlayback()
     root.busyAction = "select"
     root.busyId = -1
     if (root.errorText !== "") root.errorText = ""
@@ -130,6 +200,7 @@ Singleton {
 
   function retry(id) {
     if (root.busyAction !== "") return
+    root.stopPlayback()
     root.busyAction = "retry"
     root.busyId = Number(id)
     if (root.errorText !== "") root.errorText = ""
@@ -139,6 +210,7 @@ Singleton {
 
   function deleteEntry(id) {
     if (root.busyAction !== "") return
+    root.stopPlayback()
     root.busyAction = "delete"
     root.busyId = Number(id)
     if (root.errorText !== "") root.errorText = ""
@@ -148,6 +220,7 @@ Singleton {
 
   function saveText(id, text) {
     if (root.busyAction !== "") return
+    root.stopPlayback()
     root.busyAction = "save"
     root.busyId = Number(id)
     if (root.errorText !== "") root.errorText = ""
@@ -193,6 +266,35 @@ Singleton {
   Process {
     id: modelsProc
     stdout: StdioCollector { onStreamFinished: root._applyModels(String(this.text)) }
+  }
+
+  MediaPlayer {
+    id: player
+    audioOutput: AudioOutput {}
+    onPositionChanged: root.syncPlayback()
+    onDurationChanged: root.syncPlayback()
+    // Natural end (or an external stop): reset state without raising an
+    // error. Guarded so our own stopPlayback/togglePlay source swaps don't
+    // double-reset mid-switch.
+    onPlaybackStateChanged: {
+      if (playbackState === MediaPlayer.StoppedState && !root.playbackStopping && root.playingId >= 0) {
+        root._resetPlaybackState()
+        if (String(player.source) !== "") {
+          root.playbackStopping = true
+          player.source = ""
+          root.playbackStopping = false
+        }
+      }
+    }
+    // Failure surfaces a plain-language error and resets state.
+    onErrorOccurred: {
+      root.playbackStopping = true
+      player.stop()
+      player.source = ""
+      root.playbackStopping = false
+      root._resetPlaybackState()
+      root.errorText = "Could not play recording"
+    }
   }
 
   Process {
