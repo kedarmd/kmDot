@@ -4,10 +4,10 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Shared Handy read store (issue #52, spec #51).
+// Shared Handy read store (issues #52/#53, spec #51).
 // Owns the transcription models, the 5 most recent recordings, and the
-// selected model. Serves reads for the tray popup (and later the launcher).
-// Mutations, playback, and the launcher stay view-local for now — this store
+// selected model. Serves reads for the tray popup and the launcher.
+// Mutations, playback, and key verbs stay view-local for now — this store
 // is reads only: refresh() coalesces concurrent callers into one in-flight
 // fetch pair and caches models (rarely changing) so refetches touch history
 // only. The handy-control.mjs verbs are unchanged.
