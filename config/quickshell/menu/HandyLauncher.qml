@@ -43,15 +43,16 @@ LauncherBase {
 
   // 0 = Models, 1 = History. Opens on Models to mirror the tray popup's tabs.
   property int mode: 0
-  property var models: []
-  property var history: []
-  property string selectedModel: ""
+  // Read path served by the HandyStore singleton (issue #53, spec #51): the
+  // launcher binds its models/history/selection here instead of fetching them
+  // itself. Mutations, playback, and key verbs stay view-local.
+  property var models: HandyStore.models
+  property var history: HandyStore.history
+  property string selectedModel: HandyStore.selectedModel
   property int busyId: -1
   property string busyAction: ""
   readonly property bool busy: busyAction !== ""
   property string pendingCommand: ""
-  property bool modelsPending: false
-  property bool historyPending: false
   property int playingId: -1
   property bool playbackStopping: false
   // Two-click delete confirm: first click arms the row's trash glyph, the
@@ -71,7 +72,7 @@ LauncherBase {
     return "0:00 / " + (row.durationMs != null ? fmtDur(row.durationMs) : "--:--")
   }
 
-  // ---- data ----
+  // ---- data (reads via HandyStore; one in-flight pair shared with popup) ----
   function refreshItems() {
     root.loading = true
     root.pool = []
@@ -81,45 +82,23 @@ LauncherBase {
     root.pendingCommand = ""
     root.confirmId = -1
     root.mode = 0
-    root.modelsPending = true
-    root.historyPending = true
-    modelsProc.exec(["node", root.script(), "models"])
-    historyProc.exec(["node", root.script(), "history"])
-  }
-
-  function settle() {
-    if (!root.modelsPending && !root.historyPending) root.loading = false
-  }
-
-  function applyModels(text) {
-    try {
-      const result = JSON.parse(String(text))
-      if (result.ok) {
-        root.models = result.models || []
-        if (result.selected) root.selectedModel = result.selected
-      } else {
-        console.warn("handy-launcher:", result.error || "models failed")
-      }
-    } catch (e) { console.warn("handy-launcher: unparseable models payload") }
-    root.modelsPending = false
+    // Show cached store data instantly while the refetch runs; the store
+    // change handlers rebuild again when fresh data lands.
     root.rebuildPool()
-    root.settle()
+    HandyStore.refresh()
   }
 
-  function applyHistory(text) {
-    try {
-      const result = JSON.parse(String(text))
-      if (result.ok) {
-        root.history = result.history || []
-      } else {
-        console.warn("handy-launcher:", result.error || "history failed")
-        root.history = []
-      }
-    } catch (e) { console.warn("handy-launcher: unparseable history payload"); root.history = [] }
-    root.historyPending = false
+  // Rebuilds the pool from the store; clears loading once the shared fetch
+  // pair has settled. Empty history yields an empty pool (plain empty state,
+  // never an error — the launcher shows no fetch errors).
+  function syncFromStore() {
     root.rebuildPool()
-    root.settle()
+    if (!HandyStore.refreshing) root.loading = false
   }
+
+  onModelsChanged: root.syncFromStore()
+  onHistoryChanged: root.syncFromStore()
+  onSelectedModelChanged: root.rebuildPool()
 
   // ---- pool ----
   function rebuildPool() {
@@ -263,31 +242,35 @@ LauncherBase {
     if (!root.opened) root.stopPlayback()
   }
 
-  Process {
-    id: modelsProc
-    stdout: StdioCollector { onStreamFinished: root.applyModels(String(this.text)) }
+  // Clears loading when the shared pair settles even if the payloads are
+  // identical (no models/history change signals to ride on).
+  Connections {
+    target: HandyStore
+    function onRefreshingChanged() { if (!HandyStore.refreshing) root.syncFromStore() }
   }
-  Process {
-    id: historyProc
-    stdout: StdioCollector { onStreamFinished: root.applyHistory(String(this.text)) }
-  }
+
   Process {
     id: actionProc
     stdout: StdioCollector {
       onStreamFinished: {
         const wasRetry = root.pendingCommand === "retry"
         const wasDelete = root.pendingCommand === "delete"
+        const wasSelect = root.pendingCommand === "select-model"
         root.pendingCommand = ""
         root.busyAction = ""
         root.busyId = -1
         try {
           const result = JSON.parse(String(this.text))
-          if (!result.ok) console.warn("handy-launcher:", result.error || "operation failed")
+          if (!result.ok) {
+            console.warn("handy-launcher:", result.error || "operation failed")
+          } else if (wasSelect && result.selected) {
+            // Reads live in HandyStore; select-model updates it here, and
+            // retry/delete refetch history through it (models cached, so
+            // history-only) instead of a launcher-local fetch.
+            HandyStore.selectedModel = result.selected
+          }
         } catch (e) { console.warn("handy-launcher: unparseable action response") }
-        if (wasRetry || wasDelete) {
-          root.historyPending = true
-          historyProc.exec(["node", root.script(), "history"])
-        }
+        if (wasRetry || wasDelete) HandyStore.refresh()
       }
     }
   }
