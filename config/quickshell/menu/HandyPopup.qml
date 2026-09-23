@@ -11,10 +11,15 @@ PopupBase {
   cardWidth: 500
 
   property int tab: 0
-  property var models: []
-  property var history: []
-  property string selectedModel: ""
+  // Read path served by the HandyStore singleton (issue #52): the popup binds
+  // its models/history/selection here instead of fetching them itself.
+  // Mutations, playback, and busy/error for those stay view-local.
+  property var models: HandyStore.models
+  property var history: HandyStore.history
+  property string selectedModel: HandyStore.selectedModel
   property string errorText: ""
+  // Mutation errors (local) take precedence; fetch errors come from the store.
+  readonly property string effectiveError: root.errorText !== "" ? root.errorText : HandyStore.errorText
   property int busyId: -1
   property string busyAction: ""
   readonly property bool busy: busyAction !== ""
@@ -29,8 +34,7 @@ PopupBase {
 
   function script() { return Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/handy-control.mjs" }
   function run(command, args) {
-    const proc = command === "history" ? historyProc : controlProc
-    proc.exec(["node", script(), command].concat(args || []))
+    controlProc.exec(["node", script(), command].concat(args || []))
   }
   function refreshItems() { refresh() }
   function openedChange() {
@@ -45,8 +49,7 @@ PopupBase {
     stopPlayback()
     confirmId = -1
     errorText = ""
-    run("models")
-    run("history")
+    HandyStore.refresh()
   }
   function remove(row) {
     if (playingId === row.id) stopPlayback()
@@ -90,11 +93,13 @@ PopupBase {
     try {
       const result = JSON.parse(String(text))
       if (!result.ok) { errorText = result.error || "Handy operation failed"; return }
-      if (result.models) { models = result.models; selectedModel = result.selected || "" }
-      if (result.history) history = result.history
-      if (result.selected) selectedModel = result.selected
-      if (result.deleted !== undefined) { confirmId = -1; run("history") }
-      if (result.text !== undefined) refresh()
+      // Reads live in HandyStore; mutations update it here. Save returns
+      // { ok: true } with no payload, so like before it refetches nothing.
+      // Retry keeps the old refresh() side effects (stop playback, reset
+      // confirm/error) with the fetch itself routed through the store.
+      if (result.selected) HandyStore.selectedModel = result.selected
+      if (result.deleted !== undefined) { confirmId = -1; HandyStore.refresh() }
+      if (result.text !== undefined) { stopPlayback(); confirmId = -1; errorText = ""; HandyStore.refresh() }
     } catch (e) { errorText = "Could not parse Handy response" }
   }
   function selectModel(id) { busyAction = "model"; run("select-model", [id]) }
@@ -116,10 +121,6 @@ PopupBase {
         root.busyId = -1
       }
     }
-  }
-  Process {
-    id: historyProc
-    stdout: StdioCollector { onStreamFinished: root.applyResult(String(this.text)) }
   }
   Process { id: copyProc }
   MediaPlayer {
@@ -146,7 +147,7 @@ PopupBase {
           PillButton { width: (parent.width - 8) / 2; text: "Models"; active: root.tab === 0; onClicked: root.tab = 0 }
           PillButton { width: (parent.width - 8) / 2; text: "History"; active: root.tab === 1; onClicked: root.tab = 1 }
         }
-        Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; color: Colors.error; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; wrapMode: Text.WordWrap }
+        Text { visible: root.effectiveError !== ""; width: parent.width; text: root.effectiveError; color: Colors.error; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; wrapMode: Text.WordWrap }
 
         ListView {
           id: modelList
