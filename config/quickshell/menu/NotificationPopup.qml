@@ -12,17 +12,6 @@ PanelWindow {
   color: Qt.rgba(0, 0, 0, 0)
   focusable: false
 
-  BackgroundEffect.blurRegion: Region {
-    item: root.contentItem
-
-    Region {
-      intersection: Intersection.Subtract
-      x: 0
-      y: 0
-      width: root.width
-      height: 42
-    }
-  }
   // NOTE: Pos.primaryScreen (indexed), not .values (see PopupBase screen binding).
   screen: Pos.primaryScreen(Quickshell.screens)
 
