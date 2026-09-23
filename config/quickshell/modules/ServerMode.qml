@@ -2,103 +2,47 @@ import QtQuick
 import Quickshell.Io
 import qs
 import "../components"
+import "../components/serverstatus.js" as ServerStatus
 
-Item {
+BarModule {
   id: root
-  implicitHeight: 30
-  width: Math.max(30, label.implicitWidth + 20)
-  property var tooltip: null
-  required property var dropdown
-
-  signal activated
+  sock: "kmdot-server"
 
   property string mode: "off"
-  property real spinAngle: 0
+  property string inhibitor: "inactive"
+  property string tailscale: "inactive"
+  property string tailscaleIp: ""
+  property string jellyfin: "inactive"
 
-  NumberAnimation on spinAngle {
-    from: 0
-    to: 360
-    duration: 1200
-    running: root.busy
-    loops: Animation.Infinite
-  }
+  busy: root.popupRef ? root.popupRef.busy : false
 
-  readonly property bool active: root.mode === "on"
-  readonly property bool busy: root.dropdown ? root.dropdown.busy : false
-  readonly property string tooltipText: "Server mode: " + (root.active ? "On" : "Off")
+  glyph: ""
+  active: root.mode === "on"
+  fill: Tokens.successContainer
+  on_color: Tokens.on_success_container
+  dimmed: !root.busy && root.mode !== "on"
+  tooltipText: "Server mode: " + (root.mode === "on" ? "On" : "Off")
 
   function applyStatus(text) {
-    for (const line of String(text).split("\n")) {
-      const ln = line.trim()
-      if (!ln) continue
-      const i = ln.indexOf("=")
-      if (i < 0) continue
-      const k = ln.slice(0, i)
-      const v = ln.slice(i + 1)
-      if (k === "mode") root.mode = v
-    }
+    const s = ServerStatus.parseServerStatus(text)
+    root.mode = s.mode
+    root.inhibitor = s.inhibitor
+    root.tailscale = s.tailscale
+    root.tailscaleIp = s.tailscaleIp
+    root.jellyfin = s.jellyfin
   }
 
   function refresh() {
     statusProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/server-mode.sh status"])
   }
 
-  function openDropdown() {
-    root.dropdown.anchorItem = root
-    root.dropdown.open()
-  }
-
   Timer {
     interval: 2000
-    running: !root.dropdown || !root.dropdown.opened
+    running: !root.popupRef || !root.popupRef.opened
     repeat: true
     onTriggered: root.refresh()
   }
   Component.onCompleted: root.refresh()
-
-  ModulePill {
-    id: pill
-    anchors.centerIn: parent
-    width: Math.max(30, label.implicitWidth + 20)
-    height: 30
-    active: root.active
-    fill: Tokens.successContainer
-    hovered: mouse.containsMouse
-    pressed: mouse.pressed
-
-    Text {
-      id: label
-      anchors.centerIn: parent
-      text: root.busy ? "\uf013" : "\uf233"
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 15
-      color: root.busy ? Tokens.primary : (root.active ? Tokens.on_success_container : Colors.text_alt)
-      opacity: root.busy ? 1.0 : (root.active ? 1.0 : 0.4)
-      rotation: root.busy ? root.spinAngle : 0
-      transformOrigin: Item.Center
-    }
-  }
-
-  MouseArea {
-    id: mouse
-    anchors.fill: parent
-    hoverEnabled: true
-    cursorShape: Qt.PointingHandCursor
-    onClicked: {
-      root.activated()
-      if (root.dropdown.opened) {
-        root.dropdown.close()
-      } else {
-        root.openDropdown()
-      }
-    }
-    onEntered: {
-      if (root.tooltip) root.tooltip.show(root, root.tooltipText)
-    }
-    onExited: {
-      if (root.tooltip) root.tooltip.hide()
-    }
-  }
 
   Process {
     id: statusProc

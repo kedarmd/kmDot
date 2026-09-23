@@ -2,45 +2,16 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Notifications
-import Quickshell.Wayland
 import qs
 import "../components"
-import "../components/popuppos.js" as Pos
 
-PanelWindow {
+PopupBase {
   id: root
-  visible: root.opened
-  color: Qt.rgba(0, 0, 0, 0)
-  focusable: true
+  sockName: "kmdot-notifications"
+  cardWidth: 380
+  cardChrome: 24
+  cardMaxHeight: root.height - 80
 
-  BackgroundEffect.blurRegion: Region {
-    item: root.contentItem
-
-    Region {
-      intersection: Intersection.Subtract
-      x: 0
-      y: 0
-      width: root.width
-      height: 42
-    }
-  }
-  screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
-
-  WlrLayershell.layer: WlrLayer.Overlay
-  WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-  WlrLayershell.exclusionMode: ExclusionMode.Ignore
-
-  anchors {
-    top: true
-    bottom: true
-    left: true
-    right: true
-  }
-
-  property bool opened: false
-  property var scope: null
-  property var anchorItem: null
-  property real anchorGX: -1
   property int maxHistory: 100
   property var groups: []
 
@@ -48,11 +19,6 @@ PanelWindow {
     const cache = Quickshell.env("XDG_CACHE_HOME")
     const dir = cache ? cache : (Quickshell.env("HOME") + "/.cache")
     return dir + "/kmdot/notification_history.json"
-  }
-
-  readonly property string sockPath: {
-    const rt = Quickshell.env("XDG_RUNTIME_DIR")
-    return (rt ? rt : "/tmp") + "/kmdot-notifications.sock"
   }
 
   function findLiveById(id) {
@@ -63,48 +29,7 @@ PanelWindow {
     return null
   }
 
-  function pickScreen() {
-    posProc.exec(["sh", "-c", "hyprctl cursorpos"])
-  }
-
-  function applyAnchor() {
-    if (root.anchorItem) {
-      const gx = Pos.globalCenterX(root.anchorItem)
-      root.anchorItem = null
-      if (gx >= 0) root.anchorGX = gx
-    }
-    if (root.anchorGX >= 0) {
-      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
-      if (s) root.screen = s
-      else root.pickScreen()
-    } else {
-      root.pickScreen()
-    }
-  }
-
-  function open() {
-    if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
-    if (root.scope && root.scope.batteryPopup) root.scope.batteryPopup.close()
-    if (root.scope && root.scope.volumePopup) root.scope.volumePopup.close()
-    if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
-    if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
-    if (root.scope && root.scope.displayPopup) root.scope.displayPopup.close()
-    root.opened = true
-    root.syncFromServer()
-    root.applyAnchor()
-    focusTimer.start()
-  }
-
-  function close() {
-    root.opened = false
-  }
-
-  function toggle() {
-    if (root.opened) root.close()
-    else root.open()
-  }
-
-  function syncFromServer() {
+  function refreshItems() {
     const tracked = notifServer.trackedNotifications.values || []
     for (let i = 0; i < tracked.length; i++) {
       const n = tracked[i]
@@ -302,464 +227,376 @@ PanelWindow {
     }
   }
 
-  SocketServer {
-    active: true
-    path: root.sockPath
-    handler: Socket {
-      onConnectedChanged: {
-        if (connected) root.toggle()
-      }
-    }
-  }
-
-  Timer {
-    id: focusTimer
-    interval: 60
-    repeat: true
-    onTriggered: {
-      if (!root.opened) {
-        focusTimer.stop()
-        return
-      }
-      content.forceActiveFocus()
-      if (content.activeFocus) focusTimer.stop()
-    }
-  }
-
   Timer {
     interval: 3000
     repeat: true
     running: root.opened
-    onTriggered: root.syncFromServer()
+    onTriggered: root.refreshItems()
   }
 
-  Process {
-    id: posProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const m = /(-?\d+),\s*(-?\d+)/.exec(String(this.text).trim())
-        if (!m) return
-        const X = parseInt(m[1], 10)
-        const Y = parseInt(m[2], 10)
-        const screens = Quickshell.screens.values
-        for (let i = 0; i < screens.length; i++) {
-          const s = screens[i]
-          if (X >= s.x && X < s.x + s.width && Y >= s.y && Y < s.y + s.height) {
-            root.screen = s
-            return
-          }
-        }
-      }
+  Row {
+    id: headerRow
+    width: parent.width
+    spacing: 8
+
+    Text {
+      anchors.verticalCenter: parent.verticalCenter
+      text: ""
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 18
+      color: Colors.text
     }
-  }
 
-  Item {
-    id: content
-    anchors.fill: parent
-    focus: true
-    Keys.onEscapePressed: root.close()
+    Text {
+      anchors.verticalCenter: parent.verticalCenter
+      text: "Notifications"
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 16
+      font.weight: Font.DemiBold
+      color: Colors.text
+    }
 
-    MouseArea {
-      id: dismiss
-      anchors.fill: parent
-      onClicked: root.close()
+    Text {
+      anchors.verticalCenter: parent.verticalCenter
+      visible: historyModel.count > 0
+      text: historyModel.count
+      font.family: "JetBrainsMono Nerd Font Propo"
+      font.pixelSize: 11
+      color: Colors.muted
+    }
+
+    Item { width: 1; height: 1 }
+
+    PillButton {
+      anchors.verticalCenter: parent.verticalCenter
+      height: 26
+      active: DnDState.dndEnabled
+      fillColor: DnDState.dndEnabled ? Colors.warning : "transparent"
+      activeTextColor: DnDState.dndEnabled ? Colors.text : Colors.text_alt
+      glyph: DnDState.dndEnabled ? "" : ""
+      glyphSize: 11
+      text: DnDState.dndEnabled ? "DnD On" : "DnD Off"
+      textSize: 10
+      horizontalPadding: 8
+      onClicked: DnDState.dndEnabled = !DnDState.dndEnabled
     }
 
     Rectangle {
-      id: card
-      width: 380
-      height: Math.min(cardBody.implicitHeight + 24, root.height - 80)
-      radius: 20
-      color: Tokens.surfaceContainerLow
+      anchors.verticalCenter: parent.verticalCenter
+      height: 26
+      width: clearRow.implicitWidth + 14
+      radius: height / 2
+      color: clearHover.containsMouse ? Tokens.stateHover : "transparent"
+      border.width: 1
+      border.color: Tokens.outlineVariant
+      visible: historyModel.count > 0
 
-      anchors {
-        top: parent.top
-        topMargin: 48
-      }
-      x: root.anchorGX >= 0
-        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
-        : parent.width - card.width - 10
+      Row {
+        id: clearRow
+        anchors.centerIn: parent
+        spacing: 4
 
-      MouseArea {
-        anchors.fill: parent
-      }
-
-      Column {
-        id: cardBody
-        anchors {
-          top: parent.top
-          left: parent.left
-          right: parent.right
-          margins: 16
-        }
-        spacing: 12
-
-        Row {
-          id: headerRow
-          width: parent.width
-          spacing: 8
-
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: "\uf0f3"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 18
-            color: Colors.text
-          }
-
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: "Notifications"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 16
-            font.weight: Font.DemiBold
-            color: Colors.text
-          }
-
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            visible: historyModel.count > 0
-            text: historyModel.count
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 11
-            color: Colors.muted
-          }
-
-          Item { width: 1; height: 1 }
-
-          PillButton {
-            anchors.verticalCenter: parent.verticalCenter
-            height: 26
-            active: DnDState.dndEnabled
-            fillColor: DnDState.dndEnabled ? Colors.warning : "transparent"
-            activeTextColor: DnDState.dndEnabled ? Colors.text : Colors.text_alt
-            glyph: DnDState.dndEnabled ? "\uf0e1" : "\uf0e2"
-            glyphSize: 11
-            text: DnDState.dndEnabled ? "DnD On" : "DnD Off"
-            textSize: 10
-            horizontalPadding: 8
-            onClicked: DnDState.dndEnabled = !DnDState.dndEnabled
-          }
-
-          Rectangle {
-            anchors.verticalCenter: parent.verticalCenter
-            height: 26
-            width: clearRow.implicitWidth + 14
-            radius: height / 2
-            color: clearHover.containsMouse ? Tokens.stateHover : "transparent"
-            border.width: 1
-            border.color: Tokens.outlineVariant
-            visible: historyModel.count > 0
-
-            Row {
-              id: clearRow
-              anchors.centerIn: parent
-              spacing: 4
-
-              Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "\uf2ed"
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 10
-                color: Colors.text_alt
-              }
-
-              Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Clear"
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 10
-                color: Colors.text_alt
-              }
-            }
-
-            MouseArea {
-              id: clearHover
-              anchors.fill: parent
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.clearAll()
-            }
-          }
-        }
-
-        Rectangle {
-          width: parent.width
-          height: 1
-          color: Tokens.divider
+        Text {
+          anchors.verticalCenter: parent.verticalCenter
+          text: ""
+          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 10
+          color: Colors.text_alt
         }
 
         Text {
-          width: parent.width
-          visible: root.groups.length === 0
-          text: "No notifications"
+          anchors.verticalCenter: parent.verticalCenter
+          text: "Clear"
           font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 13
-          color: Colors.muted
-          horizontalAlignment: Text.AlignHCenter
-          topPadding: 40
-          bottomPadding: 40
+          font.pixelSize: 10
+          color: Colors.text_alt
+        }
+      }
+
+      MouseArea {
+        id: clearHover
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: root.clearAll()
+      }
+    }
+  }
+
+  Rectangle {
+    width: parent.width
+    height: 1
+    color: Tokens.divider
+  }
+
+  Text {
+    width: parent.width
+    visible: root.groups.length === 0
+    text: "No notifications"
+    font.family: "JetBrainsMono Nerd Font Propo"
+    font.pixelSize: 13
+    color: Colors.muted
+    horizontalAlignment: Text.AlignHCenter
+    topPadding: 40
+    bottomPadding: 40
+  }
+
+  Repeater {
+    id: groupsRepeater
+    model: root.groups
+
+    delegate: Column {
+      id: groupCol
+      width: parent.width
+      property var groupData: modelData
+
+      Rectangle {
+        width: groupCol.width
+        height: groupCol.groupData.expanded
+          ? groupHeaderCol.height + expandedCol.height + 8
+          : collapsedRow.height
+        radius: 8
+        color: groupHover.containsMouse ? Tokens.stateHover : "transparent"
+
+        MouseArea {
+          id: groupHover
+          anchors.fill: parent
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.toggleGroup(groupCol.groupData.appName)
         }
 
-        Repeater {
-          id: groupsRepeater
-          model: root.groups
+        Column {
+          anchors {
+            left: parent.left
+            right: parent.right
+            margins: 10
+          }
+          spacing: 4
 
-          delegate: Column {
-            id: groupCol
-            width: cardBody.width
-            property var groupData: modelData
+          Row {
+            id: collapsedRow
+            visible: !groupCol.groupData.expanded
+            width: parent.width
+            spacing: 8
+            height: 36
+
+            Image {
+              anchors.verticalCenter: parent.verticalCenter
+              visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) !== ""
+              source: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon)
+              width: 22
+              height: 22
+              sourceSize: Qt.size(22, 22)
+              smooth: true
+            }
+
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) === ""
+              text: ""
+              font.family: "JetBrainsMono Nerd Font Propo"
+              font.pixelSize: 14
+              color: Colors.text
+            }
+
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              text: groupCol.groupData.appName
+              font.family: "JetBrainsMono Nerd Font Propo"
+              font.pixelSize: 13
+              font.weight: Font.DemiBold
+              color: Colors.text
+              elide: Text.ElideRight
+              width: parent.width - 120
+            }
 
             Rectangle {
-              width: groupCol.width
-              height: groupCol.groupData.expanded
-                ? groupHeaderCol.height + expandedCol.height + 8
-                : collapsedRow.height
-              radius: 8
-              color: groupHover.containsMouse ? Tokens.stateHover : "transparent"
+              anchors.verticalCenter: parent.verticalCenter
+              height: 18
+              width: countText.implicitWidth + 10
+              radius: 9
+              color: Colors.primary
+              visible: groupCol.groupData.entries.length > 1
+
+              Text {
+                id: countText
+                anchors.centerIn: parent
+                text: groupCol.groupData.entries.length
+                font.family: "JetBrainsMono Nerd Font Propo"
+                font.pixelSize: 10
+                font.weight: Font.Bold
+                color: Colors.surface
+              }
+            }
+
+            Item { width: 1; height: 1 }
+
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              text: root.relativeTime(groupCol.groupData.entries[groupCol.groupData.entries.length - 1].timestamp)
+              font.family: "JetBrainsMono Nerd Font Propo"
+              font.pixelSize: 10
+              color: Colors.muted
+            }
+
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              text: ""
+              font.family: "JetBrainsMono Nerd Font Propo"
+              font.pixelSize: 11
+              color: Colors.muted
 
               MouseArea {
-                id: groupHover
                 anchors.fill: parent
-                hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.toggleGroup(groupCol.groupData.appName)
+                onClicked: root.dismissGroup(groupCol.groupData.appName)
+              }
+            }
+          }
+
+          Column {
+            id: groupHeaderCol
+            visible: groupCol.groupData.expanded
+            width: parent.width
+            spacing: 4
+
+            Row {
+              width: parent.width
+              spacing: 8
+              height: 36
+
+              Image {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) !== ""
+                source: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon)
+                width: 20
+                height: 20
+                sourceSize: Qt.size(20, 20)
+                smooth: true
               }
 
-              Column {
-                anchors {
-                  left: parent.left
-                  right: parent.right
-                  margins: 10
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) === ""
+                text: ""
+                font.family: "JetBrainsMono Nerd Font Propo"
+                font.pixelSize: 14
+                color: Colors.text
+              }
+
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: groupCol.groupData.appName + (groupCol.groupData.entries.length > 1 ? " (" + groupCol.groupData.entries.length + ")" : "")
+                font.family: "JetBrainsMono Nerd Font Propo"
+                font.pixelSize: 13
+                font.weight: Font.DemiBold
+                color: Colors.text
+              }
+
+              Item { width: 1; height: 1 }
+
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: ""
+                font.family: "JetBrainsMono Nerd Font Propo"
+                font.pixelSize: 11
+                color: Colors.muted
+
+                MouseArea {
+                  anchors.fill: parent
+                  cursorShape: Qt.PointingHandCursor
+                  onClicked: root.dismissGroup(groupCol.groupData.appName)
                 }
-                spacing: 4
+              }
+            }
 
-                Row {
-                  id: collapsedRow
-                  visible: !groupCol.groupData.expanded
-                  width: parent.width
-                  spacing: 8
-                  height: 36
+            Rectangle {
+              width: parent.width
+              height: 1
+              color: Tokens.divider
+            }
+          }
 
-                  Image {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) !== ""
-                    source: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon)
-                    width: 22
-                    height: 22
-                    sourceSize: Qt.size(22, 22)
-                    smooth: true
-                  }
+          Column {
+            id: expandedCol
+            visible: groupCol.groupData.expanded
+            width: parent.width
+            spacing: 4
 
-                  Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) === ""
-                    text: "\uf0f3"
-                    font.family: "JetBrainsMono Nerd Font Propo"
-                    font.pixelSize: 14
-                    color: Colors.text
-                  }
+            Repeater {
+              model: groupCol.groupData.entries
 
-                  Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: groupCol.groupData.appName
-                    font.family: "JetBrainsMono Nerd Font Propo"
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
-                    color: Colors.text
-                    elide: Text.ElideRight
-                    width: parent.width - 120
-                  }
+              delegate: Rectangle {
+                width: expandedCol.width
+                height: entryInner.implicitHeight + 12
+                radius: 6
+                color: entryHover.containsMouse ? Tokens.stateHover : "transparent"
+                border.width: 1
+                border.color: Tokens.outlineVariant
 
-                  Rectangle {
-                    anchors.verticalCenter: parent.verticalCenter
-                    height: 18
-                    width: countText.implicitWidth + 10
-                    radius: 9
-                    color: Colors.primary
-                    visible: groupCol.groupData.entries.length > 1
-
-                    Text {
-                      id: countText
-                      anchors.centerIn: parent
-                      text: groupCol.groupData.entries.length
-                      font.family: "JetBrainsMono Nerd Font Propo"
-                      font.pixelSize: 10
-                      font.weight: Font.Bold
-                      color: Colors.surface
-                    }
-                  }
-
-                  Item { width: 1; height: 1 }
-
-                  Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: root.relativeTime(groupCol.groupData.entries[groupCol.groupData.entries.length - 1].timestamp)
-                    font.family: "JetBrainsMono Nerd Font Propo"
-                    font.pixelSize: 10
-                    color: Colors.muted
-                  }
-
-                  Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "\uf00d"
-                    font.family: "JetBrainsMono Nerd Font Propo"
-                    font.pixelSize: 11
-                    color: Colors.muted
-
-                    MouseArea {
-                      anchors.fill: parent
-                      cursorShape: Qt.PointingHandCursor
-                      onClicked: root.dismissGroup(groupCol.groupData.appName)
-                    }
-                  }
+                MouseArea {
+                  id: entryHover
+                  anchors.fill: parent
+                  hoverEnabled: true
                 }
 
                 Column {
-                  id: groupHeaderCol
-                  visible: groupCol.groupData.expanded
-                  width: parent.width
-                  spacing: 4
+                  id: entryInner
+                  anchors {
+                    left: parent.left
+                    right: parent.right
+                    verticalCenter: parent.verticalCenter
+                    margins: 8
+                  }
+                  spacing: 1
 
                   Row {
                     width: parent.width
-                    spacing: 8
-                    height: 36
-
-                    Image {
-                      anchors.verticalCenter: parent.verticalCenter
-                      visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) !== ""
-                      source: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon)
-                      width: 20
-                      height: 20
-                      sourceSize: Qt.size(20, 20)
-                      smooth: true
-                    }
+                    spacing: 4
 
                     Text {
-                      anchors.verticalCenter: parent.verticalCenter
-                      visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) === ""
-                      text: "\uf0f3"
-                      font.family: "JetBrainsMono Nerd Font Propo"
-                      font.pixelSize: 14
-                      color: Colors.text
-                    }
-
-                    Text {
-                      anchors.verticalCenter: parent.verticalCenter
-                      text: groupCol.groupData.appName + (groupCol.groupData.entries.length > 1 ? " (" + groupCol.groupData.entries.length + ")" : "")
-                      font.family: "JetBrainsMono Nerd Font Propo"
-                      font.pixelSize: 13
-                      font.weight: Font.DemiBold
-                      color: Colors.text
-                    }
-
-                    Item { width: 1; height: 1 }
-
-                    Text {
-                      anchors.verticalCenter: parent.verticalCenter
-                      text: "\uf00d"
+                      text: modelData.summary || ""
                       font.family: "JetBrainsMono Nerd Font Propo"
                       font.pixelSize: 11
+                      font.weight: Font.Bold
+                      color: modelData.urgency === 2 ? Colors.error : Colors.text
+                      elide: Text.ElideRight
+                      width: parent.width - 80
+                    }
+
+                    Text {
+                      text: root.relativeTime(modelData.timestamp)
+                      font.family: "JetBrainsMono Nerd Font Propo"
+                      font.pixelSize: 9
+                      color: Colors.muted
+                    }
+
+                    Text {
+                      text: ""
+                      font.family: "JetBrainsMono Nerd Font Propo"
+                      font.pixelSize: 10
                       color: Colors.muted
 
                       MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: root.dismissGroup(groupCol.groupData.appName)
+                        onClicked: root.dismissEntry(modelData)
                       }
                     }
                   }
 
-                  Rectangle {
+                  Text {
                     width: parent.width
-                    height: 1
-                    color: Tokens.divider
-                  }
-                }
-
-                Column {
-                  id: expandedCol
-                  visible: groupCol.groupData.expanded
-                  width: parent.width
-                  spacing: 4
-
-                  Repeater {
-                    model: groupCol.groupData.entries
-
-                    delegate: Rectangle {
-                      width: expandedCol.width
-                      height: entryInner.implicitHeight + 12
-                      radius: 6
-                      color: entryHover.containsMouse ? Tokens.stateHover : "transparent"
-                      border.width: 1
-                      border.color: Tokens.outlineVariant
-
-                      MouseArea {
-                        id: entryHover
-                        anchors.fill: parent
-                        hoverEnabled: true
-                      }
-
-                      Column {
-                        id: entryInner
-                        anchors {
-                          left: parent.left
-                          right: parent.right
-                          verticalCenter: parent.verticalCenter
-                          margins: 8
-                        }
-                        spacing: 1
-
-                        Row {
-                          width: parent.width
-                          spacing: 4
-
-                          Text {
-                            text: modelData.summary || ""
-                            font.family: "JetBrainsMono Nerd Font Propo"
-                            font.pixelSize: 11
-                            font.weight: Font.Bold
-                            color: modelData.urgency === 2 ? Colors.error : Colors.text
-                            elide: Text.ElideRight
-                            width: parent.width - 80
-                          }
-
-                          Text {
-                            text: root.relativeTime(modelData.timestamp)
-                            font.family: "JetBrainsMono Nerd Font Propo"
-                            font.pixelSize: 9
-                            color: Colors.muted
-                          }
-
-                          Text {
-                            text: "\uf00d"
-                            font.family: "JetBrainsMono Nerd Font Propo"
-                            font.pixelSize: 10
-                            color: Colors.muted
-
-                            MouseArea {
-                              anchors.fill: parent
-                              cursorShape: Qt.PointingHandCursor
-                              onClicked: root.dismissEntry(modelData)
-                            }
-                          }
-                        }
-
-                        Text {
-                          width: parent.width
-                          visible: text !== ""
-                          text: modelData.body
-                          font.family: "JetBrainsMono Nerd Font Propo"
-                          font.pixelSize: 10
-                          color: Colors.text_alt
-                          elide: Text.ElideRight
-                          maximumLineCount: 2
-                          wrapMode: Text.Wrap
-                          textFormat: Text.StyledText
-                        }
-                      }
-                    }
+                    visible: text !== ""
+                    text: modelData.body
+                    font.family: "JetBrainsMono Nerd Font Propo"
+                    font.pixelSize: 10
+                    color: Colors.text_alt
+                    elide: Text.ElideRight
+                    maximumLineCount: 2
+                    wrapMode: Text.Wrap
+                    textFormat: Text.StyledText
                   }
                 }
               }

@@ -1,15 +1,11 @@
 import QtQuick
-import Quickshell.Io
 import Quickshell.Services.UPower
 import qs
 import "../components"
 
-Item {
+BarModule {
   id: root
-  implicitHeight: 30
-  width: Math.max(30, label.implicitWidth + 20)
-  required property var tooltip
-  property var popup
+  sock: "kmdot-battery"
 
   readonly property var battery: UPower.displayDevice
   function batteryPercent(dev) {
@@ -33,7 +29,8 @@ Item {
     if (PowerProfiles.profile === PowerProfile.Performance) return "performance"
     return "unknown"
   }
-  readonly property string tooltipText: {
+
+  tooltipText: {
     var t = "Battery: " + capacity + "% (" + statusText + ")"
     if (discharging && battery && battery.timeToEmpty > 0) {
       t += "\nTime remaining: " + formatTime(battery.timeToEmpty)
@@ -42,76 +39,25 @@ Item {
     return t
   }
 
-  readonly property string icon: {
+  function formatTime(seconds) {
+    if (seconds >= 3600) return (seconds / 3600).toFixed(1) + " hours"
+    return Math.round(seconds / 60) + " minutes"
+  }
+
+  glyph: {
+    if (charging) return ""
     if (capacity <= 20) return ""
     if (capacity <= 40) return ""
     if (capacity <= 60) return ""
     if (capacity <= 80) return ""
     return ""
   }
-  readonly property string text: charging
-    ? " " + capacity + "%"
-    : icon + " " + capacity + "%"
-
-  function formatTime(seconds) {
-    if (seconds >= 3600) return (seconds / 3600).toFixed(1) + " hours"
-    return Math.round(seconds / 60) + " minutes"
-  }
-
-  function cycleProfile() {
-    if (PowerProfiles.profile === PowerProfile.PowerSaver) {
-      PowerProfiles.profile = PowerProfile.Balanced
-    } else if (PowerProfiles.profile === PowerProfile.Balanced) {
-      PowerProfiles.profile = PowerProfiles.hasPerformanceProfile ? PowerProfile.Performance : PowerProfile.PowerSaver
-    } else {
-      PowerProfiles.profile = PowerProfile.PowerSaver
-    }
-  }
-
-  ModulePill {
-    id: pill
-    anchors.centerIn: parent
-    width: Math.max(30, label.implicitWidth + 20)
-    height: 30
-    active: root.charging || root.capacity <= 30
-    fill: root.charging ? Tokens.successContainer
-        : root.capacity <= 15 ? Tokens.errorContainer
-        : Tokens.warningContainer
-    hovered: mouse.containsMouse
-    pressed: mouse.pressed
-
-    Text {
-      id: label
-      anchors.centerIn: parent
-      text: root.text
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 15
-      color: root.charging ? Tokens.on_success_container
-           : root.capacity <= 15 ? Tokens.on_error_container
-           : root.capacity <= 30 ? Tokens.on_warning_container
-           : Colors.text_alt
-    }
-  }
-
-  MouseArea {
-    id: mouse
-    anchors.fill: parent
-    hoverEnabled: true
-    cursorShape: Qt.PointingHandCursor
-    acceptedButtons: Qt.LeftButton | Qt.RightButton
-    onClicked: {
-      if (mouse.button === Qt.RightButton) {
-        root.cycleProfile()
-      } else {
-        if (root.popup) root.popup.anchorItem = root
-        toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-battery"])
-      }
-    }
-    onEntered: root.tooltip.show(root, root.tooltipText)
-    onExited: root.tooltip.hide()
-  }
-
-  Process {
-    id: toggleProc
-  }
+  text: capacity + "%"
+  active: root.charging || root.capacity <= 30
+  fill: root.charging ? Tokens.successContainer
+      : root.capacity <= 15 ? Tokens.errorContainer
+      : Tokens.warningContainer
+  on_color: root.charging ? Tokens.on_success_container
+         : root.capacity <= 15 ? Tokens.on_error_container
+         : Tokens.on_warning_container
 }

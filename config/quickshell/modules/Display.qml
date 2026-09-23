@@ -1,156 +1,23 @@
 import QtQuick
-import Quickshell.Io
 import qs
 import "../components"
 
-Item {
+// Bar-module view over the DisplayState singleton (issue #49 owns state):
+// zero Processes here, all detection/polling/apply lives in DisplayState.
+BarModule {
   id: root
-  implicitHeight: 30
-  width: Math.max(30, label.implicitWidth + 20)
-  required property var tooltip
-  property var popup
+  sock: "kmdot-display"
 
-  property int cur: 0
-  property int max: 1
-  property bool _applying: false
-  property int _pending: -1
-  property string activeDevice: ""
-  property bool hasBacklight: false
+  glyph: ""
+  clickable: DisplayState.barHasBacklight
+  dimmed: !DisplayState.barHasBacklight
 
-  readonly property int percent: max > 0 ? Math.round(cur * 100 / max) : 0
-  readonly property int _min: Math.round(max * 5 / 100)
-  readonly property string icon: "\uf26c"
-  readonly property string text: icon
-
-  readonly property string tooltipText: {
-    if (!hasBacklight) return "Display (no backlight)"
-    return "Brightness: " + percent + "%"
+  tooltipText: {
+    if (!DisplayState.barHasBacklight) return "Display (no backlight)"
+    return "Brightness: " + DisplayState.barPercent + "%"
   }
 
-  function detectBacklightDevice() {
-    detectProc.exec(["sh", "-c",
-      "for dev in /sys/class/backlight/*/; do " +
-      "name=$(basename \"$dev\"); " +
-      "target=$(readlink -f \"${dev}device\" 2>/dev/null); " +
-      "connector=$(echo \"$target\" | grep -oP 'card\\d+-\\K[A-Za-z0-9-]+$'); " +
-      "[ -n \"$connector\" ] && echo \"$connector $name\"; " +
-      "done"])
-  }
-
-  function poll() {
-    if (root.activeDevice) {
-      curProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " get"])
-    }
-  }
-
-  function apply(target) {
-    const t = Math.max(root._min, Math.min(root.max, target))
-    root.cur = t
-    if (root._applying) {
-      root._pending = t
-      return
-    }
-    root._applying = true
-    root._pending = -1
-    setProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " set " + t])
-  }
-
-  Component.onCompleted: {
-    detectBacklightDevice()
-  }
-
-  Timer {
-    interval: 500
-    running: true
-    repeat: true
-    onTriggered: root.poll()
-  }
-
-  Process {
-    id: detectProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const lines = this.text.trim().split("\n")
-        for (let i = 0; i < lines.length; i++) {
-          const parts = lines[i].split(" ")
-          if (parts.length >= 2) {
-            root.activeDevice = parts[1]
-            root.hasBacklight = true
-            maxProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " max"])
-            root.poll()
-            return
-          }
-        }
-        root.hasBacklight = false
-        root.activeDevice = ""
-      }
-    }
-  }
-
-  Process {
-    id: curProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const v = parseInt(this.text.replace(/[^0-9]/g, "")) || 0
-        if (!root._applying) root.cur = v
-      }
-    }
-  }
-
-  Process {
-    id: maxProc
-    stdout: StdioCollector {
-      onStreamFinished: root.max = parseInt(this.text.replace(/[^0-9]/g, "")) || 1
-    }
-  }
-
-  Process {
-    id: setProc
-    onExited: {
-      root._applying = false
-      if (root._pending >= 0) {
-        const t = root._pending
-        root._pending = -1
-        root._applying = true
-        setProc.exec(["sh", "-c", "brightnessctl --device " + root.activeDevice + " set " + t])
-      } else {
-        root.poll()
-      }
-    }
-  }
-
-  ModulePill {
-    id: pill
-    anchors.centerIn: parent
-    width: Math.max(30, label.implicitWidth + 20)
-    height: 30
-    hovered: mouse.containsMouse
-    pressed: mouse.pressed
-
-    Text {
-      id: label
-      anchors.centerIn: parent
-      text: root.text
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 15
-      color: Colors.text_alt
-    }
-  }
-
-  MouseArea {
-    id: mouse
-    anchors.fill: parent
-    hoverEnabled: true
-    cursorShape: Qt.PointingHandCursor
-    onClicked: {
-      if (root.popup) root.popup.anchorItem = root
-      toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-display"])
-    }
-    onEntered: root.tooltip.show(root, root.tooltipText)
-    onExited: root.tooltip.hide()
-  }
-
-  Process {
-    id: toggleProc
+  onWheeled: wheel => {
+    if (DisplayState.barHasBacklight) DisplayState.nudgeBar(wheel.angleDelta.y > 0 ? 1 : -1)
   }
 }

@@ -1,46 +1,25 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import QtMultimedia
 import qs
 import "../components"
-import "../components/popuppos.js" as Pos
 
-PanelWindow {
+PopupBase {
   id: root
-  visible: opened
-  color: Qt.rgba(0, 0, 0, 0)
-  focusable: true
+  sockName: "kmdot-handy"
+  cardWidth: 500
 
-  BackgroundEffect.blurRegion: Region {
-    item: root.contentItem
-
-    Region {
-      intersection: Intersection.Subtract
-      x: 0
-      y: 0
-      width: root.width
-      height: 42
-    }
-  }
-  screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
-
-  WlrLayershell.layer: WlrLayer.Overlay
-  WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-  WlrLayershell.exclusionMode: ExclusionMode.Ignore
-  anchors { top: true; bottom: true; left: true; right: true }
-
-  property bool opened: false
-  property var scope: null
-  // anchorItem seam: set by the bar module before toggling (see ConnectionDropdownBase).
-  property var anchorItem: null
-  property real anchorGX: -1
   property int tab: 0
-  property var models: []
-  property var history: []
-  property string selectedModel: ""
+  // Read path served by the HandyStore singleton (issue #52): the popup binds
+  // its models/history/selection here instead of fetching them itself.
+  // Mutations, playback, and busy/error for those stay view-local.
+  property var models: HandyStore.models
+  property var history: HandyStore.history
+  property string selectedModel: HandyStore.selectedModel
   property string errorText: ""
+  // Mutation errors (local) take precedence; fetch errors come from the store.
+  readonly property string effectiveError: root.errorText !== "" ? root.errorText : HandyStore.errorText
   property int busyId: -1
   property string busyAction: ""
   readonly property bool busy: busyAction !== ""
@@ -52,52 +31,25 @@ PanelWindow {
   // second (within 3s) deletes.
   property int confirmId: -1
   readonly property string recordingsDir: Quickshell.env("HOME") + "/.local/share/com.pais.handy/recordings"
-  readonly property string sockPath: {
-    const rt = Quickshell.env("XDG_RUNTIME_DIR")
-    return (rt ? rt : "/tmp") + "/kmdot-handy.sock"
-  }
 
   function script() { return Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/handy-control.mjs" }
   function run(command, args) {
-    const proc = command === "history" ? historyProc : controlProc
-    proc.exec(["node", script(), command].concat(args || []))
+    controlProc.exec(["node", script(), command].concat(args || []))
   }
-  function open() {
-    if (scope && scope.activeLauncher) scope.activeLauncher.closeLauncher()
-    if (scope && scope.batteryPopup) scope.batteryPopup.close()
-    if (scope && scope.volumePopup) scope.volumePopup.close()
-    if (scope && scope.calendarPopup) scope.calendarPopup.close()
-    if (scope && scope.serverModeDropdown) scope.serverModeDropdown.close()
-    if (scope && scope.openCodeUsagePopup) scope.openCodeUsagePopup.close()
-    if (scope && scope.displayPopup) scope.displayPopup.close()
-    opened = true
-    applyAnchor()
-    refresh()
-    focusTimer.start()
-  }
-  function close() { stopPlayback(); confirmId = -1; opened = false; busyAction = ""; busyId = -1 }
-  function toggle() { opened ? close() : open() }
-  function pickScreen() { posProc.exec(["sh", "-c", "hyprctl cursorpos"]) }
-  function applyAnchor() {
-    if (root.anchorItem) {
-      const gx = Pos.globalCenterX(root.anchorItem)
-      root.anchorItem = null
-      if (gx >= 0) root.anchorGX = gx
-    }
-    if (root.anchorGX >= 0) {
-      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
-      if (s) root.screen = s
-      else root.pickScreen()
-    } else {
-      root.pickScreen()
+  function refreshItems() { refresh() }
+  function openedChange() {
+    if (!root.opened) {
+      stopPlayback()
+      confirmId = -1
+      busyAction = ""
+      busyId = -1
     }
   }
   function refresh() {
     stopPlayback()
     confirmId = -1
     errorText = ""
-    run("models")
-    run("history")
+    HandyStore.refresh()
   }
   function remove(row) {
     if (playingId === row.id) stopPlayback()
@@ -141,11 +93,13 @@ PanelWindow {
     try {
       const result = JSON.parse(String(text))
       if (!result.ok) { errorText = result.error || "Handy operation failed"; return }
-      if (result.models) { models = result.models; selectedModel = result.selected || "" }
-      if (result.history) history = result.history
-      if (result.selected) selectedModel = result.selected
-      if (result.deleted !== undefined) { confirmId = -1; run("history") }
-      if (result.text !== undefined) refresh()
+      // Reads live in HandyStore; mutations update it here. Save returns
+      // { ok: true } with no payload, so like before it refetches nothing.
+      // Retry keeps the old refresh() side effects (stop playback, reset
+      // confirm/error) with the fetch itself routed through the store.
+      if (result.selected) HandyStore.selectedModel = result.selected
+      if (result.deleted !== undefined) { confirmId = -1; HandyStore.refresh() }
+      if (result.text !== undefined) { stopPlayback(); confirmId = -1; errorText = ""; HandyStore.refresh() }
     } catch (e) { errorText = "Could not parse Handy response" }
   }
   function selectModel(id) { busyAction = "model"; run("select-model", [id]) }
@@ -153,21 +107,6 @@ PanelWindow {
   function save(row, text) { busyId = row.id; busyAction = "save"; run("save", [String(row.id), text]) }
   function copy(text) { copyProc.exec(["sh", "-c", "printf '%s' \"$1\" | wl-copy", "kmdot", text]) }
 
-  SocketServer {
-    active: true
-    path: root.sockPath
-    handler: Socket { onConnectedChanged: if (connected) root.toggle() }
-  }
-  Timer {
-    id: focusTimer
-    interval: 60
-    repeat: true
-    onTriggered: {
-      if (!root.opened) { stop(); return }
-      content.forceActiveFocus()
-      if (content.activeFocus) stop()
-    }
-  }
   Timer {
     id: confirmTimer
     interval: 3000
@@ -183,10 +122,6 @@ PanelWindow {
       }
     }
   }
-  Process {
-    id: historyProc
-    stdout: StdioCollector { onStreamFinished: root.applyResult(String(this.text)) }
-  }
   Process { id: copyProc }
   MediaPlayer {
     id: player
@@ -199,45 +134,6 @@ PanelWindow {
       root.stopPlayback()
     }
   }
-  Process {
-    id: posProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const m = /(-?\d+),\s*(-?\d+)/.exec(String(this.text).trim())
-        if (!m) return
-        const x = parseInt(m[1], 10), y = parseInt(m[2], 10)
-        const screens = Quickshell.screens.values
-        for (let i = 0; i < screens.length; i++) {
-          const s = screens[i]
-          if (x >= s.x && x < s.x + s.width && y >= s.y && y < s.y + s.height) { root.screen = s; return }
-        }
-      }
-    }
-  }
-
-  Item {
-    id: content
-    anchors.fill: parent
-    focus: true
-    Keys.onEscapePressed: root.close()
-    MouseArea { anchors.fill: parent; onClicked: root.close() }
-
-    Rectangle {
-      id: card
-      width: 500
-      height: body.implicitHeight + 32
-      radius: 20
-      color: Tokens.surfaceContainerLow
-      anchors { top: parent.top; topMargin: 48 }
-      x: root.anchorGX >= 0
-        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
-        : parent.width - card.width - 10
-      MouseArea { anchors.fill: parent }
-
-      Column {
-        id: body
-        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 16 }
-        spacing: 10
 
         Item {
           width: parent.width; height: 34
@@ -251,7 +147,7 @@ PanelWindow {
           PillButton { width: (parent.width - 8) / 2; text: "Models"; active: root.tab === 0; onClicked: root.tab = 0 }
           PillButton { width: (parent.width - 8) / 2; text: "History"; active: root.tab === 1; onClicked: root.tab = 1 }
         }
-        Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; color: Colors.error; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; wrapMode: Text.WordWrap }
+        Text { visible: root.effectiveError !== ""; width: parent.width; text: root.effectiveError; color: Colors.error; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; wrapMode: Text.WordWrap }
 
         ListView {
           id: modelList
@@ -362,7 +258,4 @@ PanelWindow {
           Text { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; text: root.busy ? "Updating Handy…" : (root.tab === 0 ? root.models.length + " installed model(s)" : root.history.length + " recent recording(s)"); color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10 }
           PillButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: 72; height: 24; text: "Refresh"; glyph: "\uf021"; glyphSize: 10; textSize: 10; enabled: !root.busy; onClicked: root.refresh() }
         }
-      }
-    }
-  }
 }

@@ -2,11 +2,10 @@ import QtQuick
 import qs
 import "../components"
 
-ConnectionDropdownBase {
+PopupBase {
   id: root
   title: "Confirm"
   cardWidth: 340
-  escapeCloses: true
   socketEnabled: false
 
   property string message: ""

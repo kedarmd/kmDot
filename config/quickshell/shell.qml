@@ -36,6 +36,26 @@ Scope {
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
   property NotificationPopup notificationPopup: NotificationPopup { scope: shellRoot }
 
+  // Overlay coordinator: every PopupBase routes open() through here. The toast
+  // (notificationPopup) is excluded — it stacks above cards and never closes them.
+  function closeAllExcept(except) {
+    const launchers = [shellRoot.appLauncher, shellRoot.kmdotLauncher, shellRoot.systemLauncher,
+      shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.wifiLauncher,
+      shellRoot.bluetoothLauncher, shellRoot.keybindsLauncher, shellRoot.clipboardLauncher,
+      shellRoot.handyLauncher]
+    for (const l of launchers) {
+      if (l && l !== except) l.closeLauncher()
+    }
+    const popups = [shellRoot.wifiDropdown, shellRoot.bluetoothDropdown, shellRoot.wifiAddPopup,
+      shellRoot.bluetoothAddPopup, shellRoot.confirmPopup, shellRoot.batteryPopup,
+      shellRoot.volumePopup, shellRoot.calendarPopup, shellRoot.serverModeDropdown,
+      shellRoot.openCodeUsagePopup, shellRoot.handyPopup, shellRoot.displayPopup,
+      shellRoot.notificationCenter]
+    for (const p of popups) {
+      if (p && p !== except) p.close()
+    }
+  }
+
   NotificationServer {
     id: notifServer
     keepOnReload: true
@@ -154,7 +174,7 @@ PanelWindow {
         }
         Kmdot {}
         Clock {
-          popup: calendarPopup
+          popupRef: calendarPopup
         }
         Dnd {
           id: dndModule
@@ -177,35 +197,35 @@ PanelWindow {
           stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened
           OpenCodeUsage {
             tooltip: tooltip
-            popup: openCodeUsagePopup
+            popupRef: openCodeUsagePopup
           }
           Handy {
             tooltip: tooltip
-            popup: handyPopup
+            popupRef: handyPopup
           }
           ServerMode {
-            dropdown: serverModeDropdown
+            popupRef: serverModeDropdown
           }
         }
         Network {
           tooltip: tooltip
-          dropdown: wifiDropdown
+          popupRef: wifiDropdown
         }
         Bluetooth {
           tooltip: tooltip
-          dropdown: bluetoothDropdown
+          popupRef: bluetoothDropdown
         }
         Audio {
           tooltip: tooltip
-          popup: volumePopup
+          popupRef: volumePopup
         }
         Battery {
           tooltip: tooltip
-          popup: batteryPopup
+          popupRef: batteryPopup
         }
         Display {
           tooltip: tooltip
-          popup: displayPopup
+          popupRef: displayPopup
         }
       }
     }

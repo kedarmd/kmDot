@@ -3,12 +3,12 @@ import Quickshell.Io
 import qs
 import "../components"
 
-ConnectionDropdownBase {
+PopupBase {
   id: root
   title: "Add Wi-Fi connection"
   cardWidth: 360
-  escapeCloses: true
   socketEnabled: false
+  focusItem: ssidInput
 
   property string ssid: ""
   property string password: ""

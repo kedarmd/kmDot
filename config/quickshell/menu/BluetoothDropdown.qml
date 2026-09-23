@@ -3,10 +3,12 @@ import Quickshell.Bluetooth
 import qs
 import "../components"
 
-ConnectionDropdownBase {
+PopupBase {
   id: root
   sockName: "kmdot-bluetooth-dropdown"
   title: "Bluetooth"
+  // Preserve pre-PopupBase behavior: Escape does not dismiss (base default is true).
+  escapeCloses: false
 
   property var devices: []
   property string busyPath: ""

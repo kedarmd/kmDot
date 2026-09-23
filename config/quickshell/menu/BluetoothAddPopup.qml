@@ -3,11 +3,10 @@ import Quickshell.Bluetooth
 import qs
 import "../components"
 
-ConnectionDropdownBase {
+PopupBase {
   id: root
   title: "Pair Bluetooth device"
   cardWidth: 360
-  escapeCloses: true
   socketEnabled: false
 
   property var devices: []

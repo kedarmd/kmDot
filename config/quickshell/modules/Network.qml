@@ -1,15 +1,11 @@
 import QtQuick
 import Quickshell.Networking
-import Quickshell.Io
 import qs
 import "../components"
 
-Item {
+BarModule {
   id: root
-  implicitHeight: 30
-  width: Math.max(30, label.implicitWidth + 20)
-  required property var tooltip
-  property var dropdown
+  sock: "kmdot-wifi-dropdown"
 
   function wifiDevice() {
     for (const d of Networking.devices.values) {
@@ -37,11 +33,12 @@ Item {
   readonly property var net: connectedWifi()
   readonly property bool disabled: !Networking.wifiHardwareEnabled || !Networking.wifiEnabled
   readonly property bool connected: !!net || wiredConnected()
-  readonly property string tooltipText: connected
+
+  tooltipText: connected
     ? ("Connected to: " + (net ? net.name : "Wired Connection"))
     : (disabled ? "Wi-Fi disabled" : "Disconnected")
 
-  readonly property string icon: {
+  glyph: {
     if (disabled) return "󰤮"
     if (wiredConnected()) return "󰈁"
     if (!net) return "󰤯"
@@ -51,47 +48,8 @@ Item {
     if (s <= 0.75) return "󰤥"
     return "󰤨"
   }
-
-  ModulePill {
-    id: pill
-    anchors.centerIn: parent
-    width: Math.max(30, label.implicitWidth + 20)
-    height: 30
-    active: root.connected && !root.disabled
-    fill: Tokens.primaryContainer
-    hovered: mouse.containsMouse
-    pressed: mouse.pressed
-
-    Text {
-      id: label
-      anchors.centerIn: parent
-      text: icon
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 15
-      color: root.connected && !root.disabled ? Tokens.on_primary_container : Colors.text_alt
-      opacity: root.disabled ? 0.4 : 1.0
-    }
-  }
-
-  MouseArea {
-    id: mouse
-    anchors.fill: parent
-    hoverEnabled: true
-    acceptedButtons: Qt.LeftButton | Qt.RightButton
-    cursorShape: Qt.PointingHandCursor
-    onClicked: {
-      if (mouse.button === Qt.RightButton) {
-        Networking.wifiEnabled = !Networking.wifiEnabled
-      } else {
-        if (root.dropdown) root.dropdown.anchorItem = root
-        wifiProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-wifi-dropdown"])
-      }
-    }
-    onEntered: root.tooltip.show(root, root.tooltipText)
-    onExited: root.tooltip.hide()
-  }
-
-  Process {
-    id: wifiProc
-  }
+  active: connected && !disabled
+  fill: Tokens.primaryContainer
+  on_color: Tokens.on_primary_container
+  dimmed: disabled
 }

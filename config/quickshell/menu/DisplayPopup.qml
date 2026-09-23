@@ -1,423 +1,42 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import qs
 import "../components"
-import "../components/popuppos.js" as Pos
 
-PanelWindow {
+PopupBase {
   id: root
-  visible: root.opened
-  color: Qt.rgba(0, 0, 0, 0)
-  focusable: true
+  sockName: "kmdot-display"
+  cardWidth: 340
+  cardMaxHeight: 600
 
-  BackgroundEffect.blurRegion: Region {
-    item: root.contentItem
+  // Positioning/focus/socket shell lives in PopupBase (anchorItem seam).
+  // Pure view over the DisplayState singleton (issue #49): state binds to
+  // singleton properties, actions delegate to it. No Processes of its own.
+  property var displays: DisplayState.displays
+  property var backlightMap: DisplayState.backlightMap
+  property int selectedIdx: DisplayState.selectedIdx
+  property string currentMode: DisplayState.currentMode
+  property string externalPosition: DisplayState.externalPosition
 
-    Region {
-      intersection: Intersection.Subtract
-      x: 0
-      y: 0
-      width: root.width
-      height: 42
-    }
-  }
-  screen: Quickshell.screens.values.length > 0 ? Quickshell.screens.values[0] : null
+  readonly property var selectedDisplay: DisplayState.selectedDisplay
+  readonly property string selectedName: DisplayState.selectedName
+  readonly property bool selectedHasBacklight: DisplayState.selectedHasBacklight
+  readonly property string selectedDevice: DisplayState.selectedDevice
+  readonly property real selectedScale: DisplayState.selectedScale
 
-  WlrLayershell.layer: WlrLayer.Overlay
-  WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-  WlrLayershell.exclusionMode: ExclusionMode.Ignore
+  readonly property int brightnessCur: DisplayState.curFor(DisplayState.selectedDevice)
+  readonly property int brightnessMax: DisplayState.maxFor(DisplayState.selectedDevice)
+  readonly property int brightnessPercent: DisplayState.percentFor(DisplayState.selectedDevice)
 
-  anchors {
-    top: true
-    bottom: true
-    left: true
-    right: true
-  }
-
-  property bool opened: false
-  property var scope: null
-  property var anchorItem: null
-  property real anchorGX: -1
-
-  property var displays: []
-  property var backlightMap: ({})
-  property int selectedIdx: 0
-  property string currentMode: "extend"
-  property string externalPosition: "right"  // "left" or "right" - where external monitor is relative to internal
-
-  readonly property string sockPath: {
-    const rt = Quickshell.env("XDG_RUNTIME_DIR")
-    return (rt ? rt : "/tmp") + "/kmdot-display.sock"
+  function refreshItems() {
+    DisplayState.refreshDisplays()
+    DisplayState.detectBacklights()
   }
 
-  readonly property var selectedDisplay: {
-    if (selectedIdx >= 0 && selectedIdx < displays.length)
-      return displays[selectedIdx]
-    return null
+  function openedChange() {
+    DisplayState.monitorsActive = root.opened
   }
-
-  readonly property string selectedName: selectedDisplay ? selectedDisplay.name : ""
-  readonly property bool selectedHasBacklight: selectedName in backlightMap
-  readonly property string selectedDevice: selectedHasBacklight ? backlightMap[selectedName] : ""
-  readonly property real selectedScale: selectedDisplay ? selectedDisplay.scale : 1
-
-  function pickScreen() {
-    posProc.exec(["sh", "-c", "hyprctl cursorpos"])
-  }
-
-  function applyAnchor() {
-    if (root.anchorItem) {
-      const gx = Pos.globalCenterX(root.anchorItem)
-      root.anchorItem = null
-      if (gx >= 0) root.anchorGX = gx
-    }
-    if (root.anchorGX >= 0) {
-      const s = Pos.screenFor(Quickshell.screens.values, root.anchorGX)
-      if (s) root.screen = s
-      else root.pickScreen()
-    } else {
-      root.pickScreen()
-    }
-  }
-
-  function open() {
-    if (root.scope && root.scope.activeLauncher) root.scope.activeLauncher.closeLauncher()
-    if (root.scope && root.scope.batteryPopup) root.scope.batteryPopup.close()
-    if (root.scope && root.scope.volumePopup) root.scope.volumePopup.close()
-    if (root.scope && root.scope.calendarPopup) root.scope.calendarPopup.close()
-    if (root.scope && root.scope.serverModeDropdown) root.scope.serverModeDropdown.close()
-    root.opened = true
-    root.refreshDisplays()
-    root.detectBacklights()
-    root.applyAnchor()
-    focusTimer.start()
-  }
-
-  function close() {
-    root.opened = false
-  }
-
-  function toggle() {
-    if (root.opened) root.close()
-    else root.open()
-  }
-
-  function refreshDisplays() {
-    monitorsProc.exec(["sh", "-c", "hyprctl monitors -j"])
-  }
-
-  function detectBacklights() {
-    backlightProc.exec(["sh", "-c",
-      "for dev in /sys/class/backlight/*/; do " +
-      "name=$(basename \"$dev\"); " +
-      "target=$(readlink -f \"${dev}device\" 2>/dev/null); " +
-      "connector=$(echo \"$target\" | grep -oP 'card\\d+-\\K[A-Za-z0-9-]+$'); " +
-      "[ -n \"$connector\" ] && echo \"$connector $name\"; " +
-      "done"])
-  }
-
-  function applyScale(scale) {
-    if (!selectedDisplay) return
-    const m = selectedDisplay
-    const rule = '{ output = "' + m.name + '", mode = "' + m.width + 'x' + m.height + '@' + m.refresh + '", position = "' + m.x + 'x' + m.y + '", scale = ' + scale + ' }'
-    const cmd = "hyprctl eval 'hl.monitor(" + rule + ")'"
-    scaleProc.exec(["sh", "-c", cmd])
-    persistSettings()
-  }
-
-  function applyMode(mode) {
-    root.currentMode = mode
-    if (mode === "extend") {
-      modeProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/display-mode.sh extend --position " + root.externalPosition])
-    } else if (mode === "mirror") {
-      const primary = displays.length > 0 ? displays[0].name : "eDP-1"
-      modeProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/display-mode.sh mirror " + primary])
-    } else if (mode === "external") {
-      modeProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/display-mode.sh external"])
-    }
-    persistSettings()
-  }
-
-  property bool persistInFlight: false
-  property bool persistDirty: false
-
-  function persistSettings() {
-    if (persistInFlight) { persistDirty = true; return }
-    _doPersist()
-  }
-
-  function _doPersist() {
-    const lines = ["return {"]
-    for (let i = 0; i < displays.length; i++) {
-      const m = displays[i]
-      const isExternal = !(m.name in backlightMap)
-      const scale = (m.name === selectedName) ? selectedScale : m.scale
-      const disabled = (currentMode === "external" && !isExternal) ? "true" : "false"
-      const mirrorTarget = (currentMode === "mirror" && isExternal && displays.length > 0) ? displays[0].name : ""
-      let rule = "  { output = \"" + m.name + "\", mode = \"" + m.width + "x" + m.height + "@" + m.refresh + "\", position = \"" + m.x + "x" + m.y + "\", scale = " + scale
-      if (disabled === "true") rule += ", disabled = true"
-      if (mirrorTarget) rule += ", mirror = \"" + mirrorTarget + "\""
-      rule += " }"
-      if (i < displays.length - 1) rule += ","
-      lines.push(rule)
-    }
-    lines.push("}")
-    lines.push("-- external_position: " + root.externalPosition)
-    const luaContent = lines.join("\n")
-    const tmpFile = "~/.config/kmdot/display-settings.lua.tmp"
-    const targetFile = "~/.config/kmdot/display-settings.lua"
-    const linkFile = "~/.config/hypr/display-settings.lua"
-    const safe = luaContent.replace(/\\/g, "\\\\").replace(/'/g, "'\\''")
-    persistInFlight = true
-    persistProc.exec(["sh", "-c",
-      "mkdir -p ~/.config/kmdot && " +
-      "echo '" + safe + "' > " + tmpFile + " && " +
-      "mv " + tmpFile + " " + targetFile + " && " +
-      "ln -sf " + targetFile + " " + linkFile])
-  }
-
-  Component.onCompleted: {
-    detectBacklights()
-  }
-
-  SocketServer {
-    active: true
-    path: root.sockPath
-    handler: Socket {
-      onConnectedChanged: {
-        if (connected) root.toggle()
-      }
-    }
-  }
-
-  Timer {
-    id: focusTimer
-    interval: 60
-    repeat: true
-    onTriggered: {
-      if (!root.opened) {
-        focusTimer.stop()
-        return
-      }
-      content.forceActiveFocus()
-      if (content.activeFocus) focusTimer.stop()
-    }
-  }
-
-  Timer {
-    interval: 5000
-    repeat: true
-    running: root.opened
-    onTriggered: root.refreshDisplays()
-  }
-
-  Process {
-    id: monitorsProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        try {
-          const arr = JSON.parse(this.text)
-          const result = []
-          for (let i = 0; i < arr.length; i++) {
-            const m = arr[i]
-            result.push({
-              name: m.name,
-              width: m.width,
-              height: m.height,
-              refresh: m.refreshRate ? Math.round(m.refreshRate) : 60,
-              x: m.x,
-              y: m.y,
-              scale: m.scale || 1,
-              focused: m.focused || false
-            })
-          }
-          root.displays = result
-          if (root.selectedIdx >= result.length) root.selectedIdx = 0
-        } catch (e) {}
-      }
-    }
-  }
-
-  Process {
-    id: backlightProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const map = {}
-        const lines = this.text.trim().split("\n")
-        for (let i = 0; i < lines.length; i++) {
-          const parts = lines[i].split(" ")
-          if (parts.length >= 2) {
-            map[parts[0]] = parts[1]
-          }
-        }
-        root.backlightMap = map
-      }
-    }
-  }
-
-  Process {
-    id: scaleProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        root.refreshDisplays()
-      }
-    }
-  }
-
-  Process {
-    id: modeProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        root.refreshDisplays()
-      }
-    }
-  }
-
-  Process {
-    id: persistProc
-    onExited: function(exitCode) {
-      persistInFlight = false
-      if (exitCode !== 0) console.warn("display-settings persist failed:", exitCode)
-      if (persistDirty) { persistDirty = false; _doPersist() }
-    }
-  }
-
-  Process {
-    id: posProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const m = /(-?\d+),\s*(-?\d+)/.exec(String(this.text).trim())
-        if (!m) return
-        const X = parseInt(m[1], 10)
-        const Y = parseInt(m[2], 10)
-        const screens = Quickshell.screens.values
-        for (let i = 0; i < screens.length; i++) {
-          const s = screens[i]
-          if (X >= s.x && X < s.x + s.width && Y >= s.y && Y < s.y + s.height) {
-            root.screen = s
-            return
-          }
-        }
-      }
-    }
-  }
-
-  // Brightness processes (per selected display)
-  property int brightnessCur: 0
-  property int brightnessMax: 1
-  property bool _applyingBrightness: false
-  property int _pendingBrightness: -1
-
-  readonly property int brightnessPercent: brightnessMax > 0 ? Math.round(brightnessCur * 100 / brightnessMax) : 0
-
-  function pollBrightness() {
-    if (root.selectedDevice) {
-      brightnessGetProc.exec(["sh", "-c", "brightnessctl --device " + root.selectedDevice + " get"])
-    }
-  }
-
-  function applyBrightness(target) {
-    if (!root.selectedDevice) return
-    const min = Math.round(brightnessMax * 5 / 100)
-    const t = Math.max(min, Math.min(brightnessMax, target))
-    brightnessCur = t
-    if (_applyingBrightness) {
-      _pendingBrightness = t
-      return
-    }
-    _applyingBrightness = true
-    _pendingBrightness = -1
-    brightnessSetProc.exec(["sh", "-c", "brightnessctl --device " + root.selectedDevice + " set " + t])
-  }
-
-  onSelectedDeviceChanged: {
-    if (selectedDevice) {
-      brightnessMaxProc.exec(["sh", "-c", "brightnessctl --device " + selectedDevice + " max"])
-      pollBrightness()
-    }
-  }
-
-  Timer {
-    interval: 500
-    repeat: true
-    running: root.opened && root.selectedHasBacklight
-    onTriggered: root.pollBrightness()
-  }
-
-  Process {
-    id: brightnessGetProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const v = parseInt(this.text.replace(/[^0-9]/g, "")) || 0
-        if (!root._applyingBrightness) root.brightnessCur = v
-      }
-    }
-  }
-
-  Process {
-    id: brightnessMaxProc
-    stdout: StdioCollector {
-      onStreamFinished: root.brightnessMax = parseInt(this.text.replace(/[^0-9]/g, "")) || 1
-    }
-  }
-
-  Process {
-    id: brightnessSetProc
-    onExited: {
-      root._applyingBrightness = false
-      if (root._pendingBrightness >= 0) {
-        const t = root._pendingBrightness
-        root._pendingBrightness = -1
-        root._applyingBrightness = true
-        brightnessSetProc.exec(["sh", "-c", "brightnessctl --device " + root.selectedDevice + " set " + t])
-      } else {
-        root.pollBrightness()
-      }
-    }
-  }
-
-  Item {
-    id: content
-    anchors.fill: parent
-    focus: true
-    Keys.onEscapePressed: root.close()
-
-    MouseArea {
-      id: dismiss
-      anchors.fill: parent
-      onClicked: root.close()
-    }
-
-    Rectangle {
-      id: card
-      width: 340
-      height: Math.min(body.implicitHeight + 32, 600)
-      radius: 20
-      color: Tokens.surfaceContainerLow
-
-      anchors {
-        top: parent.top
-        topMargin: 48
-      }
-      x: root.anchorGX >= 0
-        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
-        : parent.width - card.width - 10
-
-      MouseArea {
-        anchors.fill: parent
-      }
-
-      Column {
-        id: body
-        anchors {
-          top: parent.top
-          left: parent.left
-          right: parent.right
-          margins: 16
-        }
-        spacing: 14
 
         // Header
         Row {
@@ -472,7 +91,7 @@ PanelWindow {
           Rectangle {
             required property var modelData
             required property int index
-            width: body.width
+            width: parent.width
             height: 48
             radius: 12
             color: index === root.selectedIdx ? Tokens.primaryContainer : "transparent"
@@ -480,7 +99,7 @@ PanelWindow {
             MouseArea {
               anchors.fill: parent
               cursorShape: Qt.PointingHandCursor
-              onClicked: root.selectedIdx = index
+              onClicked: DisplayState.selectedIdx = index
             }
 
             Row {
@@ -576,7 +195,7 @@ PanelWindow {
           SliderBar {
             width: parent.width
             value: root.brightnessMax > 0 ? root.brightnessCur / root.brightnessMax : 0
-            onChanged: root.applyBrightness(Math.round(v * root.brightnessMax))
+            onChanged: DisplayState.applyBrightness(root.selectedDevice, Math.round(v * root.brightnessMax))
           }
         }
 
@@ -614,13 +233,13 @@ PanelWindow {
             PillButton {
               required property var modelData
               required property int index
-              width: (body.width - 24) / 4
+              width: (parent.width - 24) / 4
               height: 30
               filled: true
               active: root.selectedScale === modelData
               text: modelData + "\u00d7"
               textSize: 12
-              onClicked: root.applyScale(modelData)
+              onClicked: DisplayState.applyScale(root.selectedName, modelData)
             }
           }
         }
@@ -659,33 +278,33 @@ PanelWindow {
           spacing: 8
 
           PillButton {
-            width: (body.width - 16) / 3
+            width: (parent.width - 16) / 3
             height: 30
             filled: true
             active: root.currentMode === "extend"
             text: "Extend"
             textSize: 12
-            onClicked: root.applyMode("extend")
+            onClicked: DisplayState.applyMode("extend")
           }
 
           PillButton {
-            width: (body.width - 16) / 3
+            width: (parent.width - 16) / 3
             height: 30
             filled: true
             active: root.currentMode === "mirror"
             text: "Mirror"
             textSize: 12
-            onClicked: root.applyMode("mirror")
+            onClicked: DisplayState.applyMode("mirror")
           }
 
           PillButton {
-            width: (body.width - 16) / 3
+            width: (parent.width - 16) / 3
             height: 30
             filled: true
             active: root.currentMode === "external"
             text: "External"
             textSize: 12
-            onClicked: root.applyMode("external")
+            onClicked: DisplayState.applyMode("external")
           }
         }
 
@@ -708,33 +327,30 @@ PanelWindow {
             spacing: 8
 
             PillButton {
-              width: (body.width - 8) / 2
+              width: (parent.width - 8) / 2
               height: 30
               filled: true
               active: root.externalPosition === "left"
               text: "← Left"
               textSize: 12
               onClicked: {
-                root.externalPosition = "left"
-                root.applyMode("extend")
+                DisplayState.externalPosition = "left"
+                DisplayState.applyMode("extend")
               }
             }
 
             PillButton {
-              width: (body.width - 8) / 2
+              width: (parent.width - 8) / 2
               height: 30
               filled: true
               active: root.externalPosition === "right"
               text: "Right →"
               textSize: 12
               onClicked: {
-                root.externalPosition = "right"
-                root.applyMode("extend")
+                DisplayState.externalPosition = "right"
+                DisplayState.applyMode("extend")
               }
             }
           }
         }
-      }
-    }
-  }
 }

@@ -23,6 +23,12 @@ function screenFor(screens, x) {
   return null
 }
 
+// Primary screen for PanelWindow `screen:` bindings. Indexed access, not
+// .values — the .values snapshot does not track the model (see PopupBase).
+function primaryScreen(screens) {
+  return screens.length > 0 ? screens[0] : null
+}
+
 function cardXFor(centerGX, cardWidth, screen) {
   const sX = screen ? screen.x : 0
   const sW = screen ? screen.width : 0

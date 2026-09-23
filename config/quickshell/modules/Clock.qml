@@ -1,52 +1,18 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import qs
 import "../components"
 
-Item {
+BarModule {
   id: root
-  implicitHeight: 30
-  width: Math.max(30, label.implicitWidth + 20)
-  property var popup
+  sock: "kmdot-calendar"
 
   SystemClock {
     id: clock
     precision: SystemClock.Minutes
   }
 
-  ModulePill {
-    id: pill
-    anchors.centerIn: parent
-    width: Math.max(30, label.implicitWidth + 20)
-    height: 30
-    hovered: mouse.containsMouse
-    pressed: mouse.pressed
-
-    Text {
-      id: label
-      anchors.centerIn: parent
-      text: root.formatClock(clock.date)
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 15
-      color: Colors.text_alt
-    }
-  }
-
-  MouseArea {
-    id: mouse
-    anchors.fill: parent
-    hoverEnabled: true
-    cursorShape: Qt.PointingHandCursor
-    onClicked: {
-      if (root.popup) root.popup.anchorItem = root
-      toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-calendar"])
-    }
-  }
-
-  Process {
-    id: toggleProc
-  }
+  text: root.formatClock(clock.date)
 
   function formatClock(date) {
     var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
