@@ -36,23 +36,39 @@ Scope {
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
   property NotificationPopup notificationPopup: NotificationPopup { scope: shellRoot }
 
+  // Keep all radio views in one registry. The stores deliberately do not know
+  // about overlays; this is the shell-owned close-all boundary for the two
+  // launchers, two dropdowns, and two add flows.
+  readonly property var radioSurfaces: [
+    shellRoot.wifiLauncher, shellRoot.bluetoothLauncher,
+    shellRoot.wifiDropdown, shellRoot.bluetoothDropdown,
+    shellRoot.wifiAddPopup, shellRoot.bluetoothAddPopup
+  ]
+
   // Overlay coordinator: every PopupBase routes open() through here. The toast
   // (notificationPopup) is excluded — it stacks above cards and never closes them.
   function closeAllExcept(except) {
     const launchers = [shellRoot.appLauncher, shellRoot.kmdotLauncher, shellRoot.systemLauncher,
-      shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.wifiLauncher,
-      shellRoot.bluetoothLauncher, shellRoot.keybindsLauncher, shellRoot.clipboardLauncher,
-      shellRoot.handyLauncher]
+      shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.keybindsLauncher,
+      shellRoot.clipboardLauncher, shellRoot.handyLauncher]
     for (const l of launchers) {
       if (l && l !== except) l.closeLauncher()
     }
-    const popups = [shellRoot.wifiDropdown, shellRoot.bluetoothDropdown, shellRoot.wifiAddPopup,
-      shellRoot.bluetoothAddPopup, shellRoot.confirmPopup, shellRoot.batteryPopup,
+    const popups = [shellRoot.confirmPopup, shellRoot.batteryPopup,
       shellRoot.volumePopup, shellRoot.calendarPopup, shellRoot.serverModeDropdown,
       shellRoot.openCodeUsagePopup, shellRoot.handyPopup, shellRoot.displayPopup,
       shellRoot.notificationCenter]
     for (const p of popups) {
       if (p && p !== except) p.close()
+    }
+
+    // Keep this explicit after the kind-specific loops: it documents and
+    // enforces that every radio view participates in cross-kind coordination,
+    // including the two add flows which have no socket of their own.
+    for (const surface of shellRoot.radioSurfaces) {
+      if (!surface || surface === except) continue
+      if (surface.closeLauncher) surface.closeLauncher()
+      else if (surface.close) surface.close()
     }
   }
 
