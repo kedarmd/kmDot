@@ -17,9 +17,8 @@ PopupBase {
   readonly property string errorText: BluetoothStore.errorText
   readonly property bool discovering: BluetoothStore.discovering
   readonly property bool radioAllowed: BluetoothStore.enabled
-  // Injected by the opening dropdown (coordinator reopen without scope
-  // strings): back navigation returns here instead of reading
-  // scope.bluetoothDropdown.
+  // Injected by the opening surface: back navigation returns here without
+  // coupling this form to a specific dropdown instance.
   property var returnPopup: null
 
   readonly property string statusText: {

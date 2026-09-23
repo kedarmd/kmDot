@@ -19,6 +19,8 @@ LauncherBase {
   // derives from the shared devices list; this view keeps pool derivation,
   // activate intent, and the footer pill only.
   readonly property var adapter: BluetoothStore.adapter
+  property string forgetPath: ""
+  itemActions: [{ key: Qt.Key_Delete, ctrl: true, hint: "Ctrl+Del forget" }]
 
   function batterySuffix(d) {
     return BtJs.batteryLabel(d.batteryAvailable, d.battery)
@@ -26,6 +28,9 @@ LauncherBase {
 
   function syncFooter() {
     const on = BluetoothStore.enabled
+    root.footerHint = BluetoothStore.errorText !== ""
+      ? BluetoothStore.errorText
+      : "↑↓ navigate · ⏎ connect/disconnect · tab toggle · esc close"
     root.footerActionGlyph = on ? "" : ""
     root.footerActionText = on ? "Bluetooth On" : "Bluetooth Off"
     root.footerActionActive = on
@@ -91,6 +96,7 @@ LauncherBase {
     function onDiscoveringChanged() { root.rebuild() }
     function onBusyPathChanged() { root.rebuild() }
     function onBusyActionChanged() { root.rebuild() }
+    function onErrorTextChanged() { root.rebuild() }
   }
 
   onActivated: function(item) {
@@ -104,9 +110,34 @@ LauncherBase {
     }
   }
 
+  onItemAction: function(action, item) {
+    if (action.key !== Qt.Key_Delete || !item || !item.paired
+        || !root.scope || !root.scope.confirmPopup) return
+    root.forgetPath = item.path
+    root.closeLauncher()
+    root.scope.confirmPopup.anchorGX = -1
+    root.scope.confirmPopup.ask("Forget Bluetooth device", "Remove '" + item.label + "'? You will need to pair it again to use it.")
+  }
+
   onFooterActionClicked: {
     BluetoothStore.setEnabled(!BluetoothStore.enabled)
     root.syncFooter()
     root.rebuild()
+  }
+
+  Connections {
+    target: root.scope ? root.scope.confirmPopup : null
+    function onConfirmed() {
+      if (!root.forgetPath) return
+      const path = root.forgetPath
+      root.forgetPath = ""
+      BluetoothStore.forget(path)
+      root.openLauncher()
+    }
+    function onCancelled() {
+      if (!root.forgetPath) return
+      root.forgetPath = ""
+      root.openLauncher()
+    }
   }
 }
