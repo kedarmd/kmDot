@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../components"
+import "../components/wifi.js" as WifiJs
 import qs
 
 LauncherBase {
@@ -9,140 +10,76 @@ LauncherBase {
 
   sockName: "kmdot-wifi"
   title: "Wi-Fi"
-  footerHint: "\u2191\u2193 navigate \u00b7 \u23ce connect \u00b7 tab toggle \u00b7 esc close"
+  footerHint: "↑↓ navigate · ⏎ connect · tab toggle · esc close"
   countShown: false
   loadingText: "Scanning for networks..."
   // Items decide whether to close themselves — the password flow keeps the launcher open.
   closeOnActivate: false
 
-  property string pendingSsid: ""
-  property var _rows: []
-  property var _saved: []
-  property bool _savedMode: false
-  property string _state: "enabled"
-  property string _lastErr: ""
-  property int _emptyScans: 0
+  // Thin adapter over the Wifi singleton (issue #61): the pool derives from
+  // the shared networks list; this view keeps pool derivation, activate
+  // intent, password promptMode wiring, and the footer pill only.
+  // promptSsid tracks the secured network currently in the password flow
+  // across submits and re-prompts (survives startPrompt resets).
+  property string promptSsid: ""
 
-  function shellQuote(s) {
-    return "'" + s.replace(/'/g, "'\\''") + "'"
-  }
-
-  function decodeNmcli(s) {
-    return String(s).replace(/\\([\\:sn])/g, function(_, code) {
-      if (code === ":") return ":"
-      if (code === "s") return " "
-      if (code === "n") return "\n"
-      return "\\"
-    })
-  }
-
-  function sigGlyph(sig) {
-    if (sig >= 75) return "\u2588\u2588\u2588\u2588"
-    if (sig >= 50) return "\u2588\u2588\u2586\u2581"
-    if (sig >= 25) return "\u2588\u2584\u2581\u2581"
-    return "\u2581\u2581\u2581\u2581"
-  }
-
-  function startScan() {
-    root.pool = []
-    root.loading = true
-    root.pendingSsid = ""
-    root._rows = []
-    root._saved = []
-    root._savedMode = false
-    root._state = ""
-    wifiScanProc.exec(["sh", "-c",
-      "nmcli -t -f ACTIVE,SSID,SIGNAL,SECURITY device wifi list 2>/dev/null; " +
-      "printf 'STATE:%s\\n' \"$(nmcli -t -f WIFI general 2>/dev/null)\"; " +
-      "printf 'SAVED\\n'; nmcli -t -f NAME connection show 2>/dev/null"])
-  }
+  function sigGlyph(sig) { return WifiJs.signalGlyph(sig) }
 
   function refreshItems() {
-    root._emptyScans = 0
-    root.startScan()
+    root.promptSsid = ""
+    Wifi.errorText = ""
+    Wifi.scan()
+    root.buildPool()
   }
 
   function syncFooter() {
-    root.footerActionGlyph = root._state === "enabled" ? "\uf1eb" : "\uf011"
-    root.footerActionText = root._state === "enabled" ? "Wi-Fi On" : "Wi-Fi Off"
-    root.footerActionActive = root._state === "enabled"
+    root.footerActionGlyph = Wifi.enabled ? "" : ""
+    root.footerActionText = Wifi.enabled ? "Wi-Fi On" : "Wi-Fi Off"
+    root.footerActionActive = Wifi.enabled
   }
 
   function buildPool() {
-    const savedSet = {}
-    for (const n of root._saved) {
-      const t = root.decodeNmcli(n.trim())
-      if (t) savedSet[t] = true
-    }
     const items = []
-    for (const line of root._rows) {
-      const parts = line.split(":")
-      if (parts.length < 3) continue
-      const active = parts[0] === "yes"
-      const ssid = root.decodeNmcli(parts.slice(1, parts.length - 2).join(":"))
-      const signal = parseInt(parts[parts.length - 2], 10) || 0
-      const security = parts[parts.length - 1] || ""
-      if (!ssid) continue
-      const open = !security || security === "--" || security === "NONE" || security === "OPEN"
+    for (const n of Wifi.networks) {
       items.push({
-        label: ssid,
-        subtitle: (active ? "active \u00b7 " : "") + (open ? "Open" : security) + " \u00b7 " + root.sigGlyph(signal) + " " + signal + "%",
-        glyph: "\uf1eb",
-        ssid: ssid,
-        active: active,
-        saved: !!savedSet[ssid],
-        open: open,
-        signal: signal
+        label: n.ssid,
+        subtitle: (n.active ? "active · " : "") + (n.open ? "Open" : n.security) + " · " + root.sigGlyph(n.signal) + " " + n.signal + "%",
+        glyph: "",
+        ssid: n.ssid,
+        active: !!n.active,
+        saved: !!(n.saved || Wifi.isSaved(n.ssid)),
+        open: !!n.open,
+        signal: n.signal,
+        security: n.security
       })
     }
-    items.sort(function(a, b) {
-      return (b.active ? 1 : 0) - (a.active ? 1 : 0) || b.signal - a.signal
-    })
-    root.loading = false
-    root.emptyText = root._state === "disabled" ? "Wi-Fi is turned off" : "No networks found"
+    // Wifi.networks arrives sorted from the store; keep that order.
+    root.loading = Wifi.scanning && items.length === 0
+    root.emptyText = !Wifi.enabled ? "Wi-Fi is turned off" : "No networks found"
     root.syncFooter()
     root.pool = items
-    // Right after the radio is re-enabled the device may not have cached any APs
-    // yet, so a scan can legitimately return nothing — retry a couple of times.
-    if (root._state === "enabled" && items.length === 0 && root._emptyScans < 2) {
-      root._emptyScans++
-      wifiRescanTimer.restart()
-    }
   }
 
-  Process {
-    id: wifiScanProc
-    stdout: SplitParser {
-      splitMarker: "\n"
-      onRead: function(data) {
-        const line = String(data)
-        if (line.startsWith("STATE:")) { root._state = line.slice(6).trim(); return }
-        if (line === "SAVED") { root._savedMode = true; return }
-        if (root._savedMode) { root._saved.push(line); return }
-        root._rows.push(line)
-      }
+  function findNet(ssid) {
+    for (const it of root.pool) {
+      if (it.ssid === ssid) return { ssid: it.ssid, active: false, open: !!it.open, saved: !!it.saved, security: it.security }
     }
-    onExited: root.buildPool()
+    return { ssid: ssid, active: false, open: false, saved: Wifi.isSaved(ssid) }
   }
 
   function connectTo(item) {
     if (item.active) {
       root.closeLauncher()
-      root.runCommand("nmcli con down id " + root.shellQuote(item.ssid))
+      Wifi.disconnect({ ssid: item.ssid })
       return
     }
-    if (item.saved) {
+    if (item.saved || item.open) {
       root.closeLauncher()
-      root.runCommand("nmcli connection up id " + root.shellQuote(item.ssid))
+      Wifi.connect({ ssid: item.ssid, active: false, open: !!item.open, saved: !!item.saved, security: item.security })
       return
     }
-    if (!item.open) {
-      root.pendingSsid = item.ssid
-      root.startPrompt("Password for " + item.ssid)
-      return
-    }
-    root.closeLauncher()
-    root.runCommand("nmcli dev wifi connect " + root.shellQuote(item.ssid))
+    root.promptSsid = item.ssid
+    root.startPrompt("Password for " + item.ssid)
   }
 
   onActivated: function(item) {
@@ -150,56 +87,46 @@ LauncherBase {
   }
 
   onFooterActionClicked: {
-    const turnOn = root._state !== "enabled"
-    root.loading = true
-    root._state = turnOn ? "enabled" : "disabled"
-    root.syncFooter()
-    root.runCommand("nmcli radio wifi " + (turnOn ? "on" : "off"))
-    wifiRefreshTimer.restart()
-  }
-
-  Timer {
-    id: wifiRefreshTimer
-    interval: 1200
-    repeat: false
-    onTriggered: root.refreshItems()
-  }
-
-  Timer {
-    id: wifiRescanTimer
-    interval: 2500
-    repeat: false
-    onTriggered: root.startScan()
+    // Keep the surface open across the toggle; the store rescans and the
+    // pool rebuilds through the Connections below.
+    Wifi.toggleRadio()
   }
 
   onPromptSubmitted: function(text) {
-    const ssid = root.pendingSsid
-    if (!ssid) return
-    const pass = text
-    if (!pass) return
-    connectProc.exec(["sh", "-c",
-      "nmcli dev wifi connect " + root.shellQuote(ssid) + " password " + root.shellQuote(pass) + " 2>&1"])
+    const ssid = root.promptSsid
+    if (!ssid || !text) return
+    if (!Wifi.connect(root.findNet(ssid), text)) {
+      root.startPrompt("Password for " + ssid, "Connection failed")
+      return
+    }
+    // Success settles through onBusySsidChanged (closes); a failure
+    // re-prompts through onErrorTextChanged below.
   }
 
-  Process {
-    id: connectProc
-    stdout: SplitParser {
-      splitMarker: "\n"
-      onRead: function(data) {
-        const t = String(data).trim()
-        if (t) root._lastErr = t
-      }
-    }
-    onExited: function(exitCode, exitStatus) {
-      const ssid = root.pendingSsid
-      if (exitCode === 0) {
-        root.closeLauncher()
-        root.pendingSsid = ""
-        return
-      }
+  // Failure UI stays view-shaped over the shared store errorText: a failed
+  // password connect re-prompts with the error instead of closing.
+  // Order is load-bearing: the store sets errorText before clearing
+  // busySsid, so a failure re-prompts (promptMode=true) before the busy
+  // handler runs, and only the success path still has promptMode=false.
+  Connections {
+    target: Wifi
+    function onNetworksChanged() { root.buildPool() }
+    function onScanningChanged() { root.buildPool() }
+    function onEnabledChanged() { root.buildPool() }
+    function onErrorTextChanged() {
+      if (Wifi.errorText === "" || root.promptSsid === "" || !root.opened) return
+      const ssid = root.promptSsid
+      const err = Wifi.errorText
+      Wifi.errorText = ""
       root.startPrompt("Password for " + ssid,
-        "Connection failed" + (root._lastErr ? ": " + root._lastErr : ""))
-      root._lastErr = ""
+        "Connection failed" + (err ? ": " + err : ""))
+    }
+    function onBusySsidChanged() {
+      if (Wifi.busySsid !== "" || root.promptSsid === "" || !root.opened) return
+      if (!root.promptMode && Wifi.errorText === "") {
+        root.closeLauncher()
+        root.promptSsid = ""
+      }
     }
   }
 }

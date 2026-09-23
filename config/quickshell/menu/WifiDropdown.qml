@@ -1,8 +1,8 @@
 import QtQuick
 import Quickshell.Io
-import Quickshell.Networking
 import qs
 import "../components"
+import "../components/wifi.js" as WifiJs
 
 PopupBase {
   id: root
@@ -11,18 +11,23 @@ PopupBase {
   // Preserve pre-PopupBase behavior: Escape does not dismiss (base default is true).
   escapeCloses: false
 
-  property var networks: []
-  property string state: ""
-  property bool scanning: false
-  property string busySsid: ""
-  property string errorText: ""
-  property string connectedSsid: ""
-  property string busyAction: ""
-  property var savedNames: []
+  // Thin adapter over the Wifi singleton (issue #61): all nmcli radio state
+  // binds here read-only; this view keeps row/section rendering, activate
+  // intent, and the Dropdown-local traffic sampler only.
+  readonly property var networks: Wifi.networks
+  readonly property bool scanning: Wifi.scanning
+  readonly property string busySsid: Wifi.busySsid
+  readonly property string busyAction: Wifi.busyAction
+  readonly property string errorText: Wifi.errorText
+  readonly property string connectedSsid: Wifi.connectedSsid
+  // Master gate: every secondary control is disabled unless the Wi-Fi radio is on.
+  readonly property bool radioEnabled: Wifi.enabled
+
   property var pendingNetwork: null
   property string forgetSsid: ""
-  property int _settleTries: 0
-  readonly property int settleMaxTries: 8
+  // Set while a forget is deleting: the dropdown reopens once the
+  // post-delete rescan lands (not immediately, which would show the stale list).
+  property bool forgetPending: false
   // Live throughput sampling (see trafficProc): interface + sysfs byte counters.
   property string netIface: ""
   property double lastStamp: 0
@@ -36,27 +41,8 @@ PopupBase {
   readonly property bool hasLink: root.netIface !== ""
   readonly property var connectedNetworks: root.networks.filter(n => n.active)
   readonly property var availableNetworks: root.networks.filter(n => !n.active)
-  // Master gate: every secondary control is disabled unless the Wi-Fi radio is on.
-  readonly property bool radioEnabled: root.state === "enabled"
 
-  onStateChanged: {
-    if (root.state !== "enabled") {
-      root.resetTrafficSample()
-      root.busySsid = ""
-      root.busyAction = ""
-      root.pendingNetwork = null
-    }
-  }
-
-  function quote(s) { return "'" + s.replace(/'/g, "'\\''") + "'" }
-  function decodeNmcli(s) {
-    return String(s).replace(/\\([\\:sn])/g, function(_, code) {
-      if (code === ":") return ":"
-      if (code === "s") return " "
-      if (code === "n") return "\n"
-      return "\\"
-    })
-  }
+  function signalGlyph(signal) { return WifiJs.signalGlyph(signal) }
 
   function fmtRate(mbps) {
     if (mbps >= 100) return Math.round(mbps) + " Mbps"
@@ -90,53 +76,14 @@ PopupBase {
     if (!enabled) root.resetTrafficSample()
     else root.sampleTraffic()
   }
-  function signalGlyph(signal) {
-    if (signal >= 75) return "\u2588\u2588\u2588\u2588"
-    if (signal >= 50) return "\u2588\u2588\u2586\u2581"
-    if (signal >= 25) return "\u2588\u2584\u2581\u2581"
-    return "\u2581\u2581\u2581\u2581"
-  }
   function refreshItems() {
-    root.networks = []
-    root.connectedSsid = ""
-    root.savedNames = []
-    root.scanning = true
+    Wifi.errorText = ""
+    Wifi.scan()
     root.sampleTraffic()
-    activeProc.exec(["sh", "-c", "nmcli -t -f NAME,TYPE connection show --active 2>/dev/null"])
-    savedProc.exec(["sh", "-c", "nmcli -t -f NAME,TYPE connection show 2>/dev/null"])
-    scanProc.exec(["sh", "-c", "nmcli -t -f ACTIVE,SSID,SIGNAL,SECURITY device wifi list 2>/dev/null; printf 'STATE:%s\\n' \"$(nmcli -t -f WIFI general 2>/dev/null)\""])
   }
 
-  function beginRadioSettle() {
-    root._settleTries = 0
-    root.refreshItems()
-    settleTimer.restart()
-  }
-
-  function addNetwork(network) {
-    network.saved = root.savedNames.indexOf(network.ssid) >= 0
-    network.active = network.active || network.ssid === root.connectedSsid
-    for (let i = 0; i < root.networks.length; i++) {
-      if (root.networks[i].ssid !== network.ssid) continue
-      const updated = root.networks.slice()
-      updated[i] = network
-      root.networks = updated
-      return
-    }
-    root.networks = root.networks.concat(network)
-  }
-  function isSaved(ssid) { return root.savedNames.indexOf(ssid) >= 0 }
-  function markSaved(name) {
-    for (let i = 0; i < root.networks.length; i++) {
-      if (root.networks[i].ssid !== name || root.networks[i].saved) continue
-      const updated = root.networks.slice()
-      updated[i] = Object.assign({}, updated[i], { saved: true })
-      root.networks = updated
-    }
-  }
   function editNetwork(network) {
     if (!root.radioEnabled) return
-    root.busySsid = ""
     root.close()
     if (root.scope && root.scope.wifiAddPopup) {
       root.scope.wifiAddPopup.ssid = network.ssid
@@ -145,6 +92,7 @@ PopupBase {
       root.scope.wifiAddPopup.failed = false
       root.scope.wifiAddPopup.resultText = ""
       root.scope.wifiAddPopup.anchorGX = root.anchorGX
+      root.scope.wifiAddPopup.returnPopup = root
       root.scope.wifiAddPopup.open()
     }
   }
@@ -152,7 +100,6 @@ PopupBase {
     if (!root.radioEnabled) return
     root.forgetSsid = network.ssid
     if (root.scope && root.scope.confirmPopup) {
-      root.busySsid = ""
       root.close()
       root.scope.confirmPopup.anchorGX = root.anchorGX
       root.scope.confirmPopup.ask("Forget Wi-Fi network", "Forget '" + network.ssid + "'? You will need to re-enter the password to connect again.")
@@ -160,83 +107,59 @@ PopupBase {
   }
   function activate(n) {
     if (!root.radioEnabled) return
-    const saved = n.saved || root.isSaved(n.ssid)
+    const saved = n.saved || Wifi.isSaved(n.ssid)
     const network = Object.assign({}, n, { saved: saved })
-    root.busySsid = n.ssid
-    root.busyAction = n.active ? "disconnect" : "connect"
-    root.pendingNetwork = network
-    root.errorText = ""
-    const cmd = n.active ? "nmcli con down id " + root.quote(n.ssid)
-      : (n.open ? "nmcli dev wifi connect " + root.quote(n.ssid) : "nmcli connection up id " + root.quote(n.ssid))
     if (!n.open && !n.active && !saved) {
-      root.busySsid = ""
       root.close()
       if (root.scope && root.scope.wifiAddPopup) {
         root.scope.wifiAddPopup.ssid = n.ssid
+        root.scope.wifiAddPopup.password = ""
         root.scope.wifiAddPopup.editingExisting = false
         root.scope.wifiAddPopup.failed = false
         root.scope.wifiAddPopup.resultText = ""
         root.scope.wifiAddPopup.anchorGX = root.anchorGX
+        root.scope.wifiAddPopup.returnPopup = root
         root.scope.wifiAddPopup.open()
       }
       return
     }
-    actionProc.exec(["sh", "-c", cmd + " 2>&1"])
+    root.pendingNetwork = network
+    if (n.active) Wifi.disconnect(network)
+    else Wifi.connect(network)
   }
 
-  Process {
-    id: scanProc
-    stdout: SplitParser {
-      splitMarker: "\n"
-      onRead: function(data) {
-        const line = String(data)
-        if (line.startsWith("STATE:")) { root.state = line.slice(6).trim(); return }
-        const p = line.split(":")
-        if (p.length < 4) return
-        const ssid = root.decodeNmcli(p.slice(1, p.length - 2).join(":"))
-        if (!ssid) return
-        const security = p[p.length - 1]
-        root.addNetwork({
-          ssid: ssid, active: p[0] === "yes", signal: parseInt(p[p.length - 2], 10) || 0,
-          open: !security || security === "--" || security === "NONE" || security === "OPEN",
-          security: security
-        })
+  // Failure UI stays view-shaped over the shared store errorText: a failed
+  // secured connect routes to the AddPopup (failed=true + error), a failed
+  // disconnect just surfaces inline via the bound errorText.
+  Connections {
+    target: Wifi
+    function onEnabledChanged() {
+      if (!Wifi.enabled) {
+        root.resetTrafficSample()
+        root.pendingNetwork = null
       }
     }
-    onExited: {
-      root.scanning = false
-      root.networks.sort((a, b) => (b.active ? 1 : 0) - (a.active ? 1 : 0) || b.signal - a.signal)
-    }
-  }
-
-  Process {
-    id: savedProc
-    stdout: SplitParser {
-      splitMarker: "\n"
-      onRead: function(data) {
-        const p = String(data).split(":")
-        if (p.length >= 2 && p[p.length - 1] === "802-11-wireless") {
-          const name = root.decodeNmcli(p.slice(0, p.length - 1).join(":"))
-          if (name && root.savedNames.indexOf(name) < 0) {
-            root.savedNames = root.savedNames.concat(name)
-            root.markSaved(name)
-          }
-        }
+    function onScanningChanged() {
+      if (!Wifi.scanning && root.forgetPending) {
+        root.forgetPending = false
+        root.open()
       }
     }
-  }
-
-  Process {
-    id: activeProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        for (const line of String(this.text).split("\n")) {
-          const p = line.trim().split(":")
-          if (p.length < 2 || p[p.length - 1] !== "802-11-wireless") continue
-          root.connectedSsid = root.decodeNmcli(p.slice(0, p.length - 1).join(":"))
-          root.addNetwork({ ssid: root.connectedSsid, active: true, signal: 0, open: false, security: "Connected" })
-          return
-        }
+    function onErrorTextChanged() {
+      if (Wifi.errorText === "" || !root.pendingNetwork) return
+      const pending = root.pendingNetwork
+      root.pendingNetwork = null
+      if (pending.active || !root.opened) return
+      root.close()
+      if (root.scope && root.scope.wifiAddPopup) {
+        root.scope.wifiAddPopup.ssid = pending.ssid
+        root.scope.wifiAddPopup.password = ""
+        root.scope.wifiAddPopup.editingExisting = !!pending.saved
+        root.scope.wifiAddPopup.failed = true
+        root.scope.wifiAddPopup.resultText = Wifi.errorText || "Connection failed"
+        root.scope.wifiAddPopup.anchorGX = root.anchorGX
+        root.scope.wifiAddPopup.returnPopup = root
+        root.scope.wifiAddPopup.open()
       }
     }
   }
@@ -295,34 +218,6 @@ PopupBase {
     }
   }
 
-  Process {
-    id: actionProc
-    stdout: StdioCollector { onStreamFinished: root.errorText = String(this.text).trim() }
-    onExited: function(code) {
-      const pending = root.pendingNetwork
-      if (code !== 0 && pending && !pending.active && root.scope && root.scope.wifiAddPopup) {
-        root.busySsid = ""
-        root.busyAction = ""
-        root.pendingNetwork = null
-        root.close()
-        root.scope.wifiAddPopup.ssid = pending.ssid
-        root.scope.wifiAddPopup.password = ""
-        root.scope.wifiAddPopup.editingExisting = !!pending.saved
-        root.scope.wifiAddPopup.failed = true
-        root.scope.wifiAddPopup.resultText = root.errorText || "Connection failed"
-        root.scope.wifiAddPopup.anchorGX = root.anchorGX
-        root.scope.wifiAddPopup.open()
-        return
-      }
-      if (code !== 0) root.errorText = root.errorText || "Connection failed"
-      else root.errorText = ""
-      root.busySsid = ""
-      root.busyAction = ""
-      root.pendingNetwork = null
-      root.refreshItems()
-    }
-  }
-
   Column {
     width: parent.width
     spacing: 12
@@ -332,25 +227,24 @@ PopupBase {
       Text { id: wifiIcon; text: "󰤨"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Wi-Fi"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - wifiIcon.implicitWidth - titleText.implicitWidth - 112); height: 1 }
-      PillButton { width: 30; filled: true; glyph: "\uf021"; enabled: root.radioEnabled; opacity: root.radioEnabled ? 1 : 0.5; onClicked: { root.errorText = ""; root.refreshItems() } }
+      PillButton { width: 30; filled: true; glyph: "\uf021"; enabled: root.radioEnabled; opacity: root.radioEnabled ? 1 : 0.5; onClicked: { Wifi.errorText = ""; Wifi.scan() } }
       Rectangle {
         width: 52; height: 28; radius: 14
         anchors.verticalCenter: parent.verticalCenter
-        color: root.state === "enabled" ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
-        opacity: root.state === "" ? 0.5 : 1
+        color: root.radioEnabled ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
+        opacity: 1
         Behavior on color { ColorAnimation { duration: 150 } }
         Rectangle {
           width: 22; height: 22; radius: 11
           anchors.verticalCenter: parent.verticalCenter
-          x: root.state === "enabled" ? parent.width - width - 3 : 3
-          color: root.state === "enabled" ? Tokens.on_primary_container : Colors.muted
+          x: root.radioEnabled ? parent.width - width - 3 : 3
+          color: root.radioEnabled ? Tokens.on_primary_container : Colors.muted
           Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
         }
         MouseArea {
           anchors.fill: parent
-          enabled: root.state !== ""
           cursorShape: Qt.PointingHandCursor
-          onClicked: radioProc.exec(["sh", "-c", "nmcli radio wifi " + (root.state === "enabled" ? "off" : "on")])
+          onClicked: Wifi.toggleRadio()
         }
       }
     }
@@ -383,9 +277,9 @@ PopupBase {
             width: parent.width
             elide: Text.ElideRight
             text: !root.radioEnabled ? "Wi-Fi off"
-              : !root.trafficEnabled ? "\u2014"
+              : !root.trafficEnabled ? "—"
               : !root.hasLink ? "No link"
-              : root.measuring ? "Measuring\u2026"
+              : root.measuring ? "Measuring…"
               : root.fmtRate(root.downMbps)
             color: root.radioEnabled && root.trafficEnabled && root.hasLink && !root.measuring ? Colors.text : Colors.muted
             font.family: "JetBrainsMono Nerd Font Propo"
@@ -410,9 +304,9 @@ PopupBase {
             width: parent.width
             elide: Text.ElideRight
             text: !root.radioEnabled ? "Wi-Fi off"
-              : !root.trafficEnabled ? "\u2014"
+              : !root.trafficEnabled ? "—"
               : !root.hasLink ? "No link"
-              : root.measuring ? "Measuring\u2026"
+              : root.measuring ? "Measuring…"
               : root.fmtRate(root.upMbps)
             color: root.radioEnabled && root.trafficEnabled && root.hasLink && !root.measuring ? Colors.text : Colors.muted
             font.family: "JetBrainsMono Nerd Font Propo"
@@ -465,8 +359,7 @@ PopupBase {
         id: wifiListContent
         width: wifiList.width - 8
         spacing: 6
-        Text { visible: root.state === "disabled"; width: parent.width; text: "Wi-Fi is turned off"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
-        Text { visible: settleTimer.running && root.radioEnabled; width: parent.width; text: "Waiting for connection..."; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+        Text { visible: !root.radioEnabled; width: parent.width; text: "Wi-Fi is turned off"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
         Text { text: "Connected"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; font.weight: Font.DemiBold }
         Repeater { model: root.connectedNetworks; delegate: networkDelegate }
         Text { visible: !root.scanning && root.connectedNetworks.length === 0; text: "No connected network"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
@@ -498,11 +391,9 @@ PopupBase {
       text: "Add Wi-Fi network"
       enabled: root.radioEnabled
       opacity: root.radioEnabled ? 1 : 0.5
-      onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.scope.wifiAddPopup.anchorGX = root.anchorGX; root.scope.wifiAddPopup.open() }
+      onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.scope.wifiAddPopup.anchorGX = root.anchorGX; root.scope.wifiAddPopup.returnPopup = root; root.scope.wifiAddPopup.open() }
     }
   }
-
-  Process { id: radioProc; onExited: root.beginRadioSettle() }
 
   Process {
     id: trafficProc
@@ -547,42 +438,14 @@ PopupBase {
     onTriggered: root.sampleTraffic()
   }
 
-  Timer {
-    id: settleTimer
-    interval: 1500
-    repeat: true
-    onTriggered: {
-      if (!root.opened || !root.radioEnabled || root.connectedSsid !== "") {
-        settleTimer.stop()
-        return
-      }
-      root._settleTries++
-      if (root._settleTries > root.settleMaxTries) {
-        settleTimer.stop()
-        return
-      }
-      root.refreshItems()
-    }
-  }
-
-  Process {
-    id: forgetProc
-    onExited: {
-      root.forgetSsid = ""
-      root.errorText = ""
-      root.refreshItems()
-      root.open()
-    }
-  }
-
   Connections {
     target: root.scope ? root.scope.confirmPopup : null
     function onConfirmed() {
       if (!root.forgetSsid) return
       const ssid = root.forgetSsid
       root.forgetSsid = ""
-      if (!root.radioEnabled) { root.open(); return }
-      forgetProc.exec(["sh", "-c", "nmcli connection delete id " + root.quote(ssid)])
+      root.forgetPending = true
+      Wifi.forget(ssid)
     }
     function onCancelled() {
       if (!root.forgetSsid) return

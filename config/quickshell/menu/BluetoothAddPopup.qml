@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Bluetooth
 import qs
 import "../components"
 
@@ -9,90 +8,65 @@ PopupBase {
   cardWidth: 360
   socketEnabled: false
 
-  property var devices: []
-  property var wired: []
-  property string busyPath: ""
-  property string busyAction: ""
-  property string resultText: ""
-  // Parent dropdown gates everything on the adapter being enabled.
-  readonly property bool radioAllowed: {
-    const d = root.scope && root.scope.bluetoothDropdown ? root.scope.bluetoothDropdown : null
-    return !!d && d.radioEnabled
+  // Thin adapter over the BluetoothStore singleton (issue #61): the device
+  // list, busy state, and errors bind the store directly; this view keeps
+  // the list rendering plus pair intent only.
+  readonly property var devices: BluetoothStore.devices
+  readonly property string busyPath: BluetoothStore.busyPath
+  readonly property string busyAction: BluetoothStore.busyAction
+  readonly property string errorText: BluetoothStore.errorText
+  readonly property bool discovering: BluetoothStore.discovering
+  readonly property bool radioAllowed: BluetoothStore.enabled
+  // Injected by the opening dropdown (coordinator reopen without scope
+  // strings): back navigation returns here instead of reading
+  // scope.bluetoothDropdown.
+  property var returnPopup: null
+
+  readonly property string statusText: {
+    if (root.busyPath !== "") {
+      const entry = root.devices.find(function(e) { return e.path === root.busyPath })
+      const name = entry ? entry.name : "device"
+      if (root.busyAction === "connect") return "Connecting to " + name + "..."
+      return "Pairing with " + name + "..."
+    }
+    return root.errorText
   }
 
   function refreshItems() {
-    const values = Bluetooth.devices ? Bluetooth.devices.values : []
-    root.devices = values
-    for (const d of values) {
-      if (root.wired.indexOf(d) < 0) {
-        d.pairedChanged.connect(root.refreshItems)
-        d.connectedChanged.connect(root.refreshItems)
-        root.wired = root.wired.concat(d)
-      }
-      if (root.busyPath === (d.dbusPath || "") && root.busyAction === "pair" && d.paired) {
-        try { d.connect(); root.busyAction = "connect"; root.resultText = "Connecting to " + d.name + "..." } catch (e) { root.busyPath = ""; root.busyAction = ""; root.resultText = String(e); busyTimer.stop() }
-      } else if (root.busyPath === (d.dbusPath || "") && root.busyAction === "connect" && d.connected) {
-        root.busyPath = ""
-        root.busyAction = ""
-        busyTimer.stop()
-        root.resultText = "Connected to " + d.name
-      } else if (root.busyPath === (d.dbusPath || "") && !d.pairing && !d.paired) {
-        root.busyPath = ""
-        root.busyAction = ""
-        busyTimer.stop()
-        root.resultText = "Pairing failed"
-      }
-    }
-    if (root.radioAllowed) Bluetooth.defaultAdapter.discovering = true
+    BluetoothStore.refresh()
+    if (root.radioAllowed) BluetoothStore.startDiscovery()
   }
-  function activate(d) {
+  function activate(entry) {
     if (!root.radioAllowed) return
-    root.busyPath = d.dbusPath || ""
-    root.busyAction = "pair"
-    root.resultText = "Pairing with " + d.name + "..."
-    try { d.pair(); busyTimer.restart() } catch (e) { root.busyPath = ""; root.busyAction = ""; root.resultText = String(e) }
+    BluetoothStore.activate(entry)
+  }
+  function goBack() {
+    root.close()
+    if (root.returnPopup) root.returnPopup.open()
   }
   function openedChange() {
     if (root.opened) {
       // Never pair into a powered-off adapter: bounce straight back out.
       if (!root.radioAllowed) { root.close(); return }
+      BluetoothStore.errorText = ""
       root.refreshItems()
       return
     }
-    busyTimer.stop()
-    root.busyPath = ""
-    root.busyAction = ""
-    root.resultText = ""
-    if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.discovering = false
+    BluetoothStore.stopDiscovery()
   }
 
-  Connections { target: Bluetooth; function onDefaultAdapterChanged() { root.refreshItems() } }
-  Connections { target: root.adapter; function onDiscoveringChanged() { root.refreshItems() } }
   Connections {
-    id: bluetoothRadioWatch
-    target: root.scope && root.scope.bluetoothDropdown ? root.scope.bluetoothDropdown : null
-    // Bluetooth switched off while the pairing popup is open → close it.
-    function onRadioEnabledChanged() {
-      if (bluetoothRadioWatch.target && !bluetoothRadioWatch.target.radioEnabled && root.opened) root.close()
-    }
-  }
-  readonly property var adapter: Bluetooth.defaultAdapter
-
-  Timer {
-    id: busyTimer
-    interval: 15000
-    repeat: false
-    onTriggered: {
-      root.busyPath = ""
-      root.busyAction = ""
-      root.resultText = "Pairing timed out"
+    target: BluetoothStore
+    function onEnabledChanged() {
+      // Bluetooth switched off while the pairing popup is open → close it.
+      if (!BluetoothStore.enabled && root.opened) root.close()
     }
   }
 
   Column {
     width: parent.width; spacing: 12
     Row { width: parent.width; spacing: 10
-      PillButton { id: backButton; width: 30; filled: true; glyph: "\uf060"; onClicked: { root.close(); if (root.scope && root.scope.bluetoothDropdown) root.scope.bluetoothDropdown.open() } }
+      PillButton { id: backButton; width: 30; filled: true; glyph: "\uf060"; onClicked: root.goBack() }
       Text { id: bluetoothIcon; text: "󰂯"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Pair Bluetooth device"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - backButton.width - bluetoothIcon.implicitWidth - titleText.implicitWidth - 30); height: 1 }
@@ -120,11 +94,11 @@ PopupBase {
             required property var modelData
             width: parent.width; height: 44; radius: 12; color: Tokens.surfaceContainerHighest
             Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData.name || "Unknown device"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
-            Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; visible: root.busyPath === (modelData.dbusPath || ""); text: "\uf013"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo" }
+            Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; visible: root.busyPath === modelData.path; text: "\uf013"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo" }
             MouseArea { anchors.fill: parent; enabled: root.radioAllowed && !root.busyPath; onClicked: root.activate(modelData) }
           }
         }
-        Text { visible: root.devices.length === 0; text: root.adapter && root.adapter.discovering ? "Scanning for devices..." : "No nearby devices found"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
+        Text { visible: root.devices.length === 0; text: root.discovering ? "Scanning for devices..." : "No nearby devices found"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
       }
       }
       Rectangle {
@@ -140,6 +114,6 @@ PopupBase {
         height: Math.max(24, devicesList.height * devicesList.height / devicesList.contentHeight)
       }
     }
-    Text { visible: root.resultText !== ""; width: parent.width; text: root.resultText; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+    Text { visible: root.statusText !== ""; width: parent.width; text: root.statusText; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
   }
 }

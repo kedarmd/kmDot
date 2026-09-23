@@ -1,7 +1,7 @@
 import QtQuick
-import Quickshell.Bluetooth
 import qs
 import "../components"
+import "../components/bluetooth.js" as BtJs
 
 PopupBase {
   id: root
@@ -10,94 +10,39 @@ PopupBase {
   // Preserve pre-PopupBase behavior: Escape does not dismiss (base default is true).
   escapeCloses: false
 
-  property var devices: []
-  property string busyPath: ""
-  property string busyAction: ""
-  property string errorText: ""
+  // Thin adapter over the BluetoothStore singleton (issue #61): all BlueZ
+  // radio state binds here read-only; this view keeps row/section rendering
+  // plus activate/forget intent only.
+  readonly property var devices: BluetoothStore.devices
+  readonly property string busyPath: BluetoothStore.busyPath
+  readonly property string busyAction: BluetoothStore.busyAction
+  readonly property string errorText: BluetoothStore.errorText
   property string forgetPath: ""
   readonly property var connectedDevices: root.devices.filter(d => d.connected)
   readonly property var availableDevices: root.devices.filter(d => !d.connected)
   // Master gate: every secondary control is disabled unless the adapter is on.
-  readonly property bool radioEnabled: !!root.adapter && root.adapter.enabled
+  readonly property bool radioEnabled: BluetoothStore.enabled
+  readonly property bool discovering: BluetoothStore.discovering
+  readonly property var adapter: BluetoothStore.adapter
 
-  function deviceGlyph(icon) {
-    switch (String(icon || "").toLowerCase()) {
-      case "input-keyboard": return "\uf11c"
-      case "input-mouse": return "\uf245"
-      case "audio-headset":
-      case "audio-headphones": return "\uf025"
-      case "phone":
-      case "smartphone": return "\uf10b"
-      case "computer":
-      case "laptop": return "\uf109"
-      case "video-display": return "\uf26c"
-      default: return "\uf293"
-    }
+  function batterySuffix(device) {
+    return BtJs.batteryLabel(device.batteryAvailable, device.battery)
   }
 
   function refreshItems() {
-    let out = []
-    if (Bluetooth.devices) {
-      for (const d of Bluetooth.devices.values) {
-        if (!d.name) continue
-        const path = d.dbusPath || ""
-        const connected = !!d.connected
-        const paired = !!d.paired
-        out.push({ device: d, path: path, name: String(d.name), connected: connected, paired: paired, pairing: !!d.pairing, icon: deviceGlyph(d.icon) })
-        wire(d)
-        if (path === root.busyPath) {
-          if (root.busyAction === "pair" && paired) {
-            try { d.connect(); root.busyAction = "connect" } catch (e) { root.errorText = String(e); root.busyPath = ""; root.busyAction = "" }
-          } else if (root.busyAction === "connect" && connected) {
-            root.busyPath = ""; root.busyAction = ""; busyTimer.stop()
-          } else if (root.busyAction === "disconnect" && !connected) {
-            root.busyPath = ""; root.busyAction = ""; busyTimer.stop()
-          } else if (root.busyAction === "pair" && !d.pairing && !paired) {
-            root.errorText = "Pairing failed"
-            root.busyPath = ""; root.busyAction = ""; busyTimer.stop()
-          }
-        }
-      }
-    }
-    out.sort((a, b) => (b.connected ? 1 : 0) - (a.connected ? 1 : 0) || (b.paired ? 1 : 0) - (a.paired ? 1 : 0) || a.name.localeCompare(b.name))
-    root.devices = out
-  }
-
-  property var wired: []
-  function wire(d) {
-    if (root.wired.indexOf(d) >= 0) return
-    d.connectedChanged.connect(root.refreshItems)
-    d.pairedChanged.connect(root.refreshItems)
-    d.pairingChanged.connect(root.refreshItems)
-    d.nameChanged.connect(root.refreshItems)
-    root.wired = root.wired.concat(d)
+    BluetoothStore.errorText = ""
+    BluetoothStore.refresh()
   }
 
   function activate(item) {
     if (!root.radioEnabled) return
-    root.busyPath = item.path
-    root.busyAction = item.connected ? "disconnect" : (item.paired ? "connect" : "pair")
-    root.errorText = ""
-    try {
-      if (item.connected) item.device.disconnect()
-      else if (item.paired) item.device.connect()
-      else item.device.pair()
-    } catch (e) {
-      root.errorText = String(e)
-      root.busyPath = ""
-      root.busyAction = ""
-      busyTimer.stop()
-    }
-    if (root.busyPath) busyTimer.restart()
+    BluetoothStore.activate(item)
   }
 
   function forgetDevice(item) {
     if (!root.radioEnabled) return
     root.forgetPath = item.path
     if (root.scope && root.scope.confirmPopup) {
-      root.busyPath = ""
-      root.busyAction = ""
-      busyTimer.stop()
       root.close()
       root.scope.confirmPopup.anchorGX = root.anchorGX
       root.scope.confirmPopup.ask("Forget Bluetooth device", "Remove '" + item.name + "'" + (item.connected ? " and disconnect it" : "") + "? You will need to pair it again to use it.")
@@ -106,42 +51,12 @@ PopupBase {
 
   function openedChange() {
     if (!root.opened) {
-      if (Bluetooth.defaultAdapter) Bluetooth.defaultAdapter.discovering = false
+      BluetoothStore.stopDiscovery()
       return
     }
-    root.errorText = ""
-    root.refreshItems()
-    if (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) Bluetooth.defaultAdapter.discovering = true
-  }
-
-  Connections { target: Bluetooth; function onDefaultAdapterChanged() { root.refreshItems() } }
-  Connections {
-    target: root.adapter
-    function onEnabledChanged() {
-      // Adapter switched off: stop discovery and drop any in-flight operation.
-      if (root.adapter && !root.adapter.enabled) {
-        if (root.adapter.discovering) root.adapter.discovering = false
-        busyTimer.stop()
-        root.busyPath = ""
-        root.busyAction = ""
-        root.errorText = ""
-      }
-      root.refreshItems()
-    }
-    function onDiscoveringChanged() { root.refreshItems() }
-  }
-  readonly property var adapter: Bluetooth.defaultAdapter
-
-  Timer {
-    id: busyTimer
-    interval: 15000
-    repeat: false
-    onTriggered: {
-      if (!root.busyPath) return
-      root.errorText = "Bluetooth operation timed out"
-      root.busyPath = ""
-      root.busyAction = ""
-    }
+    BluetoothStore.errorText = ""
+    BluetoothStore.refresh()
+    BluetoothStore.startDiscovery()
   }
 
   Component {
@@ -156,7 +71,7 @@ PopupBase {
         Text { text: modelData.icon; color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter }
         Column { width: parent.width - 70; anchors.verticalCenter: parent.verticalCenter
           Text { width: parent.width; text: modelData.name; color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
-          Text { text: busy ? (root.busyAction === "disconnect" ? "Disconnecting..." : root.busyAction === "pair" ? "Pairing..." : "Connecting...") : (modelData.connected ? "Connected" : (modelData.paired ? "Paired" : (modelData.pairing ? "Pairing..." : "Not paired"))); color: modelData.connected || busy ? Tokens.on_primary_container : Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+          Text { text: busy ? (root.busyAction === "disconnect" ? "Disconnecting..." : root.busyAction === "pair" ? "Pairing..." : "Connecting...") : (modelData.connected ? "Connected" + root.batterySuffix(modelData) : (modelData.paired ? "Paired" + root.batterySuffix(modelData) : (modelData.pairing ? "Pairing..." : "Not paired"))); color: modelData.connected || busy ? Tokens.on_primary_container : Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
         }
         Text { id: rowSpinner; visible: root.busyPath === modelData.path; text: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: 900; loops: Animation.Infinite; running: rowSpinner.visible } }
       }
@@ -187,25 +102,25 @@ PopupBase {
       Text { id: bluetoothIcon; text: "󰂯"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Bluetooth"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - bluetoothIcon.implicitWidth - titleText.implicitWidth - 112); height: 1 }
-      PillButton { width: 30; filled: true; glyph: "\uf021"; enabled: root.radioEnabled; opacity: root.radioEnabled ? 1 : 0.5; onClicked: { root.errorText = ""; root.refreshItems() } }
+      PillButton { width: 30; filled: true; glyph: "\uf021"; enabled: root.radioEnabled; opacity: root.radioEnabled ? 1 : 0.5; onClicked: { BluetoothStore.errorText = ""; BluetoothStore.refresh() } }
       Rectangle {
         width: 52; height: 28; radius: 14
         anchors.verticalCenter: parent.verticalCenter
-        color: root.adapter && root.adapter.enabled ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
+        color: root.radioEnabled ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
         opacity: root.adapter ? 1 : 0.5
         Behavior on color { ColorAnimation { duration: 150 } }
         Rectangle {
           width: 22; height: 22; radius: 11
           anchors.verticalCenter: parent.verticalCenter
-          x: root.adapter && root.adapter.enabled ? parent.width - width - 3 : 3
-          color: root.adapter && root.adapter.enabled ? Tokens.on_primary_container : Colors.muted
+          x: root.radioEnabled ? parent.width - width - 3 : 3
+          color: root.radioEnabled ? Tokens.on_primary_container : Colors.muted
           Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
         }
         MouseArea {
           anchors.fill: parent
           enabled: !!root.adapter
           cursorShape: Qt.PointingHandCursor
-          onClicked: if (root.adapter) root.adapter.enabled = !root.adapter.enabled
+          onClicked: BluetoothStore.setEnabled(!root.radioEnabled)
         }
       }
     }
@@ -231,7 +146,7 @@ PopupBase {
         Text { visible: root.connectedDevices.length === 0; text: "No connected devices"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
         Text { text: "Available"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; font.weight: Font.DemiBold; topPadding: 6 }
         Repeater { model: root.availableDevices; delegate: deviceDelegate }
-        Text { visible: root.devices.length === 0; text: root.adapter && root.adapter.enabled && root.adapter.discovering ? "Scanning for devices..." : (root.adapter && root.adapter.enabled ? "No devices found" : "Bluetooth is turned off"); color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
+        Text { visible: root.devices.length === 0; text: root.radioEnabled && root.discovering ? "Scanning for devices..." : (root.radioEnabled ? "No devices found" : "Bluetooth is turned off"); color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
       }
       }
       Rectangle {
@@ -255,7 +170,7 @@ PopupBase {
       text: "Pair new device"
       enabled: root.radioEnabled
       opacity: root.radioEnabled ? 1 : 0.5
-      onClicked: { if (root.scope && root.scope.bluetoothAddPopup) { root.close(); root.scope.bluetoothAddPopup.anchorGX = root.anchorGX; root.scope.bluetoothAddPopup.open() } }
+      onClicked: { if (root.scope && root.scope.bluetoothAddPopup) { root.close(); root.scope.bluetoothAddPopup.anchorGX = root.anchorGX; root.scope.bluetoothAddPopup.returnPopup = root; root.scope.bluetoothAddPopup.open() } }
     }
   }
 
@@ -265,17 +180,8 @@ PopupBase {
       const path = root.forgetPath
       root.forgetPath = ""
       if (!root.radioEnabled) { root.open(); return }
-      const item = root.devices.find(d => d.path === path)
-      if (!item || (!item.paired && !item.connected)) return
-      try {
-        if (item.connected) item.device.disconnect()
-        item.device.forget()
-        busyTimer.stop()
-        root.busyPath = ""
-        root.busyAction = ""
-        root.errorText = ""
-      } catch (e) { root.errorText = String(e) }
-      root.refreshItems()
+      if (!path) { root.open(); return }
+      BluetoothStore.forget(path)
       root.open()
     }
     function onCancelled() {
