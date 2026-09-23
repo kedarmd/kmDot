@@ -25,7 +25,7 @@ fi
 # Socket missing OR stale (file present but no server listening, e.g. quickshell
 # died, or a theme switch live-reloaded and the old SocketServer unlinked the
 # socket after the new one bound). Restart quickshell and retry.
-notify-send "kmDot" "Restarting quickshell to restore launchers…"
+notify-send "kmDot" "Restarting quickshell to restore launchers…" || true
 # pkill exits 1 when quickshell is already dead (exactly the case we're healing),
 # and `set -e` would abort the script before the restart — so guard it.
 pkill -x quickshell || true
