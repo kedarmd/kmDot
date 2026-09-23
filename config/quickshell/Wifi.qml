@@ -81,22 +81,22 @@ Singleton {
     root.connectedSsid = connected
 
     const out = []
-    const seen = {}
+    const seen = new Set()
     for (const line of root._rows) {
       const net = WifiJs.parseScanLine(line)
       if (!net) continue
       net.saved = saved.indexOf(net.ssid) >= 0
       if (net.ssid === connected) net.active = true
-      if (seen[net.ssid]) {
+      if (seen.has(net.ssid)) {
         for (let i = 0; i < out.length; i++) {
           if (out[i].ssid === net.ssid) { out[i] = net; break }
         }
       } else {
-        seen[net.ssid] = true
+        seen.add(net.ssid)
         out.push(net)
       }
     }
-    if (connected && !seen[connected]) {
+    if (connected && !seen.has(connected)) {
       out.push({
         ssid: connected, active: true, signal: 0, open: false,
         security: "Connected", saved: saved.indexOf(connected) >= 0
@@ -157,7 +157,8 @@ Singleton {
   function forget(ssid) {
     if (!ssid) return
     root.errorText = ""
-    forgetProc.exec(["sh", "-c", "nmcli connection delete id " + WifiJs.shellQuote(ssid)])
+    root._actionOut = ""
+    forgetProc.exec(["sh", "-c", "nmcli connection delete id " + WifiJs.shellQuote(ssid) + " 2>&1"])
   }
 
   Component.onCompleted: root.scan()
@@ -208,7 +209,12 @@ Singleton {
 
   Process {
     id: forgetProc
-    onExited: {
+    stdout: StdioCollector { onStreamFinished: root._actionOut = String(this.text).trim() }
+    onExited: function(code) {
+      if (code !== 0) {
+        root.errorText = root._actionOut || "Failed to forget network"
+        return
+      }
       root.errorText = ""
       root._runScan()
     }

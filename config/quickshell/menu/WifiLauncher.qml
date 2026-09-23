@@ -22,6 +22,8 @@ LauncherBase {
   // promptSsid tracks the secured network currently in the password flow
   // across submits and re-prompts (survives startPrompt resets).
   property string promptSsid: ""
+  property string forgetSsid: ""
+  itemActions: [{ key: Qt.Key_Delete, ctrl: true, hint: "Ctrl+Del forget" }]
 
   function sigGlyph(sig) { return WifiJs.signalGlyph(sig) }
 
@@ -86,6 +88,14 @@ LauncherBase {
     root.connectTo(item)
   }
 
+  onItemAction: function(action, item) {
+    if (action.key !== Qt.Key_Delete || !item || !item.saved || !root.scope || !root.scope.confirmPopup) return
+    root.forgetSsid = item.ssid
+    root.closeLauncher()
+    root.scope.confirmPopup.anchorGX = -1
+    root.scope.confirmPopup.ask("Forget Wi-Fi network", "Forget '" + item.ssid + "'? You will need to re-enter the password to connect again.")
+  }
+
   onFooterActionClicked: {
     // Keep the surface open across the toggle; the store rescans and the
     // pool rebuilds through the Connections below.
@@ -127,6 +137,22 @@ LauncherBase {
         root.closeLauncher()
         root.promptSsid = ""
       }
+    }
+  }
+
+  Connections {
+    target: root.scope ? root.scope.confirmPopup : null
+    function onConfirmed() {
+      if (!root.forgetSsid) return
+      const ssid = root.forgetSsid
+      root.forgetSsid = ""
+      Wifi.forget(ssid)
+      root.openLauncher()
+    }
+    function onCancelled() {
+      if (!root.forgetSsid) return
+      root.forgetSsid = ""
+      root.openLauncher()
     }
   }
 }

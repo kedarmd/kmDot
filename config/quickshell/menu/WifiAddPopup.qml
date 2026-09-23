@@ -16,9 +16,8 @@ PopupBase {
   property bool busy: false
   property string resultText: ""
   property bool failed: false
-  // Injected by the opening dropdown (coordinator reopen without scope
-  // strings): back/success navigation returns here instead of reading
-  // scope.wifiDropdown.
+  // Injected by the opening surface: back/success navigation returns here
+  // without coupling this form to a specific dropdown instance.
   property var returnPopup: null
   // Thin adapter over the Wifi singleton (issue #61): the radio gate binds
   // the store directly; the ssid/password fields plus connect intent stay here.

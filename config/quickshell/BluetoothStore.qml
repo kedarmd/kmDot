@@ -179,6 +179,11 @@ Singleton {
 
   Connections {
     target: root.adapter
+    function onDiscoveringChanged() {
+      // Bluetooth.devices is an UntypedObjectModel without a count signal;
+      // discovery transitions are the reliable inventory refresh boundary.
+      root.refresh()
+    }
     function onEnabledChanged() {
       // Adapter switched off: stop discovery and drop any in-flight operation.
       if (root.adapter && !root.adapter.enabled) {
