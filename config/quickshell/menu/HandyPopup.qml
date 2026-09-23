@@ -11,18 +11,21 @@ PopupBase {
   cardWidth: 500
 
   property int tab: 0
-  // Read path served by the HandyStore singleton (issue #52): the popup binds
-  // its models/history/selection here instead of fetching them itself.
-  // Mutations, playback, and busy/error for those stay view-local.
+  // Reads AND mutations served by the HandyStore singleton (issues #52/#54):
+  // the popup binds its models/history/selection/busy/error here instead of
+  // fetching or mutating itself. The store is the single writer — select,
+  // retry, delete, and save all run through it with a history-only refetch.
+  // Delete-arm (confirmId), clipboard, and playback stay view-local.
   property var models: HandyStore.models
   property var history: HandyStore.history
   property string selectedModel: HandyStore.selectedModel
-  property string errorText: ""
-  // Mutation errors (local) take precedence; fetch errors come from the store.
-  readonly property string effectiveError: root.errorText !== "" ? root.errorText : HandyStore.errorText
-  property int busyId: -1
-  property string busyAction: ""
-  readonly property bool busy: busyAction !== ""
+  property int busyId: HandyStore.busyId
+  property string busyAction: HandyStore.busyAction
+  readonly property bool busy: HandyStore.busy
+  // View-local playback error (playback moves to the store in #55); the
+  // error line prefers the store's mutation/fetch error.
+  property string playbackError: ""
+  readonly property string effectiveError: HandyStore.errorText !== "" ? HandyStore.errorText : root.playbackError
   readonly property real listHeight: 440
   property int playingId: -1
   property real progress: 0
@@ -32,30 +35,25 @@ PopupBase {
   property int confirmId: -1
   readonly property string recordingsDir: Quickshell.env("HOME") + "/.local/share/com.pais.handy/recordings"
 
-  function script() { return Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/handy-control.mjs" }
-  function run(command, args) {
-    controlProc.exec(["node", script(), command].concat(args || []))
-  }
   function refreshItems() { refresh() }
   function openedChange() {
     if (!root.opened) {
       stopPlayback()
       confirmId = -1
-      busyAction = ""
-      busyId = -1
     }
   }
   function refresh() {
     stopPlayback()
     confirmId = -1
-    errorText = ""
+    playbackError = ""
     HandyStore.refresh()
   }
+  // Mutations run through the store (single writer); each stops this view's
+  // own playback of the row first. Delete-arm stays per-surface: the row
+  // disarms below once the entry disappears from the shared history.
   function remove(row) {
     if (playingId === row.id) stopPlayback()
-    busyId = row.id
-    busyAction = "delete"
-    run("delete", [String(row.id)])
+    HandyStore.deleteEntry(row.id)
   }
   function fmtTime(epoch) {
     return new Date(epoch * 1000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
@@ -82,29 +80,27 @@ PopupBase {
     if (!row.audioAvailable) return
     playingId = row.id
     progress = 0
-    errorText = ""
+    playbackError = ""
     playbackStopping = true
     player.stop()
     player.source = "file://" + recordingsDir + "/" + row.fileName
     playbackStopping = false
     player.play()
   }
-  function applyResult(text) {
-    try {
-      const result = JSON.parse(String(text))
-      if (!result.ok) { errorText = result.error || "Handy operation failed"; return }
-      // Reads live in HandyStore; mutations update it here. Save returns
-      // { ok: true } with no payload, so like before it refetches nothing.
-      // Retry keeps the old refresh() side effects (stop playback, reset
-      // confirm/error) with the fetch itself routed through the store.
-      if (result.selected) HandyStore.selectedModel = result.selected
-      if (result.deleted !== undefined) { confirmId = -1; HandyStore.refresh() }
-      if (result.text !== undefined) { stopPlayback(); confirmId = -1; errorText = ""; HandyStore.refresh() }
-    } catch (e) { errorText = "Could not parse Handy response" }
+  function selectModel(id) {
+    if (root.busy) return
+    HandyStore.selectModel(id)
   }
-  function selectModel(id) { busyAction = "model"; run("select-model", [id]) }
-  function retry(row) { busyId = row.id; busyAction = "retry"; run("retry", [String(row.id), selectedModel]) }
-  function save(row, text) { busyId = row.id; busyAction = "save"; run("save", [String(row.id), text]) }
+  function retry(row) {
+    if (root.busy || !row.audioAvailable) return
+    if (playingId === row.id) stopPlayback()
+    HandyStore.retry(row.id)
+  }
+  function save(row, text) {
+    if (root.busy) return
+    if (playingId === row.id) stopPlayback()
+    HandyStore.saveText(row.id, text)
+  }
   function copy(text) { copyProc.exec(["sh", "-c", "printf '%s' \"$1\" | wl-copy", "kmdot", text]) }
 
   Timer {
@@ -112,14 +108,17 @@ PopupBase {
     interval: 3000
     onTriggered: root.confirmId = -1
   }
-  Process {
-    id: controlProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        root.applyResult(String(this.text))
-        root.busyAction = ""
-        root.busyId = -1
+  // Delete-arm is per-surface (issue #54): the row disarms once the entry
+  // disappears from the shared history; a failed delete leaves it armed
+  // until the timer fires, so a second press retries.
+  Connections {
+    target: HandyStore
+    function onHistoryChanged() {
+      if (root.confirmId < 0) return
+      for (let i = 0; i < HandyStore.history.length; i++) {
+        if (HandyStore.history[i].id === root.confirmId) return
       }
+      root.confirmId = -1
     }
   }
   Process { id: copyProc }
@@ -130,7 +129,7 @@ PopupBase {
     onDurationChanged: root.syncProgress()
     onPlaybackStateChanged: if (playbackState === MediaPlayer.StoppedState && !root.playbackStopping) root.stopPlayback()
     onErrorOccurred: {
-      if (root.playingId >= 0) root.errorText = "Could not play recording"
+      if (root.playingId >= 0) root.playbackError = "Could not play recording"
       root.stopPlayback()
     }
   }

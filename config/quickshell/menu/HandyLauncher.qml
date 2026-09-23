@@ -23,11 +23,15 @@ LauncherBase {
   footerActionGlyph: "\uf0ec"
   footerActionActive: true
   footerActionText: root.mode === 0 ? "Models" : "History"
-  footerHint: root.mode === 0
-    ? "\u2191\u2193 navigate \u00b7 \u23ce select \u00b7 esc close"
-    : (root.confirmId >= 0
-      ? "Del again to confirm"
-      : "\u2191\u2193 navigate \u00b7 \u23ce copy \u00b7 esc close")
+  // Store mutation/fetch errors surface here (the launcher has no error
+  // line; the footer hint is its plain-language error surface).
+  footerHint: HandyStore.errorText !== ""
+    ? HandyStore.errorText
+    : (root.mode === 0
+      ? "\u2191\u2193 navigate \u00b7 \u23ce select \u00b7 esc close"
+      : (root.confirmId >= 0
+        ? "Del again to confirm"
+        : "\u2191\u2193 navigate \u00b7 \u23ce copy \u00b7 esc close"))
   // Secondary chords are History-only (retry/play); empty in Models mode so
   // the auto-appended hints disappear too.
   itemActions: root.mode === 1 ? [
@@ -43,24 +47,24 @@ LauncherBase {
 
   // 0 = Models, 1 = History. Opens on Models to mirror the tray popup's tabs.
   property int mode: 0
-  // Read path served by the HandyStore singleton (issue #53, spec #51): the
-  // launcher binds its models/history/selection here instead of fetching them
-  // itself. Mutations, playback, and key verbs stay view-local.
+  // Reads AND mutations served by the HandyStore singleton (issues #53/#54,
+  // spec #51): the launcher binds its models/history/selection/busy/error
+  // here instead of fetching or mutating itself. The store is the single
+  // writer — select, retry, and delete all run through it with a
+  // history-only refetch. Delete-arm (confirmId), clipboard, key verbs, and
+  // playback stay view-local.
   property var models: HandyStore.models
   property var history: HandyStore.history
   property string selectedModel: HandyStore.selectedModel
-  property int busyId: -1
-  property string busyAction: ""
-  readonly property bool busy: busyAction !== ""
-  property string pendingCommand: ""
+  property int busyId: HandyStore.busyId
+  property string busyAction: HandyStore.busyAction
+  readonly property bool busy: HandyStore.busy
   property int playingId: -1
   property bool playbackStopping: false
   // Two-click delete confirm: first click arms the row's trash glyph, the
   // second (within 3s) deletes; anything else disarms via the timer.
   property int confirmId: -1
   readonly property string recordingsDir: Quickshell.env("HOME") + "/.local/share/com.pais.handy/recordings"
-
-  function script() { return Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/handy-control.mjs" }
 
   function fmtDur(ms) {
     const total = Math.max(0, Math.floor(Number(ms || 0) / 1000))
@@ -73,13 +77,12 @@ LauncherBase {
   }
 
   // ---- data (reads via HandyStore; one in-flight pair shared with popup) ----
+  // Busy state is store-owned: opening the launcher never resets an
+  // in-flight mutation, it only queues a coalesced refresh behind it.
   function refreshItems() {
     root.loading = true
     root.pool = []
     root.stopPlayback()
-    root.busyAction = ""
-    root.busyId = -1
-    root.pendingCommand = ""
     root.confirmId = -1
     root.mode = 0
     // Show cached store data instantly while the refetch runs; the store
@@ -177,18 +180,13 @@ LauncherBase {
   function startDelete(item) {
     root.confirmId = -1
     if (root.playingId === item.row.id) root.stopPlayback()
-    root.busyId = item.row.id
-    root.busyAction = "delete"
-    root.pendingCommand = "delete"
-    actionProc.exec(["node", root.script(), "delete", String(item.row.id)])
+    HandyStore.deleteEntry(item.row.id)
   }
 
   onActivated: function(item) {
     if (item.kind === "model") {
       if (root.busy || item.modelId === root.selectedModel) return
-      root.busyAction = "select"
-      root.pendingCommand = "select-model"
-      actionProc.exec(["node", root.script(), "select-model", item.modelId])
+      HandyStore.selectModel(item.modelId)
     } else {
       copyProc.exec(["sh", "-c", "printf '%s' \"$1\" | wl-copy", "kmdot", item.row.text || ""])
     }
@@ -210,11 +208,9 @@ LauncherBase {
   }
 
   function startRetry(item) {
-    if (!item.row.audioAvailable) return
-    root.busyId = item.row.id
-    root.busyAction = "retry"
-    root.pendingCommand = "retry"
-    actionProc.exec(["node", root.script(), "retry", String(item.row.id), root.selectedModel])
+    if (!item.row.audioAvailable || root.busy) return
+    if (root.playingId === item.row.id) root.stopPlayback()
+    HandyStore.retry(item.row.id)
   }
 
   // ---- playback (mirrors HandyPopup's wiring) ----
@@ -249,31 +245,6 @@ LauncherBase {
     function onRefreshingChanged() { if (!HandyStore.refreshing) root.syncFromStore() }
   }
 
-  Process {
-    id: actionProc
-    stdout: StdioCollector {
-      onStreamFinished: {
-        const wasRetry = root.pendingCommand === "retry"
-        const wasDelete = root.pendingCommand === "delete"
-        const wasSelect = root.pendingCommand === "select-model"
-        root.pendingCommand = ""
-        root.busyAction = ""
-        root.busyId = -1
-        try {
-          const result = JSON.parse(String(this.text))
-          if (!result.ok) {
-            console.warn("handy-launcher:", result.error || "operation failed")
-          } else if (wasSelect && result.selected) {
-            // Reads live in HandyStore; select-model updates it here, and
-            // retry/delete refetch history through it (models cached, so
-            // history-only) instead of a launcher-local fetch.
-            HandyStore.selectedModel = result.selected
-          }
-        } catch (e) { console.warn("handy-launcher: unparseable action response") }
-        if (wasRetry || wasDelete) HandyStore.refresh()
-      }
-    }
-  }
   Process { id: copyProc }
   MediaPlayer {
     id: player
