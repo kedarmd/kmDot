@@ -16,59 +16,67 @@ PopupBase {
   property bool busy: false
   property string resultText: ""
   property bool failed: false
-  // Parent dropdown gates everything on the Wi-Fi radio being enabled.
-  readonly property bool radioAllowed: {
-    const d = root.scope && root.scope.wifiDropdown ? root.scope.wifiDropdown : null
-    return !!d && d.radioEnabled
-  }
+  // Injected by the opening surface: back/success navigation returns here
+  // without coupling this form to a specific dropdown instance.
+  property var returnPopup: null
+  // Thin adapter over the Wifi singleton (issue #61): the radio gate binds
+  // the store directly; the ssid/password fields plus connect intent stay here.
+  readonly property bool radioAllowed: Wifi.enabled
 
-  function quote(s) { return "'" + s.replace(/'/g, "'\\''") + "'" }
   function connect() {
     if (!root.radioAllowed || !root.ssid.trim() || root.busy) return
     root.busy = true
     root.failed = false
     root.resultText = "Connecting..."
-    const command = root.editingExisting
-      ? "nmcli connection modify id " + root.quote(root.ssid.trim()) + " wifi-sec.psk " + root.quote(root.password) + " && nmcli connection up id " + root.quote(root.ssid.trim())
-      : "nmcli dev wifi connect " + root.quote(root.ssid.trim()) + " password " + root.quote(root.password)
-    connectProc.exec(["sh", "-c", command + " 2>&1"])
+    // The store declines (false) when a password is required but none was
+    // given — surface it as validation instead of hanging on "Connecting...".
+    if (!Wifi.connect({ ssid: root.ssid.trim(), open: false, saved: root.editingExisting }, root.password)) {
+      root.busy = false
+      root.failed = true
+      root.resultText = "Enter a password"
+    }
   }
 
   function openedChange() {
     if (root.opened) ssidInput.forceActiveFocus()
-    else if (root.scope && root.scope.wifiDropdown) root.scope.wifiDropdown.errorText = ""
+    else Wifi.errorText = ""
   }
 
-  Process {
-    id: connectProc
-    stdout: StdioCollector { onStreamFinished: root.resultText = String(this.text).trim() }
-    onExited: function(code) {
-      root.busy = false
-      root.failed = code !== 0
-      if (!root.resultText) root.resultText = code === 0 ? "Connected" : "Connection failed"
-      if (!root.opened) return
-      const dropdown = root.scope ? root.scope.wifiDropdown : null
-      root.close()
-      if (dropdown) {
-        dropdown.errorText = ""
-        dropdown.open()
-      }
+  function goBack() {
+    root.close()
+    if (root.returnPopup) {
+      Wifi.errorText = ""
+      root.returnPopup.open()
     }
   }
 
+  // Completion settles through the store (order is load-bearing: errorText
+  // lands before busySsid clears, so a failure stays open with the error
+  // while only the silent success path navigates back).
   Connections {
-    id: wifiRadioWatch
-    target: root.scope && root.scope.wifiDropdown ? root.scope.wifiDropdown : null
-    // Wi-Fi switched off while the password popup is open → close it.
-    function onRadioEnabledChanged() {
-      if (wifiRadioWatch.target && !wifiRadioWatch.target.radioEnabled && root.opened) root.close()
+    target: Wifi
+    function onEnabledChanged() {
+      // Wi-Fi switched off while the password popup is open → close it.
+      if (!Wifi.enabled && root.opened) root.close()
+    }
+    function onErrorTextChanged() {
+      if (!root.busy || Wifi.errorText === "" || !root.opened) return
+      if (Wifi.busySsid !== root.ssid.trim()) return
+      root.busy = false
+      root.failed = true
+      root.resultText = Wifi.errorText
+    }
+    function onBusySsidChanged() {
+      if (!root.busy || Wifi.busySsid !== "" || Wifi.errorText !== "" || !root.opened) return
+      root.busy = false
+      root.goBack()
     }
   }
 
   Column {
     width: parent.width; spacing: 12
     Row { width: parent.width; spacing: 10
-      PillButton { id: backButton; width: 30; filled: true; glyph: "\uf060"; onClicked: { root.close(); if (root.scope && root.scope.wifiDropdown) { root.scope.wifiDropdown.errorText = ""; root.scope.wifiDropdown.open() } } }
+      PillButton { id: backButton; width: 30; filled: true; glyph: "\uf060"; onClicked: root.goBack() }
       Text { id: wifiIcon; text: "󰤨"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Add Wi-Fi connection"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - backButton.width - wifiIcon.implicitWidth - titleText.implicitWidth - 30); height: 1 }
