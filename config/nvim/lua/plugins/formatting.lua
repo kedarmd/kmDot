@@ -15,6 +15,7 @@ return {
 				html = { "prettier" },
 				json = { "prettier" },
 				yaml = { "prettier" },
+				go = { "gofmt" },
 				-- markdown = { "prettier" },
 				lua = { "stylua" },
 			},
