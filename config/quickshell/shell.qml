@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Notifications
 import "components"
+import "compat"
 import "menu"
 import "modules"
 
@@ -35,6 +36,10 @@ Scope {
   property DisplayPopup displayPopup: DisplayPopup { scope: shellRoot }
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
   property NotificationPopup notificationPopup: NotificationPopup { scope: shellRoot }
+  // PROTOTYPE (wayfinder pilot ticket): filled in by the in-bar PluginHost
+  // instance below (single instance owns the Loader + socket). See
+  // compat/PROTOTYPE.md. Never merge to main.
+  property var pluginClockHost: null
 
   // Keep all radio views in one registry. The stores deliberately do not know
   // about overlays; this is the shell-owned close-all boundary for the two
@@ -57,7 +62,7 @@ Scope {
     const popups = [shellRoot.confirmPopup, shellRoot.batteryPopup,
       shellRoot.volumePopup, shellRoot.calendarPopup, shellRoot.serverModeDropdown,
       shellRoot.openCodeUsagePopup, shellRoot.handyPopup, shellRoot.displayPopup,
-      shellRoot.notificationCenter]
+      shellRoot.notificationCenter, shellRoot.pluginClockHost]
     for (const p of popups) {
       if (p && p !== except) p.close()
     }
@@ -220,6 +225,15 @@ PanelWindow {
         Kmdot {}
         Clock {
           popupRef: calendarPopup
+        }
+        // PROTOTYPE (wayfinder pilot ticket): throwaway Omarchy-clock pilot
+        // mounted beside the native Clock for visual contrast. See
+        // compat/PROTOTYPE.md. Never merge to main.
+        PluginHost {
+          pluginId: "omarchy.clock"
+          scope: shellRoot
+          tooltip: tooltip
+          Component.onCompleted: shellRoot.pluginClockHost = this
         }
         Dnd {
           id: dndModule

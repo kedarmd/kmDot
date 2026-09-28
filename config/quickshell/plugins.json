@@ -1,0 +1,12 @@
+{
+  "prototype": "wayfinder map 'Omarchy plugin support', ticket 'Themed pilot plugin proof in kmdot bar'",
+  "plugins": [
+    {
+      "id": "omarchy.clock",
+      "src": "https://github.com/basecamp/omarchy",
+      "rev": "b18ab49",
+      "subdir": "shell/plugins/panels/clock",
+      "enabled": true
+    }
+  ]
+}
