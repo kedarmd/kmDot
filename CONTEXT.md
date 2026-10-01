@@ -13,3 +13,9 @@ Glossary for kmDot's domain language. Terms only — implementation detail lives
 
 - **Handy launcher** — the Super+H launcher managing transcription models and recent recordings. Coexists with the tray popup: the launcher owns quick keyboard verbs (switch model, copy, retry, play); the popup keeps the mouse-first rich surface (inline editing, playback progress). Neither replaces the other.
 - **Recording** — one WAV plus its transcription row from Handy's history. Capped at the 5 most recent entries everywhere.
+
+## Omarchy plugins
+
+- **Plugin** — a third-party Omarchy `bar-widget` hosted inside the kmdot bar.
+- **Shim** — the compat layer a plugin runs against instead of the Omarchy host.
+- **Plugin panel** — the details surface nested inside a plugin's bar widget; presents as a kmdot Popup.
