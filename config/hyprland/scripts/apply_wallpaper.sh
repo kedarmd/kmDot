@@ -40,8 +40,12 @@ if [ ! -d "$WALLPAPERS_DIR" ]; then
   WALLPAPERS_DIR="$HOME/Pictures"
 fi
 
-CACHE_WALLPAPER_FILE="$HOME/.cache/hyprpaper_wallpaper_${THEME:-default}"
+CACHE_WALLPAPER_FILE="$HOME/.cache/kmdot_wallpaper_${THEME:-default}"
 WALLPAPER=""
+
+# One-time migration off the pre-awww (hyprpaper-era) cache name
+[ -f "$CACHE_WALLPAPER_FILE" ] || [ ! -f "$HOME/.cache/hyprpaper_wallpaper_${THEME:-default}" ] || \
+  mv "$HOME/.cache/hyprpaper_wallpaper_${THEME:-default}" "$CACHE_WALLPAPER_FILE"
 
 if [ -f "$CACHE_WALLPAPER_FILE" ]; then
   WALLPAPER="$(cat "$CACHE_WALLPAPER_FILE")"
