@@ -16,6 +16,14 @@ echo '
 echo "kmDot package installer"
 echo ""
 
+# --- Bootstrap: git + base-devel (needed for yay below) ---
+
+if ! command -v git &>/dev/null || ! command -v makepkg &>/dev/null; then
+  echo "Installing git and base-devel..."
+  sudo pacman -S --noconfirm --needed git base-devel
+  echo "git and base-devel installed."
+fi
+
 # --- Bootstrap: yay (AUR helper) ---
 
 install_yay() {
@@ -54,22 +62,9 @@ if ! command -v node &>/dev/null; then
     mise install nodejs@24
     echo "Node.js installed."
   else
-    echo ""
-    echo "Node.js not found and mise is not installed."
-    echo "Install Node.js with your preferred method:"
-    echo ""
-    echo "  Recommended: mise (manages multiple Node versions)"
-    echo "    sudo pacman -S mise"
-    echo "    mise install nodejs@24"
-    echo ""
-    echo "  Alternatives:"
-    echo "    nvm:     nvm install 24"
-    echo "    fnm:     fnm install 24"
-    echo "    volta:   volta install node@24"
-    echo "    pacman:  sudo pacman -S nodejs-lts-jod"
-    echo ""
-    echo "After installing, re-run: ./install.sh"
-    exit 1
+    echo "mise not found — installing nodejs-lts-jod via pacman..."
+    sudo pacman -S --noconfirm --needed nodejs-lts-jod
+    echo "Node.js installed."
   fi
 fi
 
@@ -82,7 +77,7 @@ declare -A PKGS
 PKGS["fish"]="fish"
 PKGS["ghostty"]="ghostty"
 PKGS["herdr"]="herdr-bin"
-PKGS["hyprland"]="hyprland hypridle hyprlock hyprpaper"
+PKGS["hyprland"]="hyprland hypridle hyprlock hyprshot awww"
 PKGS["nvim"]="neovim"
 PKGS["quickshell"]="quickshell"
 PKGS["sddm"]="sddm"
@@ -91,10 +86,34 @@ PKGS["tmux"]="tmux"
 PKGS["xdg-desktop-portal"]="xdg-desktop-portal xdg-desktop-portal-hyprland"
 PKGS["battery"]=""
 PKGS["theme-switcher"]=""
-PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet pipewire wireplumber pipewire-pulse bluez blueman wl-clipboard brightnessctl upower jq playerctl curl"
+PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet pipewire wireplumber pipewire-pulse bluez blueman wl-clipboard brightnessctl upower jq playerctl curl libnotify power-profiles-daemon lua gnome-keyring nautilus zen-browser"
+# Opt-in groups: visible in the picker, excluded from --all
+PKGS["themed-extras"]="btop zed opencode-bin"
+PKGS["server"]="tailscale jellyfin docker containerd"
+PKGS["handy"]="handy-bin"
 
-# Canonical order for display
+# Canonical order for display (includes opt-in groups)
 APPS=(
+  "battery"
+  "fish"
+  "ghostty"
+  "handy"
+  "herdr"
+  "hyprland"
+  "nvim"
+  "quickshell"
+  "runtime"
+  "sddm"
+  "server"
+  "starship"
+  "theme-switcher"
+  "themed-extras"
+  "tmux"
+  "xdg-desktop-portal"
+)
+
+# Default groups installed by --all (opt-in groups excluded)
+DEFAULT_APPS=(
   "battery"
   "fish"
   "ghostty"
@@ -111,15 +130,38 @@ APPS=(
 )
 
 # --- Mode selection ---
-# Usage: ./install.sh          (interactive gum choose)
-#        ./install.sh --all    (non-interactive, install everything)
+# Usage: ./install.sh                          (interactive gum choose over all groups)
+#        ./install.sh --all                     (non-interactive, default groups only)
+#        ./install.sh --all [--themed-extras] [--server] [--handy]
+#                                               (defaults plus the given opt-in groups)
+#        ./install.sh [--themed-extras] [--server] [--handy]
+#                                               (non-interactive, just the given opt-in groups)
 
 MODE="interactive"
 SELECTED=()
+OPT_INS=()
 
-if [[ "${1:-}" == "--all" ]]; then
-  MODE="all"
-  SELECTED=("${APPS[@]}")
+for arg in "$@"; do
+  case "$arg" in
+    --all) MODE="all" ;;
+    --themed-extras|--server|--handy) OPT_INS+=("${arg#--}") ;;
+    -h|--help)
+      sed -n '/^# Usage:/,/^$/p' "$0" | sed 's/^# \?//'
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $arg" >&2
+      echo "Usage: ./install.sh [--all] [--themed-extras] [--server] [--handy]" >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ "$MODE" == "all" ]]; then
+  SELECTED=("${DEFAULT_APPS[@]}" "${OPT_INS[@]}")
+elif [ ${#OPT_INS[@]} -gt 0 ]; then
+  MODE="opt-in"
+  SELECTED=("${OPT_INS[@]}")
 fi
 
 if [[ "$MODE" == "interactive" ]]; then
