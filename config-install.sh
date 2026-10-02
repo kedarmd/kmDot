@@ -76,9 +76,15 @@ echo ""
 echo "Installing: ${SELECTED[*]}"
 echo ""
 
+FAILED_APPS=()
 for app in "${SELECTED[@]}"; do
   echo "Installing $app..."
-  "$REPO_DIR/sync/$app.sh"
+  if "$REPO_DIR/sync/$app.sh"; then
+    :
+  else
+    echo "WARNING: $app failed (continuing with remaining apps)" >&2
+    FAILED_APPS+=("$app")
+  fi
 done
 
 if [[ "$MODE" == "all" ]]; then
@@ -88,4 +94,9 @@ if [[ "$MODE" == "all" ]]; then
 fi
 
 echo ""
+if [ ${#FAILED_APPS[@]} -gt 0 ]; then
+  echo "Failed apps: ${FAILED_APPS[*]}" >&2
+  echo "Fix the failures above, then re-run ./config-install.sh (or ./sync/<app>.sh per app)."
+  exit 1
+fi
 echo "All done!"

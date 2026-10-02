@@ -16,8 +16,10 @@ THEME_VALUE=$(grep "^theme" "$COLORSCHEME_FILE" | head -1 | sed 's/^theme\s*=\s*
 
 if [ ! -f "$CONFIG_FILE" ]; then
   # zed is opt-in: skip when it was never installed (no config to theme).
+  # NOTE: this file is sourced by main.sh — use return, never exit, so a
+  # skip doesn't terminate the whole theme run.
   echo "(zed not installed — skipping)" >&2
-  exit 0
+  return 0
 fi
 
 TMP_FILE="${CONFIG_FILE}.swt"

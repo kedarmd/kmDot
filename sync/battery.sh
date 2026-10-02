@@ -10,8 +10,10 @@ cp "$REPO_DIR/config/systemd/user/battery-monitor.service" "$KMDOT_SYSTEMD_DIR/"
 cp "$REPO_DIR/config/systemd/user/battery-monitor.timer" "$KMDOT_SYSTEMD_DIR/"
 
 if systemctl --user show-environment >/dev/null 2>&1; then
-  systemctl --user daemon-reload
-  systemctl --user enable --now battery-monitor.timer
+  systemctl --user daemon-reload \
+    || echo "warning: systemd daemon-reload failed" >&2
+  systemctl --user enable --now battery-monitor.timer \
+    || echo "warning: timer enable failed (unit files are deployed; re-run from a systemd session)" >&2
 else
   echo "Skipping systemd enable (no user bus available). Run sync/battery.sh again from a systemd session."
 fi

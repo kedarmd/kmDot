@@ -15,8 +15,10 @@ THEME_VALUE=$(grep "^theme" "$COLORSCHEME_FILE" | head -1 | sed 's/^theme\s*=\s*
 
 if [ ! -f "$CONFIG_FILE" ]; then
   # opencode is opt-in: skip when it was never installed (no config to theme).
+  # NOTE: this file is sourced by main.sh — use return, never exit, so a
+  # skip doesn't terminate the whole theme run.
   echo "(opencode not installed — skipping)" >&2
-  exit 0
+  return 0
 fi
 
 jq --arg theme "$THEME_VALUE" '.theme = $theme' "$CONFIG_FILE" > "$CONFIG_FILE.tmp" && mv "$CONFIG_FILE.tmp" "$CONFIG_FILE"

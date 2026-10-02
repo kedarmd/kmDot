@@ -33,6 +33,7 @@ install_yay() {
   echo "Installing yay from AUR..."
   local tmpdir
   tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' RETURN
   git clone https://aur.archlinux.org/yay.git "$tmpdir/yay"
   (cd "$tmpdir/yay" && makepkg -si --noconfirm)
   rm -rf "$tmpdir"
@@ -186,7 +187,10 @@ echo "Installing packages for: ${SELECTED[*]}"
 echo ""
 
 # --- Install packages ---
+# Failures are collected, not fatal: one bad package must not hide the
+# rest, and the summary + nonzero exit lets callers react.
 
+FAILED_PKGS=()
 for app in "${SELECTED[@]}"; do
   pkgs="${PKGS[$app]:-}"
 
@@ -209,6 +213,7 @@ for app in "${SELECTED[@]}"; do
       else
         echo "FAILED"
         echo "    $err" | head -5
+        FAILED_PKGS+=("$pkg")
       fi
     else
       if err=$(yay -S --noconfirm --needed "$pkg" 2>&1); then
@@ -216,12 +221,18 @@ for app in "${SELECTED[@]}"; do
       else
         echo "FAILED"
         echo "    $err" | head -5
+        FAILED_PKGS+=("$pkg")
       fi
     fi
   done
 done
 
 echo ""
+if [ ${#FAILED_PKGS[@]} -gt 0 ]; then
+  echo "Failed packages: ${FAILED_PKGS[*]}" >&2
+  echo "Fix the failures above, then re-run ./install.sh (installed packages are skipped)."
+  exit 1
+fi
 echo "All done!"
 echo ""
 echo "Next step: run ./config-install.sh to deploy config files."
