@@ -48,8 +48,22 @@ DEFAULT_THEME="tokyonight"
 MODE="interactive"
 SELECTED=()
 
-if [[ "${1:-}" == "--all" ]]; then
-  MODE="all"
+for arg in "$@"; do
+  case "$arg" in
+    --all) MODE="all" ;;
+    -h|--help)
+      echo "Usage: ./config-install.sh [--all]"
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $arg" >&2
+      echo "Usage: ./config-install.sh [--all]" >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ "$MODE" == "all" ]]; then
   SELECTED=("${APPS[@]}")
 fi
 
@@ -87,7 +101,10 @@ for app in "${SELECTED[@]}"; do
   fi
 done
 
-if [[ "$MODE" == "all" ]]; then
+if [[ "$MODE" == "all" && ! -f "$HOME/.cache/kmdot_theme" ]]; then
+  # Fresh box only: a re-run on an existing machine must not clobber the
+  # active theme. The cache file is written by every theme apply, so its
+  # absence reliably means "never themed".
   echo ""
   echo "Applying default theme: $DEFAULT_THEME..."
   "$REPO_DIR/theme-switcher/main.sh" "$DEFAULT_THEME"

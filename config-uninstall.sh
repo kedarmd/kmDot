@@ -26,6 +26,10 @@ echo ""
 
 # sddm is intentionally absent: sync/sddm.sh installs into system paths
 # (/usr/share/sddm/themes, /usr/share/backgrounds) which only root can remove.
+# system is intentionally absent: its steps are machine state, not symlinked
+# config — polkit rule + login shell + TPM clone + service enables. Removing
+# the rule is safe but reverting the shell/services can strand the machine
+# (e.g. disabling NetworkManager kills networking), so undo manually if needed.
 APPS=(
   "battery"
   "fish"
