@@ -18,7 +18,14 @@ fi
 mkdir -p "$(dirname "$CACHE_THEME_FILE")"
 echo "$THEME" > "$CACHE_THEME_FILE"
 
-# Apply new wallpapaer on theme change
-~/.config/kmdot/hyprland/scripts/cycle_wallpapers.sh "$THEME"
+# Apply new wallpaper on theme change, but only inside a live Hyprland
+# session — headless runs have no compositor/awww to paint through.
+# The cache file above is already written, so the wallpaper resolves
+# on next login regardless.
+if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+  ~/.config/kmdot/hyprland/scripts/cycle_wallpapers.sh "$THEME"
+else
+  echo "(hyprland not running — wallpaper applies on next login)" >&2
+fi
 
 echo "Wallpapers updated successfully!"

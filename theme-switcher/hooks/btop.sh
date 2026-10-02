@@ -11,6 +11,12 @@ if [ ! -f "$COLORSCHEME_FILE" ]; then
   exit 1
 fi
 
+# btop is opt-in: skip when it was never installed (no config to theme).
+if [ ! -f "$CONFIG_FILE" ]; then
+  echo "(btop not installed — skipping)" >&2
+  exit 0
+fi
+
 THEME_VALUE=$(grep "^color_theme" "$COLORSCHEME_FILE" | head -1 | sed 's/^color_theme\s*=\s*//' | tr -d '"')
 
 if grep -q "^color_theme" "$CONFIG_FILE"; then
