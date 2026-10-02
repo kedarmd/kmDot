@@ -36,6 +36,7 @@ APPS=(
   "starship"
   "tmux"
   "xdg-desktop-portal"
+  "system"
 )
 
 DEFAULT_THEME="tokyonight"
