@@ -1,1 +1,0 @@
-return "Tokyo Night Night"
