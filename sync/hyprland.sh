@@ -32,6 +32,12 @@ DesktopNames=Hyprland
 Keywords=tiling;wayland;compositor;
 EOF
 
-systemctl --user restart hypridle.service
+# try-restart is a no-op (exit 0) when hypridle isn't running yet, so this
+# is safe on a fresh boot outside a Hyprland session under set -e.
+if systemctl --user show-environment >/dev/null 2>&1; then
+  systemctl --user try-restart hypridle.service
+else
+  echo "Skipping hypridle restart (no systemd user bus available)."
+fi
 
 echo "kmDot hyprland config synced!!!"
