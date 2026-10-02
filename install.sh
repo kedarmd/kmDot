@@ -87,7 +87,7 @@ PKGS["theme-switcher"]=""
 PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet pipewire wireplumber pipewire-pulse bluez blueman wl-clipboard brightnessctl upower jq playerctl curl libnotify power-profiles-daemon lua gnome-keyring nautilus zen-browser"
 # Opt-in groups: visible in the picker, excluded from --all
 PKGS["themed-extras"]="btop zed opencode-bin"
-PKGS["server"]="tailscale jellyfin docker containerd"
+PKGS["server"]="tailscale jellyfin-server docker containerd"
 PKGS["handy"]="handy-bin"
 
 # Canonical order for display (includes opt-in groups)
