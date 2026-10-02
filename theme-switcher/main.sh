@@ -20,4 +20,6 @@ THEME="$1"
 . "$SCRIPT_DIR/hooks/btop.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/opencode.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/zed.sh" "$THEME"
-notify-send "$THEME theme applied"
+# Headless runs (SSH, fresh --all before first login) have no notification
+# daemon; the theme files are all written by now, so never fail here.
+notify-send "$THEME theme applied" 2>/dev/null || true

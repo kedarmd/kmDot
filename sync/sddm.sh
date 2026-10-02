@@ -13,5 +13,9 @@ sudo install -Dm644 "$REPO_DIR/config/sddm/themes/kmd-hyprlock/Main.qml" "$SDDM_
 sudo install -Dm644 "$REPO_DIR/config/sddm/themes/kmd-hyprlock/metadata.desktop" "$SDDM_THEME_DIR/metadata.desktop"
 sudo install -Dm644 "$REPO_WALLPAPER" "$SDDM_WALLPAPER"
 sudo install -Dm644 "$REPO_DIR/config/sddm/sddm.conf" /etc/sddm.conf.d/kmdot.conf
+# Fresh CachyOS ships greetd as display-manager; disable whatever owns the
+# alias before enabling sddm (plain `enable` fails when the link exists).
+sudo systemctl disable display-manager 2>/dev/null || true
+sudo systemctl enable sddm
 
 echo "kmDot sddm theme synced!!!"

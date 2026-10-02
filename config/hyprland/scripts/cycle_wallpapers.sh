@@ -40,8 +40,14 @@ if [ ! -d "$WALLPAPERS_DIR" ]; then
   WALLPAPERS_DIR="$HOME/Pictures"
 fi
 
-CACHE_FILE="$HOME/.cache/hyprpaper_wallpaper_index_${THEME:-default}"
-CACHE_WALLPAPER_FILE="$HOME/.cache/hyprpaper_wallpaper_${THEME:-default}"
+CACHE_FILE="$HOME/.cache/kmdot_wallpaper_index_${THEME:-default}"
+CACHE_WALLPAPER_FILE="$HOME/.cache/kmdot_wallpaper_${THEME:-default}"
+
+# One-time migration off the pre-awww (hyprpaper-era) cache names
+[ -f "$CACHE_FILE" ] || [ ! -f "$HOME/.cache/hyprpaper_wallpaper_index_${THEME:-default}" ] || \
+  mv "$HOME/.cache/hyprpaper_wallpaper_index_${THEME:-default}" "$CACHE_FILE"
+[ -f "$CACHE_WALLPAPER_FILE" ] || [ ! -f "$HOME/.cache/hyprpaper_wallpaper_${THEME:-default}" ] || \
+  mv "$HOME/.cache/hyprpaper_wallpaper_${THEME:-default}" "$CACHE_WALLPAPER_FILE"
 
 # Collect wallpapers (non-random, sorted)
 mapfile -t FILES < <(find "$WALLPAPERS_DIR" -maxdepth 1 -type f \

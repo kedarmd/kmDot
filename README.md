@@ -63,5 +63,5 @@ Themes: catppuccin, everforest, nord, onedark, tokyonight
 
 ## Troubleshooting
 
-- **hyprpaper errors on theme switch**: start hyprpaper before switching — the wallpaper script (`config/hyprland/scripts/cycle_wallpapers.sh`) exits early if hyprpaper isn't running.
+- **No wallpaper after login/theme switch**: the backend is `awww` — make sure `awww-daemon` is running (`pgrep -x awww-daemon`); the scripts start it automatically, and `install.sh` installs `awww`.
 - **Tmux Nerd Font glyphs missing**: set `LANG=en_IN.UTF-8 LC_ALL=en_IN.UTF-8`.
