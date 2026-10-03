@@ -16,6 +16,23 @@ fish_add_path $ANDROID_HOME/platform-tools
 set -gx JAVA_HOME /usr/lib/jvm/java-17-openjdk
 fish_add_path $JAVA_HOME/bin
 
+# mise (sole Node provider): interactive shells get full activation,
+# non-interactive ones get the shims dir (stable paths, no prompt hooks).
+# Prefer a PATH-resolved mise, fall back to the install location.
+if command -v mise >/dev/null
+    if status is-interactive
+        mise activate fish | source
+    else
+        mise activate fish --shims | source
+    end
+else if test -x ~/.local/bin/mise
+    if status is-interactive
+        ~/.local/bin/mise activate fish | source
+    else
+        ~/.local/bin/mise activate fish --shims | source
+    end
+end
+
 function ollama-remote
     set -gx OLLAMA_HOST $OLLAMA_REMOTE_IP:11434
     echo "Ollama is now pointing to the RTX 3060 server 🚀"
