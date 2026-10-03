@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -e
-# pipefail: `curl -f … | sh` must fail when the download fails (an empty
-# stdin would otherwise make `sh` exit 0 — false success in install_zed).
+# pipefail: `curl -fsSL … | sh` must fail when the download fails (an empty
+# stdin would otherwise make `sh` exit 0 — false success in ensure_mise).
 set -o pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -97,6 +97,10 @@ fi
 
 export PATH="$HOME/.local/bin:$PATH"
 
+# Bootstrap: mise via the upstream install pipe. curl|sh here is an accepted
+# risk (mise publishes no versioned checksums for the bootstrap script);
+# every versioned payload below (opencode, handy, zed installer) is pinned,
+# and handy + the zed install script are hash-verified.
 ensure_mise() {
   if command -v mise &>/dev/null; then
     echo "mise is already installed."
@@ -108,7 +112,7 @@ ensure_mise() {
     echo "done."
   else
     echo "FAILED"
-    echo "    $err" | head -5
+    head -5 <<<"$err"
     echo "mise is required (sole Node provider) — aborting." >&2
     exit 1
   fi
@@ -122,7 +126,8 @@ ensure_node_via_mise() {
     # via shims finds no version there. Idempotent rewrite of one entry.
     if err=$(mise use -g node@24 2>&1); then
       if node_ver=$(cd "$REPO_DIR" && mise exec -- node --version 2>/dev/null) \
-        && (cd "$REPO_DIR" && mise exec -- npm --version &>/dev/null); then
+        && (cd "$REPO_DIR" && mise exec -- npm --version &>/dev/null) \
+        && (cd /tmp && mise exec -- node --version &>/dev/null); then
         echo "Node.js installed ($node_ver, npm bundled)."
       else
         echo "mise installed Node but node/npm failed verification." >&2
@@ -130,12 +135,12 @@ ensure_node_via_mise() {
       fi
     else
       echo "mise global node pin FAILED"
-      echo "    $err" | head -5
+      head -5 <<<"$err"
       exit 1
     fi
   else
     echo "mise install FAILED"
-    echo "    $err" | head -5
+    head -5 <<<"$err"
     exit 1
   fi
 }
@@ -217,7 +222,8 @@ DEFAULT_APPS=(
 # --- Selection (APPS known here; interactive picker needs gum above) ---
 
 if [[ "$MODE" == "all" ]]; then
-  SELECTED=("${DEFAULT_APPS[@]}" "${OPT_INS[@]}")
+  # Dedupe: --all already includes handy, so --all --handy must not double it.
+  SELECTED=($(printf "%s\n" "${DEFAULT_APPS[@]}" "${OPT_INS[@]}" | awk '!seen[$0]++'))
 elif [ ${#OPT_INS[@]} -gt 0 ]; then
   MODE="opt-in"
   SELECTED=("${OPT_INS[@]}")
@@ -268,7 +274,7 @@ install_pkg() {
       echo "done."
     else
       echo "FAILED"
-      echo "    $err" | head -5
+      head -5 <<<"$err"
       FAILED_PKGS+=("$pkg")
     fi
   else
@@ -276,7 +282,7 @@ install_pkg() {
       echo "done."
     else
       echo "FAILED"
-      echo "    $err" | head -5
+      head -5 <<<"$err"
       FAILED_PKGS+=("$pkg")
     fi
   fi
@@ -287,29 +293,40 @@ install_pkg() {
 # activation only fires at prompt time, so scripts must not rely on it.
 
 install_opencode() {
+  if pacman -Qi opencode-bin &>/dev/null; then
+    echo "  WARNING: AUR package opencode-bin is installed and may shadow the npm install."
+    echo "  Remove it with: yay -Rns opencode-bin"
+  fi
   if (cd "$REPO_DIR" && mise exec -- opencode --version &>/dev/null); then
     echo "  opencode: already installed."
     return 0
   fi
 
-  echo -n "  Installing opencode (npm -g opencode-ai)... "
+  echo -n "  Installing opencode v$OPENCODE_VERSION (npm -g)... "
   # Never --ignore-scripts: the shipped bin is a stub until postinstall
   # copies the platform binary over it.
-  if err=$(cd "$REPO_DIR" && mise exec -- npm install -g opencode-ai 2>&1); then
-    if (cd "$REPO_DIR" && mise exec -- opencode --version &>/dev/null); then
-      echo "done."
-    elif npm_root=$(cd "$REPO_DIR" && mise exec -- npm root -g 2>/dev/null) \
-      && err=$(cd "$REPO_DIR" && mise exec -- node "$npm_root/opencode-ai/postinstall.mjs" 2>&1) \
-      && (cd "$REPO_DIR" && mise exec -- opencode --version &>/dev/null); then
-      echo "done (postinstall retried)."
-    else
-      echo "FAILED (postinstall recovery failed)"
-      echo "    $err" | head -5
-      FAILED_PKGS+=("opencode")
-    fi
+  npm_err=""
+  postinstall_err=""
+  npm_err=$(cd "$REPO_DIR" && mise exec -- npm install -g "opencode-ai@$OPENCODE_VERSION" 2>&1) || true
+  if (cd "$REPO_DIR" && mise exec -- opencode --version &>/dev/null); then
+    echo "done."
+    return 0
+  fi
+  # npm may fail after extracting the package (postinstall stub left
+  # behind) — retry postinstall whenever the package dir is present,
+  # even when the npm step itself failed.
+  if npm_root=$(cd "$REPO_DIR" && mise exec -- npm root -g 2>/dev/null) \
+    && [[ -f "$npm_root/opencode-ai/postinstall.mjs" ]] \
+    && postinstall_err=$(cd "$REPO_DIR" && mise exec -- node "$npm_root/opencode-ai/postinstall.mjs" 2>&1) \
+    && (cd "$REPO_DIR" && mise exec -- opencode --version &>/dev/null); then
+    echo "done (postinstall retried)."
   else
-    echo "FAILED"
-    echo "    $err" | head -5
+    echo "FAILED (postinstall recovery failed)"
+    if [[ -n "$postinstall_err" ]]; then
+      head -5 <<<"$postinstall_err"
+    else
+      head -5 <<<"$npm_err"
+    fi
     FAILED_PKGS+=("opencode")
   fi
 }
@@ -321,38 +338,71 @@ install_zed() {
   fi
 
   echo -n "  Installing zed (official install script)... "
-  if err=$(curl -f https://zed.dev/install.sh | sh 2>&1); then
-    echo "done."
+  tmp=$(mktemp) || { echo "FAILED (mktemp)"; FAILED_PKGS+=("zed"); return 0; }
+  if err=$(curl -fSL -o "$tmp" https://zed.dev/install.sh 2>&1); then
+    if echo "$ZED_INSTALL_SHA256  $tmp" | sha256sum -c - &>/dev/null; then
+      if err=$(sh "$tmp" 2>&1); then
+        rm -f "$tmp"
+        echo "done."
+      else
+        rm -f "$tmp"
+        echo "FAILED"
+        head -5 <<<"$err"
+        FAILED_PKGS+=("zed")
+      fi
+    else
+      rm -f "$tmp"
+      echo "FAILED (install script hash mismatch — zed.dev/install.sh changed upstream; update ZED_INSTALL_SHA256)"
+      FAILED_PKGS+=("zed")
+    fi
   else
+    rm -f "$tmp"
     echo "FAILED"
-    echo "    $err" | head -5
+    head -5 <<<"$err"
     FAILED_PKGS+=("zed")
   fi
 }
 
-# Pinned — never resolve "latest" via the GitHub API (404s for this repo).
+# Pinned — never resolve "latest" at install time.
+# OPENCODE_VERSION: latest opencode-ai on npm as of 2026-10-03
+#   (`npm view opencode-ai versions`); re-verify on bump.
+# HANDY_VERSION + HANDY_SHA256: GitHub release v0.9.7 asset
+#   Handy_0.9.7_amd64.AppImage (sha256 computed 2026-10-03); re-verify on bump.
+# ZED_INSTALL_SHA256: https://zed.dev/install.sh fetched 2026-10-03. Pins the
+#   installer logic; the script itself tracks Zed stable (Zed publishes no
+#   versioned checksums for the script path) — accepted residual risk.
+OPENCODE_VERSION="1.18.34"
 HANDY_VERSION="0.9.7"
+HANDY_SHA256="e0625120b5a5c1d45e1e536b9d20f5220e7558e50c701e72e014f99c948e363a"
+ZED_INSTALL_SHA256="c42e96c9e3da1fae61ac11b0922ad033e8fcac3c34b44303805ad3796081b502"
 
 install_handy() {
+  if [[ -x "$HOME/.local/bin/handy" ]]; then
+    echo "  handy: already installed."
+    return 0
+  fi
+  if pacman -Qi handy-bin &>/dev/null; then
+    echo "  WARNING: AUR package handy-bin is installed and may shadow ~/.local/bin/handy."
+    echo "  Remove it with: yay -Rns handy-bin"
+  fi
   # Runtime deps from official repos: fuse2 runs the AppImage,
   # gtk-layer-shell is the overlay window layer.
   install_pkg "gtk-layer-shell"
   install_pkg "fuse2"
 
-  if [[ -x "$HOME/.local/bin/handy" ]]; then
-    echo "  handy: already installed."
-    return 0
-  fi
-
   mkdir -p "$HOME/.local/bin"
   echo -n "  Installing handy v$HANDY_VERSION (upstream AppImage)... "
-  if err=$(curl -fSL -o "$HOME/.local/bin/handy" \
-    "https://github.com/cjpais/Handy/releases/download/v$HANDY_VERSION/Handy_${HANDY_VERSION}_amd64.AppImage" 2>&1 \
-    && chmod +x "$HOME/.local/bin/handy" 2>&1); then
+  tmp=$(mktemp "$HOME/.local/bin/.handy.XXXXXX") || exit 1
+  if err=$(curl -fSL -o "$tmp" \
+    "https://github.com/cjpais/Handy/releases/download/v$HANDY_VERSION/Handy_${HANDY_VERSION}_amd64.AppImage" 2>&1) \
+    && echo "$HANDY_SHA256  $tmp" | sha256sum -c - &>/dev/null \
+    && chmod +x "$tmp" \
+    && mv "$tmp" "$HOME/.local/bin/handy"; then
     echo "done."
   else
-    echo "FAILED"
-    echo "    $err" | head -5
+    echo "FAILED (download or checksum mismatch — upstream asset may have changed; re-verify HANDY_SHA256)"
+    head -5 <<<"$err"
+    rm -f "$tmp"
     FAILED_PKGS+=("handy")
   fi
 }

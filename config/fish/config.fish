@@ -18,7 +18,14 @@ fish_add_path $JAVA_HOME/bin
 
 # mise (sole Node provider): interactive shells get full activation,
 # non-interactive ones get the shims dir (stable paths, no prompt hooks).
-if test -x ~/.local/bin/mise
+# Prefer a PATH-resolved mise, fall back to the install location.
+if command -v mise >/dev/null
+    if status is-interactive
+        mise activate fish | source
+    else
+        mise activate fish --shims | source
+    end
+else if test -x ~/.local/bin/mise
     if status is-interactive
         ~/.local/bin/mise activate fish | source
     else
