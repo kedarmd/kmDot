@@ -42,3 +42,5 @@ function ollama-local
     set -e OLLAMA_HOST
     echo "Ollama is back to local mode 🏠"
 end
+
+alias lg="lazygit"
