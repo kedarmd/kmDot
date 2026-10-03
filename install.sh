@@ -392,7 +392,7 @@ install_handy() {
 
   mkdir -p "$HOME/.local/bin"
   echo -n "  Installing handy v$HANDY_VERSION (upstream AppImage)... "
-  tmp=$(mktemp "$HOME/.local/bin/.handy.XXXXXX") || exit 1
+  tmp=$(mktemp "$HOME/.local/bin/.handy.XXXXXX") || { echo "FAILED (mktemp)"; FAILED_PKGS+=("handy"); return 0; }
   if err=$(curl -fSL -o "$tmp" \
     "https://github.com/cjpais/Handy/releases/download/v$HANDY_VERSION/Handy_${HANDY_VERSION}_amd64.AppImage" 2>&1) \
     && echo "$HANDY_SHA256  $tmp" | sha256sum -c - &>/dev/null \
