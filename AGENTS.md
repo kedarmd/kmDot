@@ -54,6 +54,8 @@ Canonical source per theme: TokyoNight `folke/tokyonight.nvim` (night), Catppucc
 
 ## Key Quirks
 
+- **Screenshots**: the PRINT binds in `config/hyprland/keybinds.lua` call bare `hyprshot -m window|output|region`, so the save location comes entirely from the environment. The packaged hyprshot (**1.3.0**) has **no config file at all** — no `hyprshot.conf`, and it never sources one; it only reads `HYPRSHOT_DIR` (else `XDG_PICTURES_DIR`, else `~`) and creates the dir itself with `mkdir -p`. So the location is set once in `config/hyprland/env.lua` via `hl.env("HYPRSHOT_DIR", …)` → `~/Pictures/Screenshots`. Don't look for a hyprshot config file in `config/hyprland/` (it would be ignored); the other alternative is passing `-o` on every bind. `hl.env` only reaches compositor-spawned processes (the binds, and anything launched from the quickshell launcher), so a `hyprshot` typed inside an already-running terminal still uses the old default unless the var is also exported in the shell rc.
+
 - **Tmux**: prefix `C-s`; modular config in `config/tmux/conf.d/` (`00-base`, `10-bindings`, `20-theme`, `90-plugins`); TPM for plugins; UTF-8 locale required for Nerd Fonts.
 - **Neovim**: lazy.nvim plugin manager; entrypoint `init.lua` → `require("options")` + `require("config.lazy")`.
 - **Wallpapers**: theme-specific in `themes/<theme>/wallpapers/`; painted via `awww` (`apply_wallpaper.sh` / `cycle_wallpapers.sh`); active theme cached in `~/.cache/kmdot_theme`.
