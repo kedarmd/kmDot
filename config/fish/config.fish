@@ -33,14 +33,4 @@ else if test -x ~/.local/bin/mise
     end
 end
 
-function ollama-remote
-    set -gx OLLAMA_HOST $OLLAMA_REMOTE_IP:11434
-    echo "Ollama is now pointing to the RTX 3060 server 🚀"
-end
-
-function ollama-local
-    set -e OLLAMA_HOST
-    echo "Ollama is back to local mode 🏠"
-end
-
 alias lg="lazygit"
