@@ -18,7 +18,20 @@ mkdir -p "$KMDOT_HERDR_CONFIG_DIR"
 # move herdr's runtime state into the kmdot copy so nothing is lost, then
 # swap the directory for the symlink.
 if [ -d "$HERDR_CONFIG_DIR" ] && [ ! -L "$HERDR_CONFIG_DIR" ]; then
+  # A live server holds its control socket in this directory. The swap
+  # replaces it, so the running server (panes and all) becomes unreachable
+  # until it is restarted — flag it instead of silently orphaning it.
+  if find "$HERDR_CONFIG_DIR" -type s -print -quit 2>/dev/null | grep -q .; then
+    echo "NOTE: herdr server is running — this first sync replaces its control"
+    echo "      socket with the kmdot symlink. Panes keep running, but the old"
+    echo "      server becomes unreachable; cleanest is 'herdr server stop'"
+    echo "      before syncing (saves the session, closes panes), then re-run."
+    echo "      Layout restores from session.json either way."
+  fi
   cp -rn "$HERDR_CONFIG_DIR/." "$KMDOT_HERDR_CONFIG_DIR/" 2>/dev/null || true
+  # cp recreates copied socket files as dead sockets — drop them so a
+  # fresh server can bind cleanly after the swap.
+  find "$KMDOT_HERDR_CONFIG_DIR" -type s -delete 2>/dev/null || true
   rm -rf "$HERDR_CONFIG_DIR"
 fi
 
