@@ -5,5 +5,15 @@
 # Herdr itself upserts this file on onboarding/Settings changes; that is fine,
 # it merges around these keys.
 
+[ui]
+# Skip the "name this tab" prompt when opening a new tab. Tabs are named
+# automatically "<tab number>. <directory name>" by scripts/herdr-tab-title.mjs,
+# driven from the fish prompt hook (config/fish/config.fish) — a new tab gets
+# its default name at its first prompt, and a tab follows its directory when
+# you cd. Tab numbers come from herdr itself (1-based, per workspace).
+# Manual renames are left alone; rename a tab back to a bare number to hand
+# it back to the auto-namer.
+prompt_new_tab_name = false
+
 [theme]
 name = "tokyo-night"

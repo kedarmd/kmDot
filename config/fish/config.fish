@@ -34,3 +34,13 @@ else if test -x ~/.local/bin/mise
 end
 
 alias lg="lazygit"
+
+# herdr tab auto-titles: "<tab number>. <directory>" — see
+# config/herdr/scripts/herdr-tab-title.mjs. Fires on every prompt but only
+# does work when the directory changed, so the prompt stays fast.
+function __kmdot_herdr_tab_title --on-event fish_prompt
+    test -n "$HERDR_ENV"; or return
+    test "$PWD" != "$_kmdot_herdr_tab_title_pwd"; or return
+    set -g _kmdot_herdr_tab_title_pwd "$PWD"
+    command node ~/.config/herdr/scripts/herdr-tab-title.mjs "$PWD"
+end

@@ -4,7 +4,7 @@ Dotfiles for CachyOS + Hyprland. Source of truth is this repo; sync copies confi
 
 ## Apps
 
-fish · ghostty · hyprland · nvim · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
+fish · ghostty · herdr · hyprland · nvim · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
 
 ## Screenshots
 
@@ -60,6 +60,12 @@ Themes: catppuccin, everforest, nord, onedark, tokyonight
 - Reload: `C-s r`
 - TPM: `git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm`
 - UTF-8 locale required for Nerd Fonts (`LANG=en_IN.UTF-8`)
+
+## Herdr
+
+- Terminal workspace manager (workspaces / tabs / panes); config: `config/herdr/`
+- Tabs auto-name `<tab number>. <directory name>` (numbering starts at 1, per workspace): `ui.prompt_new_tab_name = false` skips the new-tab name prompt, and `scripts/herdr-tab-title.mjs` — run by the fish prompt hook (`config/fish/config.fish`) whenever `$PWD` changes — renames the calling pane's tab. A tab you rename by hand is left alone; rename it back to a bare number to hand it back to the auto-namer. Fish-only trigger (bash panes keep herdr's numeric names).
+- Reload: `herdr server reload-config`
 
 ## Troubleshooting
 
