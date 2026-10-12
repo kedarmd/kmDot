@@ -64,7 +64,7 @@ Themes: catppuccin, everforest, nord, onedark, tokyonight
 ## Herdr
 
 - Terminal workspace manager (workspaces / tabs / panes); config: `config/herdr/`
-- Tabs auto-name `<tab number>. <directory name>` (numbering starts at 1, per workspace): `ui.prompt_new_tab_name = false` skips the new-tab name prompt, and `scripts/herdr-tab-title.mjs` — run by the fish prompt hook (`config/fish/config.fish`) whenever `$PWD` changes — renames the calling pane's tab. A tab you rename by hand is left alone; rename it back to a bare number to hand it back to the auto-namer. Fish-only trigger (bash panes keep herdr's numeric names).
+- Tabs auto-name `<position>. <directory name>` (starts at 1, per workspace, follows the visible tab order): `ui.prompt_new_tab_name = false` skips the new-tab name prompt; a fish prompt hook renames a tab the moment its pane `cd`s; and the `plugins/kmdot-tab-titles` plugin (event hooks on tab create/close/move) renumbers every tab when tabs are created, closed, or reordered — closing/re-ordering fires no prompt in surviving panes, so the plugin is what keeps numbers in step. A tab you rename by hand is left alone; rename it back to a bare number to hand it back to the auto-namer. cd-following is fish-only (bash panes keep their name until a topology event).
 - Reload: `herdr server reload-config`
 
 ## Troubleshooting

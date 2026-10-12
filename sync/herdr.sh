@@ -94,4 +94,14 @@ fi
 
 ln -sfn "$KMDOT_HERDR_CONFIG_DIR" "$HERDR_CONFIG_DIR"
 
+# Link the tab-titles plugin so its event hooks (tab
+# created/closed/moved → renumber.mjs) fire. Re-linking is
+# refused over an existing link, so unlink first; no server or
+# binary present is not an error — the next launch links it.
+PLUGIN_DIR="$KMDOT_HERDR_CONFIG_DIR/plugins/kmdot-tab-titles"
+if command -v herdr >/dev/null 2>&1 && [ -d "$PLUGIN_DIR" ]; then
+  herdr plugin unlink kmdot.tab-titles >/dev/null 2>&1 || true
+  herdr plugin link "$PLUGIN_DIR" >/dev/null || true
+fi
+
 echo "kmDot herdr config synced!!!"

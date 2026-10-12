@@ -1,0 +1,24 @@
+# kmDot herdr plugin — keep tab labels "<tab number>. <directory>".
+# Linked by sync/herdr.sh; see renumber.mjs for the logic.
+id = "kmdot.tab-titles"
+name = "kmDot Tab Titles"
+version = "0.1.0"
+min_herdr_version = "0.9.3"
+description = "Keep herdr tab labels as '<number>. <directory>' when tabs are created, closed, or reordered"
+platforms = ["linux", "macos"]
+
+# Closing or re-ordering tabs shifts every later tab's position.
+# Nothing re-renders a prompt in the surviving panes, so the fish
+# prompt hook (which only fires on cd) cannot catch it — these
+# event hooks heal the whole session instead.
+[[events]]
+on = "tab.created"
+command = ["node", "renumber.mjs"]
+
+[[events]]
+on = "tab.closed"
+command = ["node", "renumber.mjs"]
+
+[[events]]
+on = "tab.moved"
+command = ["node", "renumber.mjs"]

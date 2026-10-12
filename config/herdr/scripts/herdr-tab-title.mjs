@@ -42,18 +42,23 @@ async function main() {
   const pane = JSON.parse(await herdr(["pane", "current"])).result.pane;
   const cwd = cwdArg || pane.cwd || process.cwd();
 
+  // Tab numbers are positions in the workspace's ordered tab list
+  // (herdr's own "number" field is a creation counter that never
+  // renumbers, so it cannot be used).
   const tabs = JSON.parse(
     await herdr(["tab", "list", "--workspace", pane.workspace_id])
   ).result.tabs;
-  const tab = tabs.find((t) => t.tab_id === pane.tab_id);
-  if (!tab) process.exit(0);
+  const position = tabs.findIndex((t) => t.tab_id === pane.tab_id) + 1;
+  if (position === 0) process.exit(0);
+
+  const tab = tabs[position - 1];
 
   // Managed labels only: herdr's bare number or this script's "N. name".
   if (!/^\d+$/.test(tab.label) && !/^\d+\. /.test(tab.label)) {
     process.exit(0);
   }
 
-  const label = `${tab.number}. ${displayName(cwd, process.env.HOME)}`;
+  const label = `${position}. ${displayName(cwd, process.env.HOME)}`;
   if (tab.label === label) process.exit(0);
 
   await herdr(["tab", "rename", tab.tab_id, label]);
