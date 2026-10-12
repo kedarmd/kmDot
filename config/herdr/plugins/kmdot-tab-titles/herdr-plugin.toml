@@ -22,3 +22,16 @@ command = ["node", "renumber.mjs"]
 [[events]]
 on = "tab.moved"
 command = ["node", "renumber.mjs"]
+
+# Closing a tab's last PANE (prefix+x, or the shell exiting
+# on its own) also closes the tab, but that path emits
+# pane.closed / pane.exited and NO tab.closed — hook the
+# pane events too. The heal is idempotent, so the extra
+# events are harmless.
+[[events]]
+on = "pane.closed"
+command = ["node", "renumber.mjs"]
+
+[[events]]
+on = "pane.exited"
+command = ["node", "renumber.mjs"]
