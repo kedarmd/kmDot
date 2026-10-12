@@ -4,7 +4,7 @@ id = "kmdot.tab-titles"
 name = "kmDot Tab Titles"
 version = "0.1.0"
 min_herdr_version = "0.9.3"
-description = "Keep herdr tab labels as '<number>. <directory>' when tabs are created, closed, or reordered"
+description = "Keep herdr tab labels as '<number>. <directory>' across tab create/close/move and pane close/exit"
 platforms = ["linux", "macos"]
 
 # Closing or re-ordering tabs shifts every later tab's position.

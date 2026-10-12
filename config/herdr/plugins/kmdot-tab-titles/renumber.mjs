@@ -2,17 +2,22 @@
 // kmDot herdr plugin event hook — keeps tab labels as
 // "<tab number>. <directory>" across tab topology changes.
 //
-// Closing or re-ordering tabs shifts every later tab's position,
-// and no prompt re-renders in the surviving panes, so the fish
-// prompt hook (which only fires on cd) leaves the old number
+// Closing, opening, or re-ordering tabs shifts every later tab's
+// position, and no prompt re-renders in the surviving panes, so the
+// fish prompt hook (which only fires on cd) leaves the old number
 // prefixes stale. This hook runs on tab.created / tab.closed /
-// tab.moved and heals the whole session in one pass:
+// tab.moved / pane.closed / pane.exited and heals the whole session
+// in one pass:
 //
 //   * "<N>. <name>" labels get their number rewritten to the
 //     tab's current position (the name half is kept)
 //   * bare-number labels (fresh tabs) get named after the
 //     tab's focused pane's directory
 //   * anything else — a tab renamed by hand — is left alone
+//
+// (Closing a tab's last pane emits pane.closed / pane.exited and NO
+// tab.closed — hence the pane hooks. The heal is idempotent, so the
+// extra events are harmless.)
 //
 // The fish prompt hook (config/fish/config.fish) covers the
 // other half: renaming a tab the moment its pane cd's.
@@ -47,37 +52,38 @@ function tabCwd(panes, tabId) {
 
 async function heal() {
   const tabs = JSON.parse(await herdrCall(["tab", "list"])).result.tabs;
-  const panes = JSON.parse(await herdrCall(["pane", "list"])).result.panes;
   const home = process.env.HOME;
+  let panes = null; // fetched lazily — only bare-number tabs need it
+  const seen = new Map(); // workspace_id -> tabs seen so far
 
-  // The tab list is grouped by workspace and ordered by
-  // position within each workspace — that order is the
-  // numbering. (herdr's own "number" field is a creation
-  // counter that never renumbers.)
-  const byWorkspace = new Map();
+  // The tab list is grouped by workspace and ordered by position
+  // within each workspace — that order IS the numbering. (herdr's
+  // own "number" field is a creation counter that never renumbers:
+  // live proof — the "2. kmDot" tab below carries number: 12.)
   for (const tab of tabs) {
-    if (!byWorkspace.has(tab.workspace_id)) {
-      byWorkspace.set(tab.workspace_id, []);
-    }
-    byWorkspace.get(tab.workspace_id).push(tab);
-  }
-
-  for (const wsTabs of byWorkspace.values()) {
-    for (const [index, tab] of wsTabs.entries()) {
-      const position = index + 1;
-      let label = null;
-      if (/^\d+\. /.test(tab.label)) {
-        // Managed label: keep the name, rewrite the number.
-        label = `${position}. ${tab.label.match(/^\d+\. (.+)$/)[1]}`;
-      } else if (/^\d+$/.test(tab.label)) {
+    const position = (seen.get(tab.workspace_id) ?? 0) + 1;
+    seen.set(tab.workspace_id, position);
+    try {
+      // Managed labels only: herdr's bare number ("2") or this
+      // script's "N. name". Anything else is a manual rename.
+      const managed = tab.label.match(/^\d+(?:\. (.*))?$/);
+      if (!managed) continue;
+      let name = managed[1];
+      if (!name) {
         // Fresh tab: name it after the focused pane's directory.
+        panes ??= JSON.parse(await herdrCall(["pane", "list"])).result.panes;
         const cwd = tabCwd(panes, tab.tab_id);
-        if (cwd) label = `${position}. ${displayName(cwd, home)}`;
+        if (!cwd) continue;
+        name = displayName(cwd, home);
       }
-      // Anything else is a manual rename — leave it alone.
-      if (label && label !== tab.label) {
+      // Managed "N. name": the name half is kept, the number is
+      // rewritten — so this is a no-op unless the number is stale.
+      const label = `${position}. ${name}`;
+      if (label !== tab.label) {
         await herdrCall(["tab", "rename", tab.tab_id, label]);
       }
+    } catch {
+      // One bad label or failed rename must not abort the rest.
     }
   }
 }

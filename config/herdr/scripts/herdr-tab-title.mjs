@@ -28,7 +28,9 @@ if (process.env.HERDR_ENV !== "1" || !process.env.HERDR_PANE_ID) {
 const cwdArg = process.argv[2];
 
 function herdr(args) {
-  return run("herdr", args).then(({ stdout }) => stdout);
+  return run(process.env.HERDR_BIN_PATH ?? "herdr", args).then(
+    ({ stdout }) => stdout
+  );
 }
 
 function displayName(cwd, home) {
@@ -39,6 +41,7 @@ function displayName(cwd, home) {
 async function main() {
   // pane current resolves the calling pane's live location (HERDR_PANE_ID),
   // so panes moved between tabs are named after the tab they are in now.
+  // (The launch-time HERDR_TAB_ID env would be stale after a pane move.)
   const pane = JSON.parse(await herdr(["pane", "current"])).result.pane;
   const cwd = cwdArg || pane.cwd || process.cwd();
 
@@ -48,17 +51,16 @@ async function main() {
   const tabs = JSON.parse(
     await herdr(["tab", "list", "--workspace", pane.workspace_id])
   ).result.tabs;
-  const position = tabs.findIndex((t) => t.tab_id === pane.tab_id) + 1;
-  if (position === 0) process.exit(0);
-
-  const tab = tabs[position - 1];
+  const index = tabs.findIndex((t) => t.tab_id === pane.tab_id);
+  if (index < 0) process.exit(0);
+  const tab = tabs[index];
 
   // Managed labels only: herdr's bare number or this script's "N. name".
-  if (!/^\d+$/.test(tab.label) && !/^\d+\. /.test(tab.label)) {
+  if (!/^\d+(?:\. .*)?$/.test(tab.label)) {
     process.exit(0);
   }
 
-  const label = `${position}. ${displayName(cwd, process.env.HOME)}`;
+  const label = `${index + 1}. ${displayName(cwd, process.env.HOME)}`;
   if (tab.label === label) process.exit(0);
 
   await herdr(["tab", "rename", tab.tab_id, label]);
