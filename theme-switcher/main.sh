@@ -8,6 +8,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 THEME="$1"
 
+# Replacing the shell process while the Wayland session lock is held can leave
+# a secure but blank lock surface. Theme changes must happen after unlock.
+if quickshell ipc call lockscreen isLocked 2>/dev/null | rg -q 'true'; then
+  echo "ERROR: unlock the session before changing themes" >&2
+  exit 1
+fi
+
 # --- 2. Use the absolute path for sourcing the hook scripts ---
 . "$SCRIPT_DIR/hooks/nvim.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/starship.sh" "$THEME"
@@ -17,6 +24,7 @@ THEME="$1"
 . "$SCRIPT_DIR/hooks/quickshell.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/hyprland.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/wallpapers.sh" "$THEME"
+. "$SCRIPT_DIR/hooks/sddm.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/btop.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/opencode.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/zed.sh" "$THEME"

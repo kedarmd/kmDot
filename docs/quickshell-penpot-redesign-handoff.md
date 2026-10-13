@@ -3,7 +3,20 @@
 Last updated: 2026-10-13
 Status: **R1 redesign and recent top-bar changes are deployed, committed as `5486179`, fast-forward merged into `main`, and pushed to `origin/main`. User review is ongoing; native R1 Bluetooth passkey UI remains unimplemented (blueman handles pairing), and hardware/action checks remain unverified.**
 
+The subsequent lock/login replacement and repairs are deployed and user-verified as described below, and included in the accompanying `feat(lockscreen): replace lock and login screens and fix authentication` commit. They are not included in `5486179`.
+
 ## Handoff summary — start here next session
+
+### Lock and login screen implementation status
+
+**Implemented and repaired on 2026-10-13:** user accepted **LOCKSCREEN-01 rev 4**, including the Folded badge logo on both screens. Quickshell and Hyprland were synced; the user completed the privileged SDDM deployment. The user confirmed the lockscreen unlocks and the final login-screen logo fix works. Read [quickshell-lockscreen-plan.md](quickshell-lockscreen-plan.md) for current implementation, repair details and verification scope. [Screen review history](quickshell-lockscreen-gate-b-review.md) and [approved credential contract](quickshell-lockscreen-design-proposal.md) retain the approved Penpot work.
+
+- Penpot: **Redesign → 06 · Lockscreens — R1**. Both ready screens are approved; do not re-open Gate B for the already accepted layout.
+- Final refinements: compact aligned cards; **2px inside-aligned password borders**; left-aligned selector labels with separate vector chevrons; **Desktop session selector outside the sign-in card at bottom-left**; 48px Folded badge logo with 48px top/left margins on both screens.
+- Fixed password delivery to PAM (`lockState.password`, not `.text` on a string alias); migrated the stale theme selection in higher-precedence `/etc/sddm.conf`; fixed both `Controls.ScrollIndicator.vertical` attachments, unsupported user-model access and power-control layout. The SDDM logo now uses the same screen-scale-aware SVG rasterization size as the lockscreen.
+- Greeter preview and picker initialization passed with no QML errors or embedded fallback. Inspect the preview process's journal: SDDM can silently fall back while stdout/stderr stay empty. User confirmed correct-password unlock and the final logo rendering; full SDDM credential/error flows, multi-monitor/scaling, all-theme rendering, suspend/resume and failure recovery have not been comprehensively checked.
+- Future SDDM edits require `./sync/sddm.sh` from a sudo-authenticated terminal and apply at the next greeter start. Do not restart SDDM within a working desktop session. Check `quickshell ipc call lockscreen isLocked` before restarting the lock-owning Quickshell process.
+- Preserve existing top-bar preferences and unrelated AttentionMode edits below. This documentation update performs no sync, service change, commit or push.
 
 ### Current top bar — authoritative user preferences
 
@@ -13,6 +26,7 @@ These decisions supersede the older Penpot tray layout and earlier implementatio
 - **Center:** only the calendar/clock, centered. The user moved the eye and bell away from the clock to trial the original design placement for a couple of days.
 - **Right, left to right:** hidden-tray chevron → Display → Audio → Wi-Fi → Bluetooth → Battery → notification bell.
 - **Hidden tray:** the chevron slides left to expose Attention mode (eye) → Server mode → OpenCode usage → Handy inline inside the top bar. It stays expanded while those panels are open. The below-bar floating tray was rejected because it overlapped desktop content and panels; do not restore it.
+- **Eye visibility cleanup:** Attention mode's old inactive/hover-only opacity rule was removed after the user reported disappearing icons. Both eye states now remain visible whenever the tray is expanded. The module has a fixed 36px width so toggling cannot shift tray entries; 20px glyph sizing and active tonal fill remain. This follow-up is deployed after `1b29ede` and is not yet committed. Latest runtime log: `/tmp/kmdot-attention-cleanup.log`.
 - **Appearance:** no tray icon. Open via **Super+T**; ThemeLauncher remains available.
 - **Tooltips:** removed altogether, including the Tooltip component and hover display handlers. Do not reintroduce tooltips or just restyle their corners.
 - **R1 styling retained:** 48px bar, 32px controls, 24px canonical vectors except the user-approved 20px eye/bell, 14px clock with two spaces between date and time, vertically centered 28px workspace pills, tonal active workspace fill with required light text, 6px primary notification dot, plain connectivity/battery surfaces, and matching 12px outer margins. Live volume/battery values and state affordances remain functional. The eye uses its existing font glyph.
@@ -23,7 +37,7 @@ Latest deployment: `./sync/quickshell.sh` followed by an explicit Quickshell res
 
 ### Completed branding and DND additions
 
-**kmDot logo completed:** the user approved [LOGO-01 rev 4](quickshell-r1-kmdot-logo-proposal-rev4.md), the Folded badge KMD monogram with trailing dot. Added `brand/kmdot` to Foundations and its manifest; replaced only the top-bar Kmdot launcher icon with the theme-aware vector. Synced/restarted and visually compared the live bar with the canonical export. Latest log `/tmp/kmdot-logo-final.log`; screenshot `/tmp/kmdot-logo-live.png`. The future lock screen is not yet implementation scope; final deployed visual acceptance awaits review.
+**kmDot logo completed:** the user approved [LOGO-01 rev 4](quickshell-r1-kmdot-logo-proposal-rev4.md), the Folded badge KMD monogram with trailing dot. Added `brand/kmdot` to Foundations and its manifest; replaced the top-bar Kmdot launcher icon with the theme-aware vector. Synced/restarted and visually compared the live bar with the canonical export. Latest log `/tmp/kmdot-logo-final.log`; screenshot `/tmp/kmdot-logo-live.png`. The same logo is implemented at 48px on both lock/login screens. The user confirmed the greeter sharpness fix after adding the screen-scale-aware `sourceSize` binding.
 
 **DND state completed:** [DND-01 rev 1](quickshell-r1-dnd-state-proposal.md) was approved and implemented. Foundations and its manifest now include `icon/bell-off` and `bar/dnd-on`. The bar uses the matching crossed-out vector bell and blue tonal selected fill; the red error fill/font fallback was removed. Synced and restarted, with a live visual comparison and clean QML startup. The user subsequently accepted this DND appearance.
 
@@ -55,6 +69,8 @@ The latest implementation and review record is [quickshell-r1-local-review.md](q
 - **Git delivery:** this redesign, user-requested top-bar refinements, canonical DND/logo additions and handoff records are included in the commit `feat(quickshell): implement Penpot R1 redesign and custom branding`, merged into `main` at the user’s request. Commit ID: `5486179`; it is pushed to `origin/main`. Older “uncommitted” entries below are historical. Hardware/action checks and native passkey implementation remain pending.
 
 ### Suggested next session
+
+For lock/login follow-ups, start with [the current lockscreen implementation and verification record](quickshell-lockscreen-plan.md). Basic implementation and the reported password, theme-loading and logo issues are resolved; do not repeat the old installation-pending steps. The general ongoing-redesign checklist below remains relevant to other modules.
 
 1. Read this handoff's **Handoff summary**, **Implementation progress**, and relevant module notes below. Treat the dated implementation entries as the current record; treat the earlier design audit/checklist as historical.
 2. Open the live Penpot R1 boards and the local Quickshell UI, then continue review with the user. Apply the authoritative top-bar preferences above as explicit design exceptions. Compare any screenshots they flag against the corresponding live board and make requested adjustments.

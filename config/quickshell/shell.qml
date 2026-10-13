@@ -3,6 +3,8 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Notifications
+import Quickshell.Wayland
+import Quickshell.Services.Pam
 import "components"
 import "menu"
 import "modules"
@@ -13,6 +15,7 @@ Scope {
   property var activeLauncher: null
   property var openingSurface: null
   property bool hasNotifications: false
+  property bool lockRequested: false
   property AppLauncher appLauncher: AppLauncher { scope: shellRoot }
   property KmdotLauncher kmdotLauncher: KmdotLauncher { scope: shellRoot }
   property SystemLauncher systemLauncher: SystemLauncher { scope: shellRoot }
@@ -97,6 +100,66 @@ Scope {
       if (shellRoot.notificationCenter)
         shellRoot.notificationCenter.addToHistory(notification)
     }
+  }
+
+  // Native Wayland session lock. Keep it in the long-lived shell process so
+  // the lock owner is never a short-lived overlay or launcher process.
+  WlSessionLock {
+    id: sessionLock
+
+    LockScreenSurface {
+      lock: sessionLock
+      shell: shellRoot
+    }
+  }
+
+  PamContext {
+    id: lockPam
+    config: "hyprlock"
+    onResponseRequiredChanged: {
+      if (lockPam.responseRequired) lockPam.respond(lockState.password)
+    }
+    onCompleted: result => {
+      lockState.password = ""
+      if (result === PamResult.Success) {
+        sessionLock.locked = false
+        shellRoot.lockRequested = false
+      } else {
+        shellRoot.lockRequested = false
+        lockError = true
+      }
+    }
+  }
+
+  IpcHandler {
+    target: "lockscreen"
+    function lock(): void {
+      if (sessionLock.locked || shellRoot.lockRequested) return
+      shellRoot.lockRequested = true
+      lockError = false
+      lockState.password = ""
+      sessionLock.locked = true
+    }
+    function isLocked(): bool { return sessionLock.locked }
+  }
+
+  // Shared credential state is surfaced into each per-screen surface through
+  // this shell-owned object, while password input itself stays in the surface.
+  QtObject {
+    id: lockState
+    property string password: ""
+    property bool error: false
+    property bool authenticating: lockPam.active
+  }
+  property alias lockPassword: lockState.password
+  property alias lockError: lockState.error
+  readonly property bool lockAuthenticating: lockPam.active
+
+  function submitLockPassword() {
+    if (!sessionLock.secure || lockPam.active || !lockState.password.length) return
+    lockState.error = false
+    lockPam.user = Quickshell.env("USER")
+    if (!lockPam.start()) lockState.error = true
   }
 
   Timer {

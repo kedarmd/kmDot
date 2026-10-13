@@ -1,11 +1,11 @@
 [SddmGreeterTheme]
-Name=kmd-hyprlock
-Description=Minimal Hyprlock-inspired theme
+Name=kmDot Quickshell
+Description=kmDot R1 sign-in greeter
 Author=kmd
 Type=sddm-theme
 Version=0.1
 MainScript=Main.qml
 ConfigFile=theme.conf
-Theme-Id=kmd-hyprlock
+Theme-Id=kmd-quickshell
 Theme-API=2.0
 QtVersion=6

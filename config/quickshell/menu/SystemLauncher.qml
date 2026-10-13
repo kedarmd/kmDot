@@ -14,7 +14,7 @@ LauncherBase {
   property string pendingCommand: ""
 
   items: [
-    { label: "Lock", subtitle: "Keep your session private", glyph: "\uf023", shortcutTarget: "exec:hyprlock", command: "hyprlock" },
+    { label: "Lock", subtitle: "Keep your session private", glyph: "\uf023", shortcutTarget: "exec:~/.config/kmdot/quickshell/scripts/lock-screen.sh", command: "~/.config/kmdot/quickshell/scripts/lock-screen.sh" },
     { label: "Suspend", subtitle: "Resume right where you left off", glyph: "\uf186", shortcutTarget: "exec:systemctl suspend", command: "systemctl suspend" },
     { label: "Log out", subtitle: "End this session", glyph: "\uf08b", shortcutTarget: "dsp:exit", command: "hyprctl dispatch 'hl.dsp.exit()'" },
     { label: "Restart", subtitle: "Restart your laptop", glyph: "\uf021", shortcutTarget: "exec:systemctl reboot", command: "systemctl reboot" },

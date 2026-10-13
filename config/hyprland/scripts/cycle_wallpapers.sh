@@ -8,23 +8,6 @@ if [ -z "$THEME" ] && [ -d "$THEMES_DIR" ]; then
   THEME="$(ls -1 "$THEMES_DIR" 2>/dev/null | head -n 1)"
 fi
 
-sync_hyprlock() {
-  local wallpaper_path="$1"
-  local hyprlock_template="$HOME/.config/kmdot/hyprland/hyprlock.base.conf"
-  local hyprlock_config="$HOME/.config/kmdot/hyprland/hyprlock.conf"
-
-  [ -f "$hyprlock_template" ] || return 0
-
-  if [ -n "$wallpaper_path" ] && [ -f "$wallpaper_path" ]; then
-    sed "s|^\s*path\s*=.*|  path = $wallpaper_path|" "$hyprlock_template" > "$hyprlock_config"
-  else
-    cp "$hyprlock_template" "$hyprlock_config"
-  fi
-
-  if pgrep -x hyprlock >/dev/null 2>&1; then
-    pkill -USR1 hyprlock
-  fi
-}
 
 sync_sddm() {
   local wallpaper_path="$1"
@@ -83,5 +66,4 @@ awww img "$WALLPAPER" \
   --transition-fps 60 \
   >/dev/null 2>&1
 
-sync_hyprlock "$WALLPAPER"
 sync_sddm "$WALLPAPER"

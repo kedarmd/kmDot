@@ -20,7 +20,7 @@ hl.bind(mod .. " + T", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/
 hl.bind(mod .. " + H", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-handy-launcher'")) -- Handy launcher (quickshell)
 hl.bind(mod .. " + W", hl.dsp.window.close()) -- Close window
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exit()) -- Exit Hyprland
-hl.bind(mod .. " + L", hl.dsp.exec_cmd("hyprlock")) -- Lock screen
+hl.bind(mod .. " + L", hl.dsp.exec_cmd("~/.config/kmdot/quickshell/scripts/lock-screen.sh")) -- Lock screen
 hl.bind(mod .. " + ESCAPE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-system'")) -- System menu (quickshell)
 hl.bind(mod .. " + K", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-kmdot'")) -- kmDot menu (quickshell)
 
