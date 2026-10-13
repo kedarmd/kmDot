@@ -6,14 +6,16 @@ Date: 2026-10-13. User review: in progress; final full-scope acceptance not reco
 
 The top bar now has Kmdot and Workspaces on the left, with no window-title module. The clock is centered alone. The right group is hidden tray → Display → Audio → Wi-Fi → Bluetooth → Battery → notification bell. The tray expands inline by sliding the chevron left and contains Attention eye, Server mode, OpenCode usage and Handy. The user is trialing this original eye/bell placement for a couple of days. No below-bar tray, Appearance tray icon, or tooltips remain. Super+T still opens Appearance. These explicit preferences supersede older screenshots and the historical follow-ups below.
 
-The final reorder was synced and Quickshell restarted; `/tmp/kmdot-bar-fixes.log` reached `Configuration Loaded`. The comprehensive comparison viewer predates these final top-bar preferences. Its 44 captured references remain evidence for the earlier module review, not the final bar order. See the [main handoff](quickshell-penpot-redesign-handoff.md) for the authoritative current layout and pending work.
+The launcher now uses approved LOGO-01 rev 4: Folded badge KMD with a trailing theme-accent dot. DND uses its approved bell-off vector and blue tonal fill. Eye/bell are 20px at runtime; clock stays 14px with a two-space date/time gap. These additions were made to the canonical Penpot Foundations manifest after approval.
+
+The final placement was synced and Quickshell restarted; `/tmp/kmdot-bar-placement.log` reached `Configuration Loaded`. Implementation and docs were committed as `5486179`, fast-forward merged into `main`, and pushed to `origin/main`; delivery ended with a clean working tree. The comprehensive comparison viewer predates these final top-bar preferences and canonical additions. Its 44 captured references remain evidence for the earlier module review, not the final bar order. See the [main handoff](quickshell-penpot-redesign-handoff.md) for the authoritative current layout and pending work.
 
 ## Review artifacts
 
 - [Side-by-side comparison viewer](/tmp/kmdot-r1-review/review.html): approved Penpot exports and local UI captures, grouped by Desktop, Launchers, Panels, and States. Search by module; click an image to enlarge it.
 - [Capture inventory](/tmp/kmdot-r1-review/capture-inventory.json): board IDs, capture provenance, and measured/estimated screenshot card dimensions.
 - [Normal runtime log](/tmp/kmdot-r1-review/runtime.log).
-- Source: Penpot **Redesign**, file `8a4f1bc7-db1f-80ff-8008-c6f6cffb2a27`, the six approved R1 pages. All 45 screen boards were exported afresh. The Foundations page's `design-system-manifest` was read from page plugin data; no canonical Penpot assets or tokens were edited.
+- Source: Penpot **Redesign**, file `8a4f1bc7-db1f-80ff-8008-c6f6cffb2a27`, the six approved R1 pages. All 45 screen boards were exported during the original audit. That audit read the Foundations page's `design-system-manifest` without canonical edits. Later approved DND and kmDot logo components were added to Foundations and its manifest, as recorded above; no color tokens changed.
 
 The viewer contains local captures for 44 board references. Desktop compositions reuse full-screen live captures; their illustrative wallpaper and 1440×900 viewport differ from the workstation's 1920×1080 terminal background. Some error/transient captures use an isolated `/tmp` config with view fixtures. Those verify rendering, not successful hardware operations. SVG exports were rendered using `rsvg-convert`, so rasterization is not a pixel-exact reproduction of the Penpot browser.
 

@@ -8,6 +8,8 @@ The notification bell is at the far right after Battery, following the user’s 
 
 DND-on now uses the approved R1 bell-off vector and blue tonal pill with light foreground. [DND-01 rev 1](quickshell-r1-dnd-state-proposal.md) records the user's approval, canonical component IDs, manifest update and live visual verification. The normal bell and unread dot behavior are retained.
 
+The user accepted the deployed DND appearance (“Good”), then approved 20px eye/bell sizing. The bell is now after Battery, with Attention in the inline tray and the clock alone at center; this is a placement trial for a couple of days. Canonical DND assets stay 24px and render at 20px in the bar. The final placement startup reached `Configuration Loaded` in `/tmp/kmdot-bar-placement.log`. All implementation changes were committed as `5486179`, merged into `main`, and pushed to `origin/main`. Real message delivery and full-scope acceptance remain separate pending checks.
+
 The Notification Center work is in `config/quickshell/menu/NotificationCenter.qml`.
 
 - Expanded app groups use a clipped, bounded Flickable so long histories scroll without covering the pinned count/Clear all footer.

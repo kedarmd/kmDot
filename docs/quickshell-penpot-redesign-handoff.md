@@ -1,7 +1,7 @@
 # Quickshell Penpot redesign — session handoff
 
 Last updated: 2026-10-13
-Status: **R1 implementation corrections and subsequent user-requested top-bar changes are deployed. User review has begun; no blanket final acceptance is recorded. Native R1 Bluetooth passkey UI remains unimplemented (blueman handles pairing), and hardware/action checks remain unverified. User requested committing all changes and merging into `main`; see the Git delivery note below.**
+Status: **R1 redesign and recent top-bar changes are deployed, committed as `5486179`, fast-forward merged into `main`, and pushed to `origin/main`. User review is ongoing; native R1 Bluetooth passkey UI remains unimplemented (blueman handles pairing), and hardware/action checks remain unverified.**
 
 ## Handoff summary — start here next session
 
@@ -9,23 +9,33 @@ Status: **R1 implementation corrections and subsequent user-requested top-bar ch
 
 These decisions supersede the older Penpot tray layout and earlier implementation entries below. Preserve them during future design comparisons.
 
-- **Left:** Kmdot launcher, then Workspaces. The active-window title module was removed entirely.
+- **Left:** Kmdot launcher with the approved Folded badge KMD monogram and trailing accent dot, then Workspaces. The active-window title module was removed entirely.
 - **Center:** only the calendar/clock, centered. The user moved the eye and bell away from the clock to trial the original design placement for a couple of days.
 - **Right, left to right:** hidden-tray chevron → Display → Audio → Wi-Fi → Bluetooth → Battery → notification bell.
 - **Hidden tray:** the chevron slides left to expose Attention mode (eye) → Server mode → OpenCode usage → Handy inline inside the top bar. It stays expanded while those panels are open. The below-bar floating tray was rejected because it overlapped desktop content and panels; do not restore it.
 - **Appearance:** no tray icon. Open via **Super+T**; ThemeLauncher remains available.
 - **Tooltips:** removed altogether, including the Tooltip component and hover display handlers. Do not reintroduce tooltips or just restyle their corners.
-- **R1 styling retained:** 48px bar, 32px controls, 24px canonical vector icons, 14px clock in the design's date/time format, vertically centered 28px workspace pills, tonal active workspace fill with required light text, 6px primary notification dot, plain connectivity/battery surfaces, and matching 12px outer margins. Live volume/battery values and state affordances remain functional. The eye uses its existing font glyph.
+- **R1 styling retained:** 48px bar, 32px controls, 24px canonical vectors except the user-approved 20px eye/bell, 14px clock with two spaces between date and time, vertically centered 28px workspace pills, tonal active workspace fill with required light text, 6px primary notification dot, plain connectivity/battery surfaces, and matching 12px outer margins. Live volume/battery values and state affordances remain functional. The eye uses its existing font glyph.
 
-Latest deployment: `./sync/quickshell.sh` followed by an explicit Quickshell restart after the right-group reorder. Normal startup reached `Configuration Loaded` in `/tmp/kmdot-bar-fixes.log`. Sync copies the config but does not itself restart Quickshell; reload it explicitly after future changes. Earlier comparison captures predate the final order and tooltip/Appearance removal.
+Latest deployment: `./sync/quickshell.sh` followed by an explicit Quickshell restart after moving Attention into the tray and the bell after Battery. Normal startup reached `Configuration Loaded` in `/tmp/kmdot-bar-placement.log`. Sync copies the config but does not itself restart Quickshell; reload it explicitly after future changes. Earlier comparison captures predate the final placement and tooltip/Appearance removal.
 
-**Center-group refinement:** the user approved 20px eye and bell icons with a 14px clock and two spaces between date and time. Their placement subsequently changed: eye in tray, bell after Battery. This supersedes the 24px bell/four-space clock gap for the center group only. Applied in AttentionMode, Dnd and Clock, synced and restarted; current log `/tmp/kmdot-bar-center.log`. The canonical Penpot DND vector remains 24px and is rendered at 20px here as a user-approved implementation preference.
+**Center-group refinement:** the user approved 20px eye and bell icons with a 14px clock and two spaces between date and time. Their placement subsequently changed: eye in tray, bell after Battery. This supersedes the 24px bell/four-space clock gap for the center group only. Applied in AttentionMode, Dnd and Clock, synced and restarted; historical refinement log `/tmp/kmdot-bar-center.log`. The canonical Penpot DND vector remains 24px and is rendered at 20px here as a user-approved implementation preference.
 
-### Pending implementation and verification
+### Completed branding and DND additions
 
 **kmDot logo completed:** the user approved [LOGO-01 rev 4](quickshell-r1-kmdot-logo-proposal-rev4.md), the Folded badge KMD monogram with trailing dot. Added `brand/kmdot` to Foundations and its manifest; replaced only the top-bar Kmdot launcher icon with the theme-aware vector. Synced/restarted and visually compared the live bar with the canonical export. Latest log `/tmp/kmdot-logo-final.log`; screenshot `/tmp/kmdot-logo-live.png`. The future lock screen is not yet implementation scope; final deployed visual acceptance awaits review.
 
-**DND state completed:** [DND-01 rev 1](quickshell-r1-dnd-state-proposal.md) was approved and implemented. Foundations and its manifest now include `icon/bell-off` and `bar/dnd-on`. The bar uses the matching crossed-out vector bell and blue tonal selected fill; the red error fill/font fallback was removed. Synced and restarted, with a live visual comparison and clean QML startup. Final visual acceptance remains pending.
+**DND state completed:** [DND-01 rev 1](quickshell-r1-dnd-state-proposal.md) was approved and implemented. Foundations and its manifest now include `icon/bell-off` and `bar/dnd-on`. The bar uses the matching crossed-out vector bell and blue tonal selected fill; the red error fill/font fallback was removed. Synced and restarted, with a live visual comparison and clean QML startup. The user subsequently accepted this DND appearance.
+
+The user subsequently said “Good” after the deployed DND change. The 20px runtime bell sizing and final placement are later user-approved refinements; the canonical vector stays 24px. Logo revs 1–3 are historical explorations; use only approved rev 4. Both brand strokes and trailing dot follow the active theme through R1Icon's foreground/accent roles. Applications retains the original app-grid vector.
+
+| Canonical asset | Penpot component ID |
+| --- | --- |
+| `brand/kmdot` | `354ba062-72fc-8008-8008-c87ee54dd13e` |
+| `icon/bell-off` | `354ba062-72fc-8008-8008-c87b2b9fbb23` |
+| `bar/dnd-on` | `354ba062-72fc-8008-8008-c87b2bc509c1` |
+
+### Pending implementation and verification
 
 1. **Native R1 Bluetooth passkey dialog:** unimplemented. blueman remains the working pairing agent; matching the R1 board requires additional BlueZ agent backend work.
 2. **Real backend action checks:** secured Wi-Fi authentication and failures, PIN/passkey pairing, service start/stop, power actions, recording deletion, and actual inline-reply delivery remain unverified. Fixture captures validate layouts only.
@@ -33,7 +43,7 @@ Latest deployment: `./sync/quickshell.sh` followed by an explicit Quickshell res
 4. **User review:** review is in progress. Collect further feedback and verify the final bar order/no-tooltip state visually if needed; there is no blanket acceptance of all modules.
 5. **Evidence durability:** the 44-of-45-reference comparison viewer and screenshots are under `/tmp` and may disappear after reboot. Re-capture missing evidence before relying on it. The viewer's desktop captures predate the latest user preferences.
 
-The user subsequently requested committing all changes and merging into `main`. Continue editing repo source and deploying only through the sync scripts.
+The full implementation was committed and delivered to `main`/`origin/main` as `5486179` (`feat(quickshell): implement Penpot R1 redesign and custom branding`): 69 files changed. The redesign branch also points to that commit; no conflict resolution or separate merge commit was required. The working tree was clean and local/remote main matched after delivery. No automated tests/build were run. Continue editing repo source and deploying only through the sync scripts.
 
 The latest implementation and review record is [quickshell-r1-local-review.md](quickshell-r1-local-review.md). Use that record and the fresh comparison viewer below; the older implementation entries are session history and do not independently prove complete parity.
 
@@ -42,7 +52,7 @@ The latest implementation and review record is [quickshell-r1-local-review.md](q
 - **Completed panel corrections:** Handy History now matches the Penpot selected-recording editor geometry and controls, including the playback track, play/pause control, Retry action, and outlined trash action. Copy and Save changes remain inside the selected recording card; only the status/count stays pinned. Handy opens on Models by default. Bluetooth `Pair new device` remains pinned at the bottom of its panel. Notification inline replies open a thread composer and call Quickshell's inline reply API for eligible live notifications. Handy capture: `/tmp/kmdot-handy-history-verified2.png`; notification preview: `/tmp/kmDot-notification-reply-preview.png`.
 - **Other recent review artifacts:** `/tmp/kmDot-handy-models-final.png`, `/tmp/kmDot-opencode-usage-daily-final.png`, `/tmp/kmDot-opencode-usage-models-redesign.png`, `/tmp/kmDot-notifications-redesign-2.png`, `/tmp/kmDot-handy-history-bottom-review.png`, `/tmp/kmDot-bluetooth-footer-final.png`, `/tmp/kmDot-notification-reply-preview.png`. These `/tmp` artifacts may be removed between sessions; use the live app and Penpot if absent.
 - **Earlier panel runtime verification:** after the inline-reply implementation, `./sync/quickshell.sh` completed, Quickshell restarted, and its log reached `Configuration Loaded`. The temporary visual fixture was removed before the final sync. The final repo and deployed config trees match; `git diff --check` passes. No automated tests were run, consistent with this config repository's instructions. Remaining icon lookup and VDPAU diagnostics are environmental; no QML type/property/binding errors appeared in the normal-config launch.
-- **Git delivery:** this redesign, user-requested top-bar refinements, canonical DND/logo additions and handoff records are included in the commit `feat(quickshell): implement Penpot R1 redesign and custom branding`, merged into `main` at the user’s request. Consult Git history for its ID; older “uncommitted” entries below are historical. Hardware/action checks and native passkey implementation remain pending.
+- **Git delivery:** this redesign, user-requested top-bar refinements, canonical DND/logo additions and handoff records are included in the commit `feat(quickshell): implement Penpot R1 redesign and custom branding`, merged into `main` at the user’s request. Commit ID: `5486179`; it is pushed to `origin/main`. Older “uncommitted” entries below are historical. Hardware/action checks and native passkey implementation remain pending.
 
 ### Suggested next session
 
