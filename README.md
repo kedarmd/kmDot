@@ -8,27 +8,37 @@ fish · ghostty · herdr · hyprland · nvim · starship · tmux · xdg-desktop-
 
 ## Screenshots
 
-The screenshots below were captured show the current Quickshell interface without an application window behind it.
+The screenshots below were captured on an empty Hyprland workspace with no application window behind the Quickshell interface. They document the current R1 redesign, including the shared launcher/popup shell, inline utility tray, responsive controls, and themed wallpaper surface.
+
+### Top bar
+
+![Quickshell top bar](./screenshots/quickshell-r2/bar.png)
 
 ### Launchers
 
-![Application launcher](./screenshots/launcher-apps.png)
-![kmDot launcher](./screenshots/launcher-kmdot.png)
-![Connections launcher](./screenshots/launcher-connections.png)
-![Keybinds launcher](./screenshots/launcher-keybinds.png)
-![System launcher](./screenshots/launcher-system.png)
-![Theme launcher](./screenshots/launcher-themes.png)
-![Clipboard launcher](./screenshots/launcher-clipboard.png)
+![Application launcher](./screenshots/quickshell-r2/launcher-apps.png)
+![kmDot launcher](./screenshots/quickshell-r2/launcher-kmdot.png)
+![Connections launcher](./screenshots/quickshell-r2/launcher-connections.png)
+![Keybinds launcher](./screenshots/quickshell-r2/launcher-keybinds.png)
+![System launcher](./screenshots/quickshell-r2/launcher-system.png)
+![Theme launcher](./screenshots/quickshell-r2/launcher-themes.png)
+![Clipboard launcher](./screenshots/quickshell-r2/launcher-clipboard.png)
+![Handy launcher](./screenshots/quickshell-r2/launcher-handy.png)
+![Wi-Fi launcher](./screenshots/quickshell-r2/launcher-wifi.png)
+![Bluetooth launcher](./screenshots/quickshell-r2/launcher-bluetooth.png)
 
-### Topbar Menus
+### Panels and menus
 
-![Wi-Fi menu](./screenshots/menu-wifi.png)
-![Bluetooth menu](./screenshots/menu-bluetooth.png)
-![Volume menu](./screenshots/menu-volume.png)
-![Brightness menu](./screenshots/menu-brightness.png)
-![Battery menu](./screenshots/menu-battery.png)
-![Calendar menu](./screenshots/menu-calendar.png)
-![Server mode menu](./screenshots/menu-server.png)
+![Wi-Fi menu](./screenshots/quickshell-r2/panel-wifi.png)
+![Bluetooth menu](./screenshots/quickshell-r2/panel-bluetooth.png)
+![Volume menu](./screenshots/quickshell-r2/panel-volume.png)
+![Display and brightness panel](./screenshots/quickshell-r2/panel-display.png)
+![Battery menu](./screenshots/quickshell-r2/panel-battery.png)
+![Calendar menu](./screenshots/quickshell-r2/panel-calendar.png)
+![Server mode menu](./screenshots/quickshell-r2/panel-server.png)
+![OpenCode usage panel](./screenshots/quickshell-r2/panel-opencode.png)
+![Handy panel](./screenshots/quickshell-r2/panel-handy.png)
+![Notification center](./screenshots/quickshell-r2/panel-notifications.png)
 
 ## Install
 
