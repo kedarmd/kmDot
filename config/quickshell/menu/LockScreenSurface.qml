@@ -12,6 +12,7 @@ WlSessionLockSurface {
 
   readonly property string fontName: "JetBrainsMono Nerd Font Propo"
   property date now: new Date()
+  readonly property bool transitionOut: root.shell.lockAuthenticating || root.shell.lockUnlocking
 
   Timer {
     interval: 1000
@@ -74,6 +75,15 @@ WlSessionLockSurface {
     border.color: Colors.border
     border.width: 1
     anchors.centerIn: parent
+    opacity: root.transitionOut ? 0 : 1
+    scale: root.transitionOut ? 0.98 : 1
+
+    Behavior on opacity {
+      NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+    }
+    Behavior on scale {
+      NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.InCubic }
+    }
 
     Column {
       anchors.fill: parent
@@ -142,6 +152,9 @@ WlSessionLockSurface {
             selectedTextColor: Colors.on_primary
             font.family: root.fontName
             font.pixelSize: 16
+            // QML's default password bullet has very little side bearing;
+            // match the Penpot credential rhythm with deliberate tracking.
+            font.letterSpacing: 4
             verticalAlignment: TextInput.AlignVCenter
             echoMode: TextInput.Password
             clip: true
@@ -201,6 +214,11 @@ WlSessionLockSurface {
     anchors.bottom: parent.bottom
     anchors.bottomMargin: 64
     spacing: 64
+    opacity: root.transitionOut ? 0 : 1
+
+    Behavior on opacity {
+      NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+    }
 
     Repeater {
       model: [

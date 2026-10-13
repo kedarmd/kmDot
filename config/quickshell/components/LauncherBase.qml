@@ -72,6 +72,7 @@ Item {
 
   // ---- state ----
   property bool opened: false
+  property bool presentationVisible: false
   property string query: ""
   property var pool: root.items
   property var results: []
@@ -114,7 +115,13 @@ Item {
   onQueryChanged: root.recompute()
   onPoolChanged: root.recompute()
   onOpenedChanged: {
-    if (root.opened) focusTimer.start()
+    if (root.opened) {
+      closePresentationTimer.stop()
+      root.presentationVisible = true
+      focusTimer.start()
+    } else {
+      closePresentationTimer.restart()
+    }
     root.onOpenedChange()
   }
   // Mode flips (e.g. Models ↔ History) swap the focus target.
@@ -370,6 +377,12 @@ Item {
   }
 
   Timer {
+    id: closePresentationTimer
+    interval: Tokens.motionStandard
+    onTriggered: root.presentationVisible = false
+  }
+
+  Timer {
     id: focusTimer
     interval: 60
     repeat: true
@@ -396,10 +409,10 @@ Item {
 
   PanelWindow {
     id: launcherWin
-    visible: root.opened
+    visible: root.presentationVisible
     // NOTE: Pos.primaryScreen (indexed), not .values (see PopupBase screen binding).
     screen: Pos.primaryScreen(Quickshell.screens)
-    color: Qt.rgba(0, 0, 0, 0.4)
+    color: Qt.rgba(0, 0, 0, 0)
     focusable: true
 
 
@@ -413,6 +426,14 @@ Item {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
+
+    Rectangle {
+      anchors.fill: parent
+      color: Qt.rgba(0, 0, 0, root.opened ? 0.4 : 0)
+      Behavior on color {
+        ColorAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+      }
+    }
 
     MouseArea {
       id: dimClick
@@ -429,6 +450,15 @@ Item {
       color: Colors.surface
       border.width: 1
       border.color: Colors.border
+      opacity: root.opened ? 1 : 0
+      scale: root.opened ? 1 : 0.96
+
+      Behavior on opacity {
+        NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+      }
+      Behavior on scale {
+        NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+      }
 
       MouseArea {
         id: cardClick
@@ -767,6 +797,14 @@ Item {
           height: bodyText.visible ? bodyText.height + 64 : 64
           radius: 16
           color: root.selectedIndex === index ? Colors.primary_container : "transparent"
+
+          Behavior on height {
+            NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+          }
+
+          Behavior on color {
+            ColorAnimation { duration: Tokens.motionFast; easing.type: Easing.OutCubic }
+          }
 
           Row {
             anchors {

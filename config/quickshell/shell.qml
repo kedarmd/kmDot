@@ -122,9 +122,10 @@ Scope {
     onCompleted: result => {
       lockState.password = ""
       if (result === PamResult.Success) {
-        sessionLock.locked = false
-        shellRoot.lockRequested = false
+        lockState.unlocking = true
+        unlockTransitionTimer.restart()
       } else {
+        lockState.unlocking = false
         shellRoot.lockRequested = false
         lockError = true
       }
@@ -138,6 +139,7 @@ Scope {
       shellRoot.lockRequested = true
       lockError = false
       lockState.password = ""
+      lockState.unlocking = false
       sessionLock.locked = true
     }
     function isLocked(): bool { return sessionLock.locked }
@@ -150,10 +152,22 @@ Scope {
     property string password: ""
     property bool error: false
     property bool authenticating: lockPam.active
+    property bool unlocking: false
   }
   property alias lockPassword: lockState.password
   property alias lockError: lockState.error
   readonly property bool lockAuthenticating: lockPam.active
+  readonly property bool lockUnlocking: lockState.unlocking
+
+  Timer {
+    id: unlockTransitionTimer
+    interval: Tokens.motionStandard
+    onTriggered: {
+      sessionLock.locked = false
+      shellRoot.lockRequested = false
+      lockState.unlocking = false
+    }
+  }
 
   function submitLockPassword() {
     if (!sessionLock.secure || lockPam.active || !lockState.password.length) return

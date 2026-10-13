@@ -8,7 +8,7 @@ import "../components/popuppos.js" as Pos
 
 PanelWindow {
   id: root
-  visible: root.opened
+  visible: root.presentationVisible
   color: Qt.rgba(0, 0, 0, 0)
   focusable: false
 
@@ -27,12 +27,28 @@ PanelWindow {
   }
 
   property bool opened: false
+  property bool presentationVisible: false
   property var scope: null
   property int maxVisible: 5
   property real popupWidth: 424
   property real popupSpacing: 8
   property real popupTopMargin: 52
   property real popupRightMargin: 12
+
+  onOpenedChanged: {
+    if (root.opened) {
+      closePresentationTimer.stop()
+      root.presentationVisible = true
+    } else {
+      closePresentationTimer.restart()
+    }
+  }
+
+  Timer {
+    id: closePresentationTimer
+    interval: Tokens.motionStandard
+    onTriggered: root.presentationVisible = false
+  }
 
   readonly property string sockPath: {
     const rt = Quickshell.env("XDG_RUNTIME_DIR")
@@ -158,6 +174,15 @@ PanelWindow {
       }
       spacing: root.popupSpacing
       width: root.popupWidth
+      opacity: root.opened ? 1 : 0
+      scale: root.opened ? 1 : 0.96
+
+      Behavior on opacity {
+        NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+      }
+      Behavior on scale {
+        NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+      }
 
       Repeater {
         model: popupModel

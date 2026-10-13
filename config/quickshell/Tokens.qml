@@ -10,6 +10,11 @@ import qs
 // No per-theme files are touched: containers/state-layers are blended from
 // the existing palette, keeping the exact same color schemes.
 Singleton {
+  // Shared motion timings for the keyboard-driven shell.
+  readonly property int motionFast: 120
+  readonly property int motionStandard: 180
+  readonly property int motionEmphasized: 240
+
   // ---- public helpers (used by consumers) ----
   function mix(c1, c2, t) {
     return Qt.rgba(c1.r * (1 - t) + c2.r * t,

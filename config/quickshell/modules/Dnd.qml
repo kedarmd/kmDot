@@ -32,7 +32,7 @@ Item {
     }
 
     Rectangle {
-      visible: root.hasNotifications && !root.dndOn
+      opacity: root.hasNotifications && !root.dndOn ? 1 : 0
       anchors.top: parent.top
       anchors.right: parent.right
       anchors.topMargin: 2
@@ -41,6 +41,10 @@ Item {
       height: 6
       radius: 3
       color: Colors.primary
+
+      Behavior on opacity {
+        NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+      }
     }
   }
 

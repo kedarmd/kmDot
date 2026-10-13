@@ -22,6 +22,7 @@ Rectangle {
   property string errorMessage: ""
   property bool showError: false
   property bool authenticating: false
+  property bool signingOut: false
   property string selectedUser: userModel.lastUser || ""
   property int rememberedSession: sessionModel.lastIndex
   property date now: new Date()
@@ -96,6 +97,15 @@ Rectangle {
     border.width: 1
     x: Math.max(16, Math.min(root.width - width - 16, root.width * 0.694 - width / 2))
     anchors.verticalCenter: parent.verticalCenter
+    opacity: root.signingOut ? 0 : 1
+    scale: root.signingOut ? 0.98 : 1
+
+    Behavior on opacity {
+      NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+    }
+    Behavior on scale {
+      NumberAnimation { duration: 240; easing.type: Easing.InCubic }
+    }
 
     Column {
       anchors.fill: parent
@@ -222,6 +232,9 @@ Rectangle {
             placeholderTextColor: secondaryColor
             font.family: root.fontName
             font.pixelSize: 16
+            // Give password bullets the same deliberate tracking as the
+            // approved Penpot credential component.
+            font.letterSpacing: 4
             background: Item { }
             onTextChanged: if (root.showError) root.showError = false
             Keys.onReturnPressed: root.login()
@@ -412,6 +425,7 @@ Rectangle {
   function login() {
     if (authenticating || !selectedUser || !password.text) return
     authenticating = true
+    signingOut = true
     showError = false
     sddm.login(selectedUser, password.text, rememberedSession)
   }
@@ -435,6 +449,7 @@ Rectangle {
     function onLoginSucceeded() { root.authenticating = false }
     function onLoginFailed() {
       root.authenticating = false
+      root.signingOut = false
       password.text = ""
       errorMessage = "Incorrect password"
       showError = true

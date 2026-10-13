@@ -76,6 +76,10 @@ Item {
                  : parent.active ? Colors.on_primary_container
                  : mouseArea.containsMouse ? Colors.text
                  : Colors.text_alt
+
+            Behavior on color {
+              ColorAnimation { duration: Tokens.motionFast }
+            }
           }
 
           StateLayer {

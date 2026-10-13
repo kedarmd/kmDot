@@ -14,6 +14,10 @@ Item {
   implicitHeight: 32
   width: Math.max(36, moduleLabel.implicitWidth + 12)
 
+  Behavior on width {
+    NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+  }
+
   // -- display props (subclass supplies) --
   property string glyph: "" // icon part; "" = text-only (Clock)
   property string iconName: ""
@@ -76,6 +80,13 @@ Item {
         opacity: root.dimmed ? 0.4 : 1.0
         rotation: root.busy ? root.spinAngle : 0
         transformOrigin: Item.Center
+
+        Behavior on color {
+          ColorAnimation { duration: Tokens.motionFast }
+        }
+        Behavior on opacity {
+          NumberAnimation { duration: Tokens.motionFast }
+        }
       }
 
       Text {
@@ -86,6 +97,13 @@ Item {
         font.weight: Font.Medium
         color: root.active ? root.on_color : root.foreground
         opacity: root.dimmed ? 0.4 : 1.0
+
+        Behavior on color {
+          ColorAnimation { duration: Tokens.motionFast }
+        }
+        Behavior on opacity {
+          NumberAnimation { duration: Tokens.motionFast }
+        }
       }
     }
   }
