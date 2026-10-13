@@ -6,11 +6,9 @@ import "../components"
 Item {
   id: root
   implicitHeight: 32
-  width: Math.max(30, label.implicitWidth + 20)
+  width: 36
 
   property bool attentionOn: false
-
-  readonly property string tooltipText: "Attention mode: " + (root.attentionOn ? "On" : "Off")
 
   function refresh() {
     statusProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/attention-mode.sh status"])
@@ -21,7 +19,7 @@ Item {
   ModulePill {
     id: pill
     anchors.centerIn: parent
-    width: Math.max(30, label.implicitWidth + 20)
+    width: root.width
     height: 32
     active: root.attentionOn
     fill: Tokens.primaryContainer
@@ -34,11 +32,7 @@ Item {
       text: root.attentionOn ? "\uf06e" : "\uf070"
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 20
-      color: root.attentionOn ? Tokens.on_primary_container : Colors.text_alt
-      opacity: root.attentionOn || mouse.containsMouse ? 1.0 : 0.0
-      Behavior on opacity {
-        NumberAnimation { duration: 120 }
-      }
+      color: root.attentionOn ? Tokens.on_primary_container : Colors.text
     }
   }
 
