@@ -4,7 +4,7 @@ import "../components"
 
 Item {
   id: root
-  implicitHeight: 30
+  implicitHeight: 32
   clip: true
 
   property bool open: false
@@ -21,7 +21,7 @@ Item {
 
   default property alias modules: modulesRow.data
 
-  readonly property real chevronWidth: chevronGlyph.implicitWidth + 20
+  readonly property real chevronWidth: 36
   readonly property real modulesWidth: modulesRow.implicitWidth
 
   width: root.open ? chevronWidth + modulesWidth + 8 : chevronWidth
@@ -33,7 +33,7 @@ Item {
   Rectangle {
     id: chevronBox
     width: root.chevronWidth
-    height: 30
+    height: 32
     radius: height / 2
     anchors.verticalCenter: parent.verticalCenter
     color: root.open ? Tokens.primaryContainer : "transparent"
@@ -41,13 +41,14 @@ Item {
       ColorAnimation { duration: 180 }
     }
 
-    Text {
+    R1Icon {
       id: chevronGlyph
       anchors.centerIn: parent
-      text: root.open ? "\uf105" : "\uf104"
+      glyph: "\uf105"
+      rotation: root.open ? 0 : 180
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 15
-      color: root.open ? Tokens.on_primary_container : Colors.text_alt
+      font.pixelSize: 24
+      color: root.open ? Tokens.on_primary_container : Colors.text
     }
 
     StateLayer {
@@ -90,7 +91,7 @@ Item {
     id: closeTimer
     interval: 150
     onTriggered: {
-      if (!root.stayOpen) root.open = false
+      if (!root.stayOpen && !hoverArea.containsMouse) root.open = false
     }
   }
 }

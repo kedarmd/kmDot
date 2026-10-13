@@ -29,7 +29,7 @@ PanelWindow {
   property bool opened: false
   property var scope: null
   property int maxVisible: 5
-  property real popupWidth: 360
+  property real popupWidth: 424
   property real popupSpacing: 8
   property real popupTopMargin: 52
   property real popupRightMargin: 12
@@ -93,6 +93,14 @@ PanelWindow {
     if (diff < 3600) return Math.floor(diff / 60) + "m"
     if (diff < 86400) return Math.floor(diff / 3600) + "h"
     return Math.floor(diff / 86400) + "d"
+  }
+
+  function actionCount(actions) {
+    if (!actions) return 0
+    return actions.count !== undefined ? actions.count : (actions.length || 0)
+  }
+  function actionAt(actions, index) {
+    return actions && actions.get ? actions.get(index) : actions[index]
   }
 
   ListModel {
@@ -159,9 +167,9 @@ PanelWindow {
           required property int index
           required property var modelData
           width: popupColumn.width
-          height: cardBody.implicitHeight + 24
-          radius: 16
-          color: modelData.urgency === 2 ? Tokens.errorContainer : Tokens.surfaceContainerLow
+          height: Math.max(240, cardBody.implicitHeight + 48)
+          radius: 32
+          color: Colors.surface
           border.width: 1
           border.color: modelData.urgency === 2 ? Colors.error : Colors.border
           opacity: 1
@@ -178,13 +186,14 @@ PanelWindow {
               top: parent.top
               left: parent.left
               right: parent.right
-              margins: 12
+              margins: 24
             }
-            spacing: 6
+            spacing: 16
 
             Row {
               width: parent.width
-              spacing: 8
+              height: 48
+              spacing: 16
 
               Image {
                 anchors.verticalCenter: parent.verticalCenter
@@ -198,21 +207,22 @@ PanelWindow {
                   if (ic.startsWith("/") || ic.startsWith("file://") || ic.startsWith("image://")) return ic
                   return Quickshell.iconPath(ic)
                 }
-                width: 18
-                height: 18
-                sourceSize: Qt.size(18, 18)
+                width: 24
+                height: 24
+                sourceSize: Qt.size(24, 24)
                 smooth: true
               }
 
-              Text {
+              R1Icon {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: {
                   const ic = modelData.appIcon || ""
                   return ic === "" || ic.startsWith("\\u")
                 }
-                text: "\uf0f3"
+                glyph: "\uf0f3"
                 font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 14
+                width: 24
+                font.pixelSize: 24
                 color: Colors.text_alt
               }
 
@@ -220,8 +230,8 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width - 80
                 text: modelData.appName || "Notification"
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 11
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 24
                 font.weight: Font.DemiBold
                 color: Colors.text
                 elide: Text.ElideRight
@@ -229,17 +239,22 @@ PanelWindow {
 
               Text {
                 anchors.verticalCenter: parent.verticalCenter
+                visible: false
                 text: root.relativeTime(modelData.timestamp)
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 10
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 12
                 color: Colors.muted
               }
 
-              Text {
+              R1Icon {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "\uf00d"
+                glyph: "\uf00d"
                 font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 12
+                width: 24
+                height: 24
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                font.pixelSize: 16
                 color: Colors.muted
 
                 MouseArea {
@@ -254,8 +269,8 @@ PanelWindow {
               width: parent.width
               visible: text !== ""
               text: modelData.summary
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 13
+              font.family: "JetBrainsMono Nerd Font"
+              font.pixelSize: 20
               font.weight: Font.Bold
               color: modelData.urgency === 2 ? Colors.error : Colors.text
               elide: Text.ElideRight
@@ -267,7 +282,7 @@ PanelWindow {
               width: parent.width
               visible: text !== ""
               text: modelData.body
-              font.family: "JetBrainsMono Nerd Font Propo"
+              font.family: "JetBrainsMono Nerd Font"
               font.pixelSize: 12
               color: Colors.text_alt
               elide: Text.ElideRight
@@ -277,22 +292,37 @@ PanelWindow {
             }
 
             Row {
-              visible: modelData.hasActions
+              visible: modelData.hasActions || (modelData._ref && modelData._ref.hasInlineReply)
               width: parent.width
               spacing: 6
 
               Repeater {
-                model: modelData.hasActions ? modelData.actions : []
+                model: root.actionCount(card.modelData.actions)
+                  + (card.modelData._ref && card.modelData._ref.hasInlineReply ? 1 : 0)
 
                 PillButton {
-                  required property var modelData
-                  height: 24
-                  text: modelData.text || ""
-                  textSize: 10
-                  horizontalPadding: 8
+                  required property int index
+                  height: 40
+                  readonly property bool replyAction: card.modelData._ref
+                    && card.modelData._ref.hasInlineReply
+                    && index === root.actionCount(card.modelData.actions)
+                  text: replyAction ? "Reply" : (root.actionAt(card.modelData.actions, index).text || "")
+                  textSize: 14
+                  horizontalPadding: 16
+                  filled: true
+                  active: true
                   onClicked: {
-                    if (modelData.invoke) modelData.invoke()
-                    root.dismissIndex(card.index)
+                    if (replyAction) {
+                      if (root.scope && root.scope.notificationReplyPopup)
+                        root.scope.notificationReplyPopup.present(card.modelData._ref, [{
+                          text: [card.modelData.summary, card.modelData.body].filter(Boolean).join("\n"),
+                          when: "now"
+                        }])
+                    } else {
+                      const action = root.actionAt(card.modelData.actions, index)
+                      if (action.invoke) action.invoke()
+                      root.dismissIndex(card.index)
+                    }
                   }
                 }
               }

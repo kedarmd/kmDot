@@ -53,7 +53,9 @@ BarModule {
     return ""
   }
   text: capacity + "%"
-  active: root.charging || root.capacity <= 30
+  iconName: "battery"
+  active: false
+  foreground: root.capacity <= 15 ? Colors.error : root.capacity <= 30 ? Colors.warning : Colors.text
   fill: root.charging ? Tokens.successContainer
       : root.capacity <= 15 ? Tokens.errorContainer
       : Tokens.warningContainer

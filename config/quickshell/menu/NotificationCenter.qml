@@ -8,9 +8,10 @@ import "../components"
 PopupBase {
   id: root
   sockName: "kmdot-notifications"
-  cardWidth: 380
-  cardChrome: 24
-  cardMaxHeight: root.height - 80
+  cardWidth: 424
+  cardChrome: 48
+  cardMinHeight: root.groups.length > 0 ? 688 : 400
+  cardMaxHeight: Math.min(688, root.height - 80)
 
   property int maxHistory: 100
   property var groups: []
@@ -47,6 +48,7 @@ PopupBase {
           summary: n.summary || "",
           body: n.body || "",
           urgency: n.urgency,
+          hasInlineReply: !!n.hasInlineReply,
           timestamp: Date.now()
         })
       }
@@ -57,13 +59,14 @@ PopupBase {
 
   function addToHistory(notif) {
     historyModel.insert(0, {
-      liveId: -1,
+      liveId: notif.id,
       appName: notif.appName || "",
       appIcon: notif.appIcon || "",
       desktopEntry: notif.desktopEntry || "",
       summary: notif.summary || "",
       body: notif.body || "",
       urgency: notif.urgency,
+      hasInlineReply: !!notif.hasInlineReply,
       timestamp: Date.now()
     })
     while (historyModel.count > root.maxHistory)
@@ -86,6 +89,18 @@ PopupBase {
     }
     saveHistory()
     rebuildGroups()
+  }
+
+  function openReply(entry) {
+    if (!entry || entry.liveId <= 0 || !root.scope || !root.scope.notificationReplyPopup) return
+    const notif = root.findLiveById(entry.liveId)
+    if (!notif || !notif.hasInlineReply) return
+    const group = root.groups.find(g => g.appName === entry.appName)
+    const thread = group ? group.entries.slice().reverse().map(e => ({
+      text: [e.summary, e.body].filter(Boolean).join("\n"),
+      when: root.relativeTime(e.timestamp)
+    })) : []
+    root.scope.notificationReplyPopup.present(notif, thread)
   }
 
   function dismissGroup(appName) {
@@ -142,6 +157,7 @@ PopupBase {
         summary: n.summary,
         body: n.body,
         urgency: n.urgency,
+        hasInlineReply: !!n.hasInlineReply,
         timestamp: n.timestamp
       })
     }
@@ -153,9 +169,18 @@ PopupBase {
     for (let i = 0; i < order.length; i++) {
       const g = map[order[i]]
       g.entries.reverse()
-      g.expanded = oldExpanded[g.appName] || false
+      g.expanded = Object.prototype.hasOwnProperty.call(oldExpanded, g.appName)
+        ? oldExpanded[g.appName]
+        : false
       newGroups.push(g)
     }
+    newGroups.sort((a, b) => {
+      const aTime = a.entries.length ? a.entries[0].timestamp : 0
+      const bTime = b.entries.length ? b.entries[0].timestamp : 0
+      return bTime - aTime
+    })
+    if (root.groups.length === 0 && newGroups.length > 0)
+      newGroups[0].expanded = true
     root.groups = newGroups
   }
 
@@ -237,126 +262,120 @@ PopupBase {
   Row {
     id: headerRow
     width: parent.width
-    spacing: 8
+    height: 48
+    spacing: 16
 
-    Text {
+    R1Icon {
       anchors.verticalCenter: parent.verticalCenter
-      text: ""
+      glyph: ""
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 18
+      font.pixelSize: 24
       color: Colors.text
     }
 
     Text {
       anchors.verticalCenter: parent.verticalCenter
       text: "Notifications"
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 16
+      font.family: "JetBrainsMono Nerd Font"
+      font.pixelSize: 24
       font.weight: Font.DemiBold
       color: Colors.text
     }
 
-    Text {
-      anchors.verticalCenter: parent.verticalCenter
-      visible: historyModel.count > 0
-      text: historyModel.count
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 11
-      color: Colors.muted
-    }
-
     Item { width: 1; height: 1 }
+  }
 
-    PillButton {
+  Item {
+    width: parent.width
+    height: 64
+
+    Column {
+      anchors.left: parent.left
+      anchors.right: dndSwitch.left
+      anchors.rightMargin: 12
       anchors.verticalCenter: parent.verticalCenter
-      height: 26
-      active: DnDState.dndEnabled
-      fillColor: DnDState.dndEnabled ? Colors.warning : "transparent"
-      activeTextColor: DnDState.dndEnabled ? Colors.text : Colors.text_alt
-      glyph: DnDState.dndEnabled ? "" : ""
-      glyphSize: 11
-      text: DnDState.dndEnabled ? "DnD On" : "DnD Off"
-      textSize: 10
-      horizontalPadding: 8
-      onClicked: DnDState.dndEnabled = !DnDState.dndEnabled
+      spacing: 2
+
+      Text { text: "Do not disturb"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; font.weight: Font.DemiBold }
+      Text { width: parent.width; text: root.groups.length === 0 && !DnDState.dndEnabled ? "Notifications are allowed" : "Quiet notifications until you turn it off"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
     }
 
     Rectangle {
+      id: dndSwitch
+      anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
-      height: 26
-      width: clearRow.implicitWidth + 14
-      radius: height / 2
-      color: clearHover.containsMouse ? Tokens.stateHover : "transparent"
-      border.width: 1
-      border.color: Tokens.outlineVariant
-      visible: historyModel.count > 0
+      width: 52
+      height: 30
+      radius: 15
+      color: DnDState.dndEnabled ? Colors.primary : Tokens.outlineVariant
 
-      Row {
-        id: clearRow
-        anchors.centerIn: parent
-        spacing: 4
-
-        Text {
-          anchors.verticalCenter: parent.verticalCenter
-          text: ""
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 10
-          color: Colors.text_alt
-        }
-
-        Text {
-          anchors.verticalCenter: parent.verticalCenter
-          text: "Clear"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 10
-          color: Colors.text_alt
-        }
+      Rectangle {
+        anchors.verticalCenter: parent.verticalCenter
+        x: DnDState.dndEnabled ? parent.width - width - 4 : 4
+        width: 22
+        height: 22
+        radius: 11
+        color: DnDState.dndEnabled ? Colors.base : Colors.text_alt
+        Behavior on x { NumberAnimation { duration: 140 } }
       }
 
       MouseArea {
-        id: clearHover
         anchors.fill: parent
-        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.clearAll()
+        onClicked: DnDState.dndEnabled = !DnDState.dndEnabled
       }
     }
-  }
-
-  Rectangle {
-    width: parent.width
-    height: 1
-    color: Tokens.divider
   }
 
   Text {
     width: parent.width
-    visible: root.groups.length === 0
-    text: "No notifications"
-    font.family: "JetBrainsMono Nerd Font Propo"
-    font.pixelSize: 13
-    color: Colors.muted
-    horizontalAlignment: Text.AlignHCenter
-    topPadding: 40
-    bottomPadding: 40
+    visible: root.groups.length > 0
+    text: "TODAY"
+    font.family: "JetBrainsMono Nerd Font"
+    font.pixelSize: 12
+    color: Colors.text_alt
   }
 
-  Repeater {
-    id: groupsRepeater
-    model: root.groups
+  Flickable {
+    id: groupsViewport
+    width: parent.width
+    height: Math.min(groupsContent.implicitHeight, Math.max(120, Math.min(400, root.height - 330)))
+    contentHeight: groupsContent.implicitHeight
+    clip: true
+    boundsBehavior: Flickable.StopAtBounds
+    flickableDirection: Flickable.VerticalFlick
 
-    delegate: Column {
+    Column {
+      id: groupsContent
+      width: parent.width - 12
+      spacing: 12
+
+      Column {
+        width: parent.width
+        visible: root.groups.length === 0
+        spacing: 24
+        Item { width: 1; height: 24 }
+        R1Icon { anchors.horizontalCenter: parent.horizontalCenter; iconName: "check"; font.pixelSize: 24; color: Colors.text }
+        Text { width: parent.width; text: "All caught up."; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text; horizontalAlignment: Text.AlignHCenter }
+        Text { width: parent.width; text: "New notifications will appear here."; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; color: Colors.text_alt; horizontalAlignment: Text.AlignHCenter }
+      }
+
+      Repeater {
+        id: groupsRepeater
+        model: root.groups
+
+        delegate: Column {
       id: groupCol
-      width: parent.width
+      width: groupsContent.width
       property var groupData: modelData
 
       Rectangle {
         width: groupCol.width
         height: groupCol.groupData.expanded
           ? groupHeaderCol.height + expandedCol.height + 8
-          : collapsedRow.height
-        radius: 8
-        color: groupHover.containsMouse ? Tokens.stateHover : "transparent"
+          : collapsedRow.height + collapsedSummary.implicitHeight + 12
+        radius: 16
+        color: groupHover.containsMouse ? Tokens.surfaceContainerHighest : Tokens.surfaceContainer
 
         MouseArea {
           id: groupHover
@@ -391,10 +410,10 @@ PopupBase {
               smooth: true
             }
 
-            Text {
+            R1Icon {
               anchors.verticalCenter: parent.verticalCenter
               visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) === ""
-              text: ""
+              glyph: ""
               font.family: "JetBrainsMono Nerd Font Propo"
               font.pixelSize: 14
               color: Colors.text
@@ -402,57 +421,58 @@ PopupBase {
 
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: groupCol.groupData.appName
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 13
+              text: groupCol.groupData.appName + (groupCol.groupData.entries.length > 1 ? " · " + groupCol.groupData.entries.length : "")
+              font.family: "JetBrainsMono Nerd Font"
+              font.pixelSize: 14
               font.weight: Font.DemiBold
               color: Colors.text
               elide: Text.ElideRight
               width: parent.width - 120
             }
 
-            Rectangle {
-              anchors.verticalCenter: parent.verticalCenter
-              height: 18
-              width: countText.implicitWidth + 10
-              radius: 9
-              color: Colors.primary
-              visible: groupCol.groupData.entries.length > 1
-
-              Text {
-                id: countText
-                anchors.centerIn: parent
-                text: groupCol.groupData.entries.length
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 10
-                font.weight: Font.Bold
-                color: Colors.surface
-              }
-            }
-
             Item { width: 1; height: 1 }
 
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              text: root.relativeTime(groupCol.groupData.entries[groupCol.groupData.entries.length - 1].timestamp)
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 10
+              text: root.relativeTime(groupCol.groupData.entries[0].timestamp)
+              font.family: "JetBrainsMono Nerd Font"
+              font.pixelSize: 12
               color: Colors.muted
             }
 
-            Text {
+            Item {
               anchors.verticalCenter: parent.verticalCenter
-              text: ""
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 11
-              color: Colors.muted
+              width: 24
+              height: 24
+
+              R1Icon {
+                anchors.centerIn: parent
+                glyph: ""
+                font.family: "JetBrainsMono Nerd Font Propo"
+                font.pixelSize: 16
+                color: Colors.text_alt
+              }
 
               MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.dismissGroup(groupCol.groupData.appName)
+                onClicked: {
+                  mouse.accepted = true
+                  root.dismissGroup(groupCol.groupData.appName)
+                }
               }
             }
+          }
+
+          Text {
+            id: collapsedSummary
+            visible: !groupCol.groupData.expanded
+            width: parent.width
+            text: groupCol.groupData.entries.length > 0 ? groupCol.groupData.entries[0].summary : ""
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 12
+            color: Colors.text_alt
+            elide: Text.ElideRight
           }
 
           Column {
@@ -476,10 +496,10 @@ PopupBase {
                 smooth: true
               }
 
-              Text {
+              R1Icon {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: root.resolveIcon(groupCol.groupData.desktopEntry, groupCol.groupData.appIcon) === ""
-                text: ""
+                glyph: ""
                 font.family: "JetBrainsMono Nerd Font Propo"
                 font.pixelSize: 14
                 color: Colors.text
@@ -487,26 +507,35 @@ PopupBase {
 
               Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: groupCol.groupData.appName + (groupCol.groupData.entries.length > 1 ? " (" + groupCol.groupData.entries.length + ")" : "")
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 13
+                text: groupCol.groupData.appName + (groupCol.groupData.entries.length > 1 ? " · " + groupCol.groupData.entries.length : "")
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 14
                 font.weight: Font.DemiBold
                 color: Colors.text
+                elide: Text.ElideRight
+                width: parent.width - 60
               }
 
-              Item { width: 1; height: 1 }
-
-              Text {
+              Item {
                 anchors.verticalCenter: parent.verticalCenter
-                text: ""
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 11
-                color: Colors.muted
+                width: 24
+                height: 24
+
+                R1Icon {
+                  anchors.centerIn: parent
+                  glyph: ""
+                  font.family: "JetBrainsMono Nerd Font Propo"
+                  font.pixelSize: 16
+                  color: Colors.text_alt
+                }
 
                 MouseArea {
                   anchors.fill: parent
                   cursorShape: Qt.PointingHandCursor
-                  onClicked: root.dismissGroup(groupCol.groupData.appName)
+                  onClicked: {
+                    mouse.accepted = true
+                    root.dismissGroup(groupCol.groupData.appName)
+                  }
                 }
               }
             }
@@ -528,12 +557,15 @@ PopupBase {
               model: groupCol.groupData.entries
 
               delegate: Rectangle {
+                id: notificationEntry
+                required property var modelData
+                required property int index
+                readonly property var liveNotification: root.findLiveById(modelData.liveId)
                 width: expandedCol.width
                 height: entryInner.implicitHeight + 12
-                radius: 6
+                radius: 8
                 color: entryHover.containsMouse ? Tokens.stateHover : "transparent"
-                border.width: 1
-                border.color: Tokens.outlineVariant
+                border.width: 0
 
                 MouseArea {
                   id: entryHover
@@ -547,56 +579,95 @@ PopupBase {
                     left: parent.left
                     right: parent.right
                     verticalCenter: parent.verticalCenter
-                    margins: 8
+                    leftMargin: 8
+                    rightMargin: 0
                   }
                   spacing: 1
 
                   Row {
+                    id: entryHeaderRow
                     width: parent.width
                     spacing: 4
 
                     Text {
+                      anchors.verticalCenter: parent.verticalCenter
                       text: modelData.summary || ""
-                      font.family: "JetBrainsMono Nerd Font Propo"
-                      font.pixelSize: 11
-                      font.weight: Font.Bold
+                      font.family: "JetBrainsMono Nerd Font"
+                      font.pixelSize: index === 0 ? 16 : 12
+                      font.weight: index === 0 ? Font.Bold : Font.Normal
                       color: modelData.urgency === 2 ? Colors.error : Colors.text
                       elide: Text.ElideRight
-                      width: parent.width - 80
+                      width: Math.max(0, parent.width - entryTime.implicitWidth - entryClose.width - entryHeaderRow.spacing * 2)
                     }
 
                     Text {
+                      id: entryTime
+                      anchors.verticalCenter: parent.verticalCenter
                       text: root.relativeTime(modelData.timestamp)
-                      font.family: "JetBrainsMono Nerd Font Propo"
-                      font.pixelSize: 9
+                      font.family: "JetBrainsMono Nerd Font"
+                      font.pixelSize: 12
                       color: Colors.muted
                     }
 
-                    Text {
-                      text: ""
-                      font.family: "JetBrainsMono Nerd Font Propo"
-                      font.pixelSize: 10
-                      color: Colors.muted
+                    Item {
+                      id: entryClose
+                      anchors.verticalCenter: parent.verticalCenter
+                      width: 24
+                      height: 24
+
+                      R1Icon {
+                        anchors.centerIn: parent
+                        glyph: ""
+                        font.family: "JetBrainsMono Nerd Font Propo"
+                        font.pixelSize: 16
+                        color: Colors.text_alt
+                      }
 
                       MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: root.dismissEntry(modelData)
+                        onClicked: {
+                          mouse.accepted = true
+                          root.dismissEntry(modelData)
+                        }
                       }
                     }
                   }
 
                   Text {
                     width: parent.width
-                    visible: text !== ""
+                    visible: index === 0 && text !== ""
                     text: modelData.body
-                    font.family: "JetBrainsMono Nerd Font Propo"
-                    font.pixelSize: 10
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: index === 0 ? 14 : 12
                     color: Colors.text_alt
                     elide: Text.ElideRight
                     maximumLineCount: 2
                     wrapMode: Text.Wrap
                     textFormat: Text.StyledText
+                  }
+
+                  Flow {
+                    width: parent.width
+                    spacing: 8
+                    visible: notificationEntry.index === 0 && !!notificationEntry.liveNotification
+                    Repeater {
+                      model: notificationEntry.liveNotification ? notificationEntry.liveNotification.actions : []
+                      PillButton {
+                        required property var modelData
+                        height: 40; textSize: 14; filled: true; active: true
+                        text: modelData.text || "Open"
+                        onClicked: {
+                          modelData.invoke()
+                          root.dismissEntry(notificationEntry.modelData)
+                        }
+                      }
+                    }
+                    PillButton {
+                      visible: !!notificationEntry.liveNotification && notificationEntry.liveNotification.hasInlineReply
+                      height: 40; text: "Reply"; textSize: 14; filled: true; active: true
+                      onClicked: root.openReply(notificationEntry.modelData)
+                    }
                   }
                 }
               }
@@ -604,6 +675,54 @@ PopupBase {
           }
         }
       }
+    }
+      }
+    }
+
+    Rectangle {
+      visible: groupsViewport.contentHeight > groupsViewport.height
+      anchors.right: parent.right
+      width: 3
+      height: parent.height
+      radius: 2
+      color: Colors.surface_alt
+
+      Rectangle {
+        width: parent.width
+        height: groupsViewport.contentHeight > 0
+          ? Math.max(24, parent.height * groupsViewport.height / groupsViewport.contentHeight)
+          : parent.height
+        y: groupsViewport.contentHeight > groupsViewport.height
+          ? groupsViewport.contentY * (parent.height - height) / (groupsViewport.contentHeight - groupsViewport.height)
+          : 0
+        radius: 2
+        color: Colors.muted
+      }
+    }
+  }
+
+  bottomContent: Item {
+    width: parent.width
+    height: root.groups.length > 0 ? 40 : 0
+    visible: root.groups.length > 0
+    Text {
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+      text: historyModel.count + (historyModel.count === 1 ? " notification" : " notifications")
+      font.family: "JetBrainsMono Nerd Font"
+      font.pixelSize: 12
+      color: Colors.muted
+    }
+    PillButton {
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+      width: 120
+      height: 40
+      filled: true
+      active: true
+      text: "Clear all"
+      enabled: historyModel.count > 0
+      onClicked: root.clearAll()
     }
   }
 }

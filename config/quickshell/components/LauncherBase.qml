@@ -13,13 +13,28 @@ Item {
   // ---- configuration ----
   property string sockName: "kmdot-launcher"
   property string title: "Search"
+  property string searchPlaceholder: ""
+  // Compact destination title. The search placeholder remains `title`.
+  property string headerTitle: ""
+  property string resultsLabel: ""
+  property string listStatusText: ""
+  property string listStatusActionText: ""
+  property string listStatusActionGlyph: ""
+  property real listStatusActionWidth: 0
+  property Component listToolbar: null
+  property real cardHeight: 608
+  property real listTopMargin: 16
+  property bool themePreview: false
+  // Optional palette for a live theme preview; defaults to the active shell palette.
+  property var themePreviewPalette: null
   // Title row shown in the search bar's slot when searchEnabled is false
   // (e.g. "Handy History"). Empty = no header row.
   property string headerText: ""
   property string headerGlyph: ""
   property var items: []
-  property string footerHint: "\u2191\u2193 navigate \u00b7 \u23ce select \u00b7 esc close"
-  property bool countShown: true
+  property string footerHint: "\u2191\u2193 navigate \u00b7 \u23ce select"
+  property string closeHint: "esc  Close"
+  property bool countShown: false
   property string countNoun: "item"
   property bool deactivatable: true
   // If false, activate() keeps the launcher open and the subclass closes it itself
@@ -31,11 +46,13 @@ Item {
   property bool loading: false
   property string loadingText: "Loading\u2026"
   property string emptyText: "No matches"
+  property string emptyIconName: "search"
   // Optional right-aligned footer pill (a state indicator + action, e.g. wifi on/off).
   // Rendered only when footerActionText is non-empty; Tab triggers footerActionClicked().
   property string footerActionText: ""
   property string footerActionGlyph: ""
   property bool footerActionActive: false
+  property bool footerActionVisible: true
   // Prompt (password) mode: turns the search input into a masked field and swaps
   // the results list for a centered prompt. Used for e.g. wifi connection passwords.
   property bool promptMode: false
@@ -45,6 +62,7 @@ Item {
   property string promptHint: "\u23ce submit \u00b7 esc cancel"
 
   signal promptSubmitted(string text)
+  signal detailBackRequested()
 
   // Shell scope that owns the launcher instances (set from shell.qml).
   // Used for the activeLauncher coordinator and cross-launcher navigation
@@ -58,6 +76,9 @@ Item {
   property var results: []
   property int selectedIndex: 0
   readonly property int resultCount: root.results.length
+  readonly property var selectedItem: root.results.length > 0
+    && root.selectedIndex >= 0 && root.selectedIndex < root.results.length
+    ? root.results[root.selectedIndex].item : null
 
   readonly property string sockPath: {
     const rt = Quickshell.env("XDG_RUNTIME_DIR")
@@ -76,6 +97,8 @@ Item {
   // nav Item (up/down/page/enter/esc/tab + chords). Only that surface honors
   // bareKeyActions — the search input never consumes bare keys.
   property bool searchEnabled: true
+  property bool detailMode: false
+  property Component detailContent: null
   // Bare (modifier-less) key actions for the no-search surface, e.g. Delete on
   // a list view. Entries: { key, hint }; hints are appended to the footer.
   property var bareKeyActions: []
@@ -110,9 +133,28 @@ Item {
   // progress = 0..1 fill along the row's bottom edge;
   // body = optional third line under the subtitle (row grows taller only when set).
   function itemStatusGlyph(item) { return item.statusGlyph || "" }
+  function itemMeta(item) { return item.meta || "" }
+  function itemSwatches(item) { return item.swatches || [] }
   function itemSubtitleLive(item) { return root.itemSubtitle(item) }
   function itemProgress(item) { return item.progress || 0 }
   function itemBody(item) { return item.body || "" }
+
+  function themePreviewColor(role) {
+    const palette = root.themePreviewPalette
+    return palette && palette[role] ? palette[role] : Colors[role]
+  }
+
+  function themePreviewCardColor() {
+    const surface = String(root.themePreviewColor("surface"))
+    return surface.toLowerCase() === String(root.themePreviewColor("base")).toLowerCase()
+      ? root.themePreviewColor("surface_high") : surface
+  }
+
+  function themePreviewBarColor() {
+    const surface = String(root.themePreviewColor("surface"))
+    return surface.toLowerCase() === String(root.themePreviewColor("base")).toLowerCase()
+      ? root.themePreviewColor("surface_alt") : surface
+  }
 
   function tryItemAction(event) {
     if (root.promptMode) return false
@@ -246,7 +288,7 @@ Item {
     const filtered = root.filterAndSort(root.pool, q)
     root.results = filtered
     if (root.selectedIndex >= filtered.length) root.selectedIndex = 0
-    if (filtered.length > 0) resultsList.positionViewAtIndex(root.selectedIndex, ListView.Center)
+    if (filtered.length > 0) resultsList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
   }
 
   function openLauncher() {
@@ -295,7 +337,7 @@ Item {
   function step(delta) {
     if (root.results.length === 0) return
     root.selectedIndex = (root.selectedIndex + delta + root.results.length) % root.results.length
-    resultsList.positionViewAtIndex(root.selectedIndex, ListView.Center)
+    resultsList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
   }
 
   // Clear the query both logically and visually (subclasses can't reach the
@@ -359,8 +401,6 @@ Item {
     color: Qt.rgba(0, 0, 0, 0.4)
     focusable: true
 
-    // Blur whatever is behind the launcher (ext-background-effect-v1, Hyprland).
-    BackgroundEffect.blurRegion: Region { item: launcherWin.contentItem }
 
     anchors {
       top: true
@@ -381,17 +421,46 @@ Item {
 
     Rectangle {
       id: card
-      width: 560
-      height: 520
+      width: Math.min(640, parent.width - 32)
+      height: Math.min(root.cardHeight, parent.height - 32)
       anchors.centerIn: parent
-      radius: 20
-      color: Tokens.surfaceContainerLow
+      radius: 32
+      color: Colors.surface
       border.width: 1
-      border.color: Tokens.divider
+      border.color: Colors.border
 
       MouseArea {
         id: cardClick
         anchors.fill: parent
+      }
+
+      Text {
+        id: heading
+        anchors { top: parent.top; left: parent.left; topMargin: 24; leftMargin: 24 }
+        text: root.headerTitle
+        visible: text !== ""
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: 20
+        font.weight: Font.DemiBold
+        color: Colors.text
+      }
+
+      R1Icon {
+        width: 24
+        height: 24
+        anchors { right: parent.right; top: parent.top; rightMargin: 32; topMargin: 32 }
+        glyph: "\uf00d"
+        font.family: "JetBrainsMono Nerd Font Propo"
+        font.pixelSize: 16
+        color: Colors.text_alt
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        MouseArea {
+          anchors.fill: parent
+          anchors.margins: -8
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.closeLauncher()
+        }
       }
 
       // Invisible key-catcher for searchless views (e.g. Handy History): owns
@@ -407,45 +476,50 @@ Item {
           else if (event.key === Qt.Key_PageUp) { root.step(10); event.accepted = true }
           else if (event.key === Qt.Key_PageDown) { root.step(-10); event.accepted = true }
           else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) { root.activate(); event.accepted = true }
-          else if (event.key === Qt.Key_Escape) { root.closeLauncher(); event.accepted = true }
+          else if (event.key === Qt.Key_Escape) {
+            if (root.detailMode) root.detailBackRequested()
+            else root.closeLauncher()
+            event.accepted = true
+          }
           else if (event.key === Qt.Key_Tab) {
-            if (root.footerActionText !== "") root.footerActionClicked()
+            if (root.footerActionText !== "" || root.listStatusActionText !== "") root.footerActionClicked()
             event.accepted = true
           }
           else if (root.tryNavItemAction(event)) event.accepted = true
         }
       }
 
-      // Title row for searchless views: occupies the search bar's exact slot
-      // (12px margins, 48px tall) so the list layout is unchanged.
+      // Title row for searchless views: occupies the search bar's exact slot.
       Item {
         id: listHeader
-        visible: !root.searchEnabled && root.headerText !== ""
+        visible: !root.searchEnabled && !root.detailMode && root.headerText !== ""
         anchors {
           top: parent.top
           left: parent.left
           right: parent.right
-          margins: 12
+          leftMargin: 24
+          rightMargin: 24
+          topMargin: 72
         }
-        height: 48
+        height: 56
 
         Row {
           anchors {
             left: parent.left
             right: parent.right
             verticalCenter: parent.verticalCenter
-            leftMargin: 14
-            rightMargin: 14
+            leftMargin: 16
+            rightMargin: 16
           }
-          spacing: 10
+          spacing: 16
 
-          Text {
+          R1Icon {
             id: headerGlyphText
             anchors.verticalCenter: parent.verticalCenter
             visible: root.headerGlyph !== ""
-            text: root.headerGlyph
+            glyph: root.headerGlyph
             font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 15
+            font.pixelSize: 16
             color: Colors.primary
           }
 
@@ -453,8 +527,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - (headerGlyphText.visible ? headerGlyphText.width + parent.spacing : 0)
             text: root.headerText
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 15
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 16
             font.weight: Font.DemiBold
             color: Colors.text
             elide: Text.ElideRight
@@ -464,16 +538,18 @@ Item {
 
       Rectangle {
         id: searchBar
-        visible: root.searchEnabled
+        visible: root.searchEnabled && !root.detailMode
         anchors {
           top: parent.top
           left: parent.left
           right: parent.right
-          margins: root.searchEnabled ? 12 : 0
+          leftMargin: root.searchEnabled ? 24 : 0
+          rightMargin: root.searchEnabled ? 24 : 0
+          topMargin: root.searchEnabled ? 64 : 0
         }
-        height: root.searchEnabled ? 48 : 0
-        radius: 24
-        color: Tokens.surfaceContainerHighest
+        height: root.searchEnabled ? 56 : 0
+        radius: 16
+        color: root.themePreviewColor("surface_alt")
         border.width: searchInput.activeFocus ? 1.5 : 0
         border.color: Tokens.primary
 
@@ -482,28 +558,30 @@ Item {
             left: parent.left
             right: parent.right
             verticalCenter: parent.verticalCenter
-            leftMargin: 14
-            rightMargin: 14
+            leftMargin: 16
+            rightMargin: 16
           }
-          spacing: 10
+          spacing: 16
 
-          Text {
+          R1Icon {
             anchors.verticalCenter: parent.verticalCenter
-            text: root.promptMode ? "\uf023" : "\uf002"
+            glyph: root.promptMode ? "\uf023" : "\uf002"
+            width: 24
+            horizontalAlignment: Text.AlignHCenter
             font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 15
+            font.pixelSize: 16
             color: Colors.muted
           }
 
           TextInput {
             id: searchInput
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 40
+            width: parent.width - 104
             height: parent.height
             verticalAlignment: Text.AlignVCenter
             color: Colors.text
-            font.pixelSize: 15
-            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 16
+            font.family: "JetBrainsMono Nerd Font"
             selectByMouse: true
             cursorVisible: true
             clip: true
@@ -512,9 +590,10 @@ Item {
             Text {
               anchors.fill: parent
               visible: parent.text === ""
-              text: root.promptMode ? root.promptTitle : root.title
+              text: root.promptMode ? root.promptTitle
+                : (root.searchPlaceholder !== "" ? root.searchPlaceholder : root.title)
               color: Colors.muted
-              font.pixelSize: 15
+              font.pixelSize: 16
               font.family: parent.font.family
               verticalAlignment: Text.AlignVCenter
             }
@@ -550,27 +629,126 @@ Item {
               event.accepted = true
             }
             Keys.onTabPressed: function(event) {
-              if (root.footerActionText !== "") root.footerActionClicked()
+              if (root.footerActionText !== "" || root.listStatusActionText !== "") root.footerActionClicked()
               event.accepted = true
             }
             Keys.onBacktabPressed: function(event) { event.accepted = true }
           }
+
         }
+
+        Text {
+          anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 16 }
+          width: 36
+          text: "Esc"
+          horizontalAlignment: Text.AlignRight
+          font.family: "JetBrainsMono Nerd Font"
+          font.pixelSize: 12
+          font.weight: Font.Medium
+          color: Colors.text_alt
+        }
+      }
+
+      Loader {
+        id: toolbarLoader
+        anchors {
+          top: searchBar.visible ? searchBar.bottom : parent.top
+          left: parent.left
+          right: parent.right
+          leftMargin: 24
+          rightMargin: 24
+          topMargin: searchBar.visible ? 20 : 72
+        }
+        height: root.listToolbar ? 40 : 0
+        visible: root.listToolbar !== null
+        sourceComponent: visible ? root.listToolbar : null
+      }
+
+      Rectangle {
+        id: themePreviewCard
+        visible: root.themePreview
+        anchors { top: parent.top; left: parent.left; right: parent.right; leftMargin: 24; rightMargin: 24; topMargin: 64 }
+        height: 208
+        radius: 24
+        color: root.themePreviewColor("base")
+
+        Rectangle {
+          anchors { top: parent.top; left: parent.left; right: parent.right; margins: 16 }
+          height: 24
+          radius: 12
+          color: root.themePreviewBarColor()
+        }
+
+        Rectangle {
+          anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 60 }
+          width: 272
+          height: 124
+          radius: 16
+          color: root.themePreviewCardColor()
+
+          Text {
+            anchors { left: parent.left; top: parent.top; leftMargin: 16; right: parent.right; rightMargin: 16; topMargin: 14 }
+            text: root.selectedItem ? root.itemLabel(root.selectedItem) : "TokyoNight · Night"
+            elide: Text.ElideRight
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 20
+            font.weight: Font.DemiBold
+            color: root.themePreviewColor("text")
+          }
+          Rectangle {
+            x: 16
+            y: 56
+            width: 240
+            height: 36
+            radius: 12
+            color: root.themePreviewColor("primary_container")
+          }
+          Text {
+            anchors { left: parent.left; top: parent.top; leftMargin: 28; topMargin: 64 }
+            text: "A little calm. A little color."
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 12
+            color: root.themePreviewColor("on_primary_container")
+          }
+        }
+        Rectangle { x: 24; y: 166; width: 24; height: 24; radius: 12; color: root.themePreviewColor("primary") }
+        Rectangle { x: 56; y: 166; width: 24; height: 24; radius: 12; color: root.themePreviewColor("primary_alt") }
+        Rectangle { x: 88; y: 166; width: 24; height: 24; radius: 12; color: root.themePreviewColor("accent") }
+        Rectangle { x: 120; y: 166; width: 24; height: 24; radius: 12; color: root.themePreviewColor("success") }
+        Rectangle { x: 152; y: 166; width: 24; height: 24; radius: 12; color: root.themePreviewColor("warning") }
+        Rectangle { x: 184; y: 166; width: 24; height: 24; radius: 12; color: root.themePreviewColor("error") }
+      }
+
+      Text {
+        id: resultsHeading
+        visible: root.resultsLabel !== "" && !root.themePreview
+        anchors { top: searchBar.bottom; left: parent.left; topMargin: 16; leftMargin: 36 }
+        text: root.resultsLabel
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: 12
+        font.weight: Font.DemiBold
+        color: Colors.text_alt
       }
 
       ListView {
         id: resultsList
         anchors {
-          top: listHeader.visible ? listHeader.bottom : searchBar.bottom
+          top: toolbarLoader.visible ? toolbarLoader.bottom
+            : themePreviewCard.visible ? themePreviewCard.bottom
+            : (resultsHeading.visible ? resultsHeading.bottom
+              : (listHeader.visible ? listHeader.bottom : searchBar.bottom))
           left: parent.left
           right: parent.right
           bottom: footer.top
-          leftMargin: 12
-          rightMargin: 12
-          topMargin: 8
-          bottomMargin: 8
+          leftMargin: 24
+          rightMargin: 24
+          topMargin: toolbarLoader.visible ? 24 : root.themePreview ? 24
+            : (root.searchEnabled
+              ? (resultsHeading.visible ? 6 : root.listTopMargin)
+              : (listHeader.visible ? 16 : 72))
+          bottomMargin: root.listStatusText !== "" || root.listStatusActionText !== "" ? 88 : 8
         }
-        visible: !root.promptMode
+        visible: !root.promptMode && !root.detailMode
         clip: true
         model: root.results
         focus: false
@@ -581,34 +759,34 @@ Item {
           required property var modelData
           required property int index
           width: resultsList.width
-          height: bodyText.visible ? bodyText.height + 56 : 52
-          radius: 14
-          color: root.selectedIndex === index ? Tokens.primaryContainer : "transparent"
+          height: bodyText.visible ? bodyText.height + 64 : 64
+          radius: 16
+          color: root.selectedIndex === index ? Colors.primary_container : "transparent"
 
           Row {
             anchors {
               left: parent.left
               right: parent.right
               verticalCenter: parent.verticalCenter
-              leftMargin: 10
-              rightMargin: 10
+              leftMargin: 12
+              rightMargin: 12
             }
             spacing: 12
 
             Rectangle {
-              width: 32
-              height: 32
-              radius: 16
+              width: 40
+              height: 40
+              radius: 12
               anchors.verticalCenter: parent.verticalCenter
-              color: root.selectedIndex === index ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
+                color: Colors.surface_alt
               visible: root.itemGlyph(modelData.item) !== "" || root.itemIcon(modelData.item) !== ""
 
-              Text {
+              R1Icon {
                 anchors.centerIn: parent
                 visible: root.itemGlyph(modelData.item) !== ""
-                text: root.itemGlyph(modelData.item)
+                glyph: root.itemGlyph(modelData.item)
                 font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 16
+                font.pixelSize: 24
                 color: root.selectedIndex === index ? Tokens.on_primary_container : Colors.text_alt
               }
 
@@ -624,20 +802,24 @@ Item {
                   return Quickshell.iconPath(ic)
                 })()
               }
+
             }
 
             Column {
               anchors.verticalCenter: parent.verticalCenter
-              width: parent.width - 40 - (statusGlyphText.visible ? statusGlyphText.implicitWidth + 14 : 0)
+              width: parent.width - 52
+                - (statusGlyphText.visible ? statusGlyphText.implicitWidth + 14 : 0)
+                - (itemMetaText.visible ? itemMetaText.implicitWidth + 24 : 0)
+                - (itemSwatchesRow.visible ? itemSwatchesRow.implicitWidth + 24 : 0)
 
               Text {
                 width: parent.width
                 text: root.itemTitle(modelData.item)
                 elide: Text.ElideRight
-                font.pixelSize: 14
-                font.bold: root.selectedIndex === index
-                font.family: "JetBrainsMono Nerd Font Propo"
-                color: root.selectedIndex === index ? Tokens.on_primary_container : Colors.text_alt
+                font.pixelSize: 16
+                font.weight: Font.DemiBold
+                font.family: "JetBrainsMono Nerd Font"
+                color: Colors.text
               }
 
               Text {
@@ -645,8 +827,8 @@ Item {
                 text: root.itemSubtitleLive(modelData.item)
                 elide: Text.ElideRight
                 font.pixelSize: 12
-                font.family: "JetBrainsMono Nerd Font Propo"
-                color: root.selectedIndex === index ? Tokens.alpha(Tokens.on_primary_container, 0.75) : Colors.muted
+                font.family: "JetBrainsMono Nerd Font"
+                color: Colors.text_alt
                 visible: text !== ""
               }
 
@@ -656,23 +838,58 @@ Item {
                 visible: root.itemBody(modelData.item) !== ""
                 text: root.itemBody(modelData.item)
                 wrapMode: Text.Wrap
-                font.pixelSize: 11
-                font.family: "JetBrainsMono Nerd Font Propo"
-                color: root.selectedIndex === index ? Tokens.alpha(Tokens.on_primary_container, 0.6) : Colors.text_alt
+                font.pixelSize: 12
+                font.family: "JetBrainsMono Nerd Font"
+                color: Colors.text_alt
               }
             }
           }
 
-          Text {
+          R1Icon {
             id: statusGlyphText
             anchors.right: parent.right
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             visible: root.itemStatusGlyph(modelData.item) !== ""
-            text: root.itemStatusGlyph(modelData.item)
+              || (root.deactivatable && root.selectedIndex === index && root.itemMeta(modelData.item) === "")
+            glyph: root.itemStatusGlyph(modelData.item) !== ""
+              ? root.itemStatusGlyph(modelData.item) : "\u21b5"
             font.family: "JetBrainsMono Nerd Font Propo"
             font.pixelSize: 14
             color: root.selectedIndex === index ? Tokens.on_primary_container : Colors.primary
+          }
+
+          Text {
+            id: itemMetaText
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.itemMeta(modelData.item) !== ""
+            text: root.itemMeta(modelData.item)
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 12
+            font.weight: Font.Medium
+            color: Colors.text_alt
+          }
+
+          Row {
+            id: itemSwatchesRow
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 4
+            visible: root.itemSwatches(modelData.item).length > 0 && !itemMetaText.visible
+
+            Repeater {
+              model: root.itemSwatches(modelData.item)
+              delegate: Rectangle {
+                required property var modelData
+                width: 8
+                height: 8
+                radius: 4
+                color: modelData
+              }
+            }
           }
 
           Rectangle {
@@ -696,16 +913,97 @@ Item {
         }
       }
 
+      Loader {
+        anchors {
+          top: parent.top
+          left: parent.left
+          right: parent.right
+          bottom: footer.top
+          leftMargin: 24
+          rightMargin: 24
+          topMargin: 64
+          bottomMargin: 16
+        }
+        visible: root.detailMode
+        sourceComponent: root.detailMode ? root.detailContent : null
+      }
+
+      Text {
+        anchors {
+          left: parent.left
+          bottom: footer.top
+          leftMargin: 36
+          bottomMargin: 64
+        }
+        visible: !root.detailMode && !root.promptMode && root.listStatusText !== ""
+        text: root.listStatusText
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: 12
+        color: Colors.text_alt
+      }
+
+      Rectangle {
+        width: root.listStatusActionWidth > 0 ? root.listStatusActionWidth : statusActionRow.implicitWidth + 32
+        height: 40
+        radius: 20
+        anchors {
+          right: parent.right
+          bottom: footer.top
+          rightMargin: 24
+          bottomMargin: 44
+        }
+        visible: !root.detailMode && !root.promptMode && root.listStatusActionText !== ""
+        color: Tokens.primaryContainer
+
+        Row {
+          id: statusActionRow
+          anchors.centerIn: parent
+          spacing: 8
+
+          R1Icon {
+            anchors.verticalCenter: parent.verticalCenter
+            visible: root.listStatusActionGlyph !== ""
+            glyph: root.listStatusActionGlyph
+            font.family: "JetBrainsMono Nerd Font Propo"
+            font.pixelSize: 12
+            color: Tokens.on_primary_container
+          }
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: root.listStatusActionText
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 14
+            font.weight: Font.DemiBold
+            color: Tokens.on_primary_container
+          }
+        }
+
+        MouseArea {
+          anchors.fill: parent
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.footerActionClicked()
+        }
+      }
+
       Column {
         anchors.centerIn: parent
         visible: !root.promptMode && root.results.length === 0
         spacing: 12
 
-        Text {
+        R1Icon {
+          anchors.horizontalCenter: parent.horizontalCenter
+          visible: !root.loading
+          iconName: root.emptyIconName
+          font.pixelSize: 24
+          color: Colors.text_alt
+        }
+
+        R1Icon {
           id: loadingSpinner
           anchors.horizontalCenter: parent.horizontalCenter
           visible: root.loading
-          text: "\uf110"
+          glyph: "\uf110"
           font.pixelSize: 24
           font.family: "JetBrainsMono Nerd Font Propo"
           color: Colors.primary
@@ -723,7 +1021,7 @@ Item {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.loading ? root.loadingText : root.emptyText
           font.pixelSize: 14
-          font.family: "JetBrainsMono Nerd Font Propo"
+          font.family: "JetBrainsMono Nerd Font"
           color: Colors.muted
         }
       }
@@ -744,8 +1042,8 @@ Item {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.promptTitle
           color: Colors.text
-          font.pixelSize: 17
-          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 16
+          font.family: "JetBrainsMono Nerd Font"
           horizontalAlignment: Text.AlignHCenter
           width: parent.width
           wrapMode: Text.Wrap
@@ -756,8 +1054,8 @@ Item {
           text: root.promptError
           visible: root.promptError !== ""
           color: Colors.error
-          font.pixelSize: 13
-          font.family: "JetBrainsMono Nerd Font Propo"
+          font.pixelSize: 14
+          font.family: "JetBrainsMono Nerd Font"
           horizontalAlignment: Text.AlignHCenter
           width: parent.width
           wrapMode: Text.Wrap
@@ -774,8 +1072,8 @@ Item {
           rightMargin: 1
           bottomMargin: 1
         }
-        height: 42
-        radius: 20
+        height: 56
+        radius: 32
         color: Colors.base
 
         Rectangle {
@@ -784,7 +1082,7 @@ Item {
             left: parent.left
             right: parent.right
           }
-          height: 20
+          height: 28
           color: Colors.base
         }
 
@@ -803,8 +1101,8 @@ Item {
             left: parent.left
             right: parent.right
             verticalCenter: parent.verticalCenter
-            leftMargin: 12
-            rightMargin: 12
+            leftMargin: 24
+            rightMargin: 24
           }
           spacing: 8
 
@@ -813,14 +1111,14 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: root.promptMode ? root.promptHint : root.fullFooterHint
             font.pixelSize: 12
-            font.family: "JetBrainsMono Nerd Font Propo"
+            font.family: "JetBrainsMono Nerd Font"
             color: Colors.muted
             // Keep the hint within its own space so it never runs underneath the
             // right-aligned footer pill (e.g. bluetooth/wifi on-off button).
             elide: Text.ElideRight
-            width: root.footerActionText !== ""
-              ? parent.width - footerPill.width - 12
-              : footerHintText.implicitWidth
+            width: root.footerActionText !== "" && root.footerActionVisible
+              ? Math.max(0, parent.width - footerPill.width - 12)
+              : Math.max(0, parent.width - 136)
           }
 
           Item {
@@ -834,13 +1132,13 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: root.countShown
               ? root.resultCount + " " + root.countNoun + (root.resultCount === 1 ? "" : "s")
-              : ""
+              : root.closeHint
             font.pixelSize: 12
-            font.family: "JetBrainsMono Nerd Font Propo"
+            font.family: "JetBrainsMono Nerd Font"
             color: Colors.muted
             horizontalAlignment: Text.AlignRight
-            visible: root.countShown
-            width: root.countShown ? footerCountText.implicitWidth : 0
+            visible: root.countShown || (root.closeHint !== "" && (!root.footerActionVisible || root.footerActionText === ""))
+            width: visible ? (root.countShown ? footerCountText.implicitWidth : 116) : 0
           }
         }
 
@@ -849,9 +1147,9 @@ Item {
           anchors {
             right: parent.right
             verticalCenter: parent.verticalCenter
-            rightMargin: 12
+            rightMargin: 24
           }
-          visible: root.footerActionText !== ""
+          visible: root.footerActionText !== "" && root.footerActionVisible
           height: 28
           width: footerActionRow.implicitWidth + 20
           radius: 14
@@ -869,7 +1167,7 @@ Item {
               visible: root.footerActionGlyph !== ""
               text: root.footerActionGlyph
               font.pixelSize: 12
-              font.family: "JetBrainsMono Nerd Font Propo"
+              font.family: "JetBrainsMono Nerd Font"
               color: root.footerActionActive ? Tokens.on_primary_container : Colors.muted
             }
 
@@ -877,7 +1175,7 @@ Item {
               anchors.verticalCenter: parent.verticalCenter
               text: root.footerActionText
               font.pixelSize: 12
-              font.family: "JetBrainsMono Nerd Font Propo"
+              font.family: "JetBrainsMono Nerd Font"
               font.weight: root.footerActionActive ? Font.Bold : Font.Normal
               color: root.footerActionActive ? Tokens.on_primary_container : Colors.muted
             }

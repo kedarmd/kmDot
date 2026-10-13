@@ -8,7 +8,7 @@ Item {
   id: root
 
   width: parent.width
-  implicitHeight: col.implicitHeight
+  implicitHeight: 128
   visible: root.player !== null
 
   property var player: null
@@ -46,11 +46,18 @@ Item {
 
   onArtUrlChanged: root.maxresMissing = false
 
-  readonly property real artHeight:
-    titleLine.implicitHeight +
-    (root.artist !== "" ? textCol.spacing + artistLine.implicitHeight : 0) +
-    textCol.spacing +
-    controlsRow.implicitHeight
+  readonly property real artHeight: 72
+  property real positionSeconds: 0
+  readonly property real trackLength: root.player && root.player.lengthSupported ? root.player.length : 0
+  readonly property real progress: root.trackLength > 0 ? Math.max(0, Math.min(1, root.positionSeconds / root.trackLength)) : 0
+
+  function seekTo(x) {
+    if (!root.player || !root.player.canSeek || root.trackLength <= 0) return
+    const target = Math.max(0, Math.min(root.trackLength, root.trackLength * x / progressTrack.width))
+    if (root.player.positionSupported) root.player.position = target
+    else root.player.seek(target - root.positionSeconds)
+    root.positionSeconds = target
+  }
 
   function livePlayer(p) {
     return p && p.trackTitle &&
@@ -74,86 +81,31 @@ Item {
   }
 
   Timer {
-    interval: 2000
+    interval: 1000
     repeat: true
     running: true
     onTriggered: root.player = root.pickPlayer()
   }
-  Component.onCompleted: root.player = root.pickPlayer()
+  Component.onCompleted: {
+    root.player = root.pickPlayer()
+    root.positionSeconds = root.player ? root.player.position : 0
+  }
+  onPlayerChanged: root.positionSeconds = root.player ? root.player.position : 0
 
-  Column {
-    id: col
-    width: root.width
-    spacing: 8
+  Item {
+    id: disc
+    x: 0
+    y: 0
+    width: root.artHeight
+    height: root.artHeight
+    transformOrigin: Item.Center
 
-    Text {
-      text: "Now playing"
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 12
-      color: Colors.muted
-    }
-
-    Row {
-      id: bodyRow
-      width: col.width
-      spacing: 12
-
-      Item {
-        id: disc
-        width: root.artHeight
-        height: root.artHeight
-        transformOrigin: Item.Center
-
-        Timer {
-          interval: 16
-          repeat: true
-          running: root.playing
-          onTriggered: {
-            if (root.playing) disc.rotation = (disc.rotation + 0.6) % 360
-          }
-        }
-
-        Canvas {
+        Item {
           id: fallbackDisc
           anchors.fill: parent
           visible: !disc.artImageReady
-
-          onPaint: {
-            const ctx = getContext("2d")
-            const cx = width / 2
-            const cy = height / 2
-            const radius = Math.min(width, height) / 2 - 1
-            ctx.clearRect(0, 0, width, height)
-
-            const gradient = ctx.createRadialGradient(cx, cy, radius * 0.08,
-                                                       cx, cy, radius)
-            gradient.addColorStop(0, Colors.primary_alt)
-            gradient.addColorStop(0.48, Colors.primary)
-            gradient.addColorStop(1, Colors.surface_alt)
-            ctx.fillStyle = gradient
-            ctx.beginPath()
-            ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-            ctx.fill()
-
-            ctx.strokeStyle = Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.22)
-            ctx.lineWidth = 1
-            for (let i = 1; i < 5; i++) {
-              ctx.beginPath()
-              ctx.arc(cx, cy, radius * (0.25 + i * 0.13), 0, Math.PI * 2)
-              ctx.stroke()
-            }
-
-            ctx.fillStyle = Colors.base
-            ctx.beginPath()
-            ctx.arc(cx, cy, Math.max(4, radius * 0.12), 0, Math.PI * 2)
-            ctx.fill()
-            ctx.strokeStyle = Colors.text
-            ctx.globalAlpha = 0.7
-            ctx.beginPath()
-            ctx.arc(cx, cy, Math.max(2, radius * 0.045), 0, Math.PI * 2)
-            ctx.stroke()
-            ctx.globalAlpha = 1
-          }
+          Rectangle { anchors.fill: parent; radius: 16; color: Tokens.primaryContainer }
+          R1Icon { anchors.centerIn: parent; glyph: "\uf001"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
         }
 
         Image {
@@ -183,103 +135,114 @@ Item {
           maskSource: Rectangle {
             width: disc.width
             height: disc.height
-            radius: width / 2
+            radius: 16
             color: "white"
           }
         }
 
         Rectangle {
           anchors.fill: parent
-          radius: width / 2
+          radius: 16
           color: "transparent"
           border.width: 1
           border.color: Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.24)
         }
 
-        Rectangle {
+  }
+
+  Text {
+    id: titleLine
+    x: 88
+    y: 0
+    width: root.width - 88
+    height: 30
+    text: root.title
+    font.family: "JetBrainsMono Nerd Font"
+    font.pixelSize: 20
+    font.weight: Font.DemiBold
+    color: Colors.text
+    elide: Text.ElideRight
+    verticalAlignment: Text.AlignVCenter
+  }
+
+  Text {
+    id: artistLine
+    x: 88
+    y: 34
+    width: root.width - 88
+    height: 18
+    visible: root.artist !== "" || root.album !== ""
+    text: root.artist + (root.artist !== "" && root.album !== "" ? " · " : "") + root.album
+    font.family: "JetBrainsMono Nerd Font"
+    font.pixelSize: 12
+    color: Colors.text_alt
+    elide: Text.ElideRight
+    verticalAlignment: Text.AlignVCenter
+  }
+
+  Row {
+    x: 88
+    y: 78
+    width: 144
+    height: 24
+    spacing: 36
+
+    Repeater {
+      model: [
+        { glyph: "\uf048", enabled: root.canPrev, act: "previous" },
+        { glyph: root.playing ? "\uf04c" : "\uf04b", enabled: root.canToggle, act: "toggle" },
+        { glyph: "\uf051", enabled: root.canNext, act: "next" }
+      ]
+      delegate: Item {
+        required property var modelData
+        width: 24
+        height: 24
+        opacity: modelData.enabled ? 1 : 0.45
+        R1Icon {
           anchors.centerIn: parent
-          width: Math.max(8, parent.width * 0.16)
-          height: width
-          radius: width / 2
-          color: Colors.base
-          border.width: 1
-          border.color: Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.55)
-        }
-      }
-
-      Column {
-        id: textCol
-        width: bodyRow.width - root.artHeight - bodyRow.spacing
-        spacing: 3
-
-        Text {
-          id: titleLine
-          width: parent.width
-          text: root.album !== "" ? root.title + " · " + root.album : root.title
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 13
-          font.weight: Font.DemiBold
+          glyph: modelData.glyph
           color: Colors.text
-          elide: Text.ElideRight
-        }
-
-        Text {
-          id: artistLine
-          width: parent.width
-          visible: root.artist !== ""
-          text: root.artist
           font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.text_alt
-          elide: Text.ElideRight
+          font.pixelSize: 16
         }
-
-        Row {
-          id: controlsRow
-          width: parent.width
-          spacing: 6
-
-          PillButton {
-            width: (controlsRow.width - controlsRow.spacing * 2) / 3
-            height: 30
-            enabled: root.canPrev
-            filled: true
-            active: true
-            fillColor: Tokens.surfaceContainerHighest
-            activeTextColor: Colors.text
-            glyph: "\uf048"
-            glyphSize: 12
-            onClicked: if (root.player) root.player.previous()
-          }
-
-          PillButton {
-            width: (controlsRow.width - controlsRow.spacing * 2) / 3
-            height: 30
-            enabled: root.canToggle
-            filled: true
-            active: root.playing
-            fillColor: Tokens.primaryContainer
-            inactiveFillColor: Tokens.surfaceContainerHighest
-            activeTextColor: root.playing ? Tokens.on_primary_container : Colors.text
-            glyph: root.playing ? "\uf04c" : "\uf04b"
-            glyphSize: 12
-            onClicked: if (root.player) root.player.togglePlaying()
-          }
-
-          PillButton {
-            width: (controlsRow.width - controlsRow.spacing * 2) / 3
-            height: 30
-            enabled: root.canNext
-            filled: true
-            active: true
-            fillColor: Tokens.surfaceContainerHighest
-            activeTextColor: Colors.text
-            glyph: "\uf051"
-            glyphSize: 12
-            onClicked: if (root.player) root.player.next()
+        MouseArea {
+          anchors.fill: parent
+          enabled: modelData.enabled
+          cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+          onClicked: {
+            if (!root.player) return
+            if (modelData.act === "previous") root.player.previous()
+            else if (modelData.act === "next") root.player.next()
+            else root.player.togglePlaying()
           }
         }
       }
+    }
+  }
+
+  Rectangle {
+    id: progressTrack
+    x: 0
+    y: 122
+    width: root.width
+    height: 4
+    radius: 2
+    color: Tokens.outlineVariant
+    Rectangle {
+      width: parent.width * root.progress
+      height: parent.height
+      radius: parent.radius
+      color: Colors.primary
+    }
+    MouseArea {
+      x: 0
+      y: -8
+      width: parent.width
+      height: parent.height + 16
+      enabled: root.player && root.player.canSeek && root.trackLength > 0
+      cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+      onPressed: root.seekTo(mouse.x)
+      onPositionChanged: if (pressed) root.seekTo(mouse.x)
     }
   }
 }

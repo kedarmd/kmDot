@@ -11,11 +11,14 @@ import qs
 // nothing). No right-click verbs, no timers in the base.
 Item {
   id: root
-  implicitHeight: 30
-  width: Math.max(30, label.implicitWidth + 20)
+  implicitHeight: 32
+  width: Math.max(36, moduleLabel.implicitWidth + 12)
 
   // -- display props (subclass supplies) --
   property string glyph: "" // icon part; "" = text-only (Clock)
+  property string iconName: ""
+  property int textSize: 12
+  property color foreground: Colors.text
   property string text: "" // body part; "" = icon-only
   property bool active: false
   property color fill: Tokens.primaryContainer
@@ -25,7 +28,6 @@ Item {
   property string tooltipText: "" // "" = no tooltip (Clock)
 
   // -- open-path props --
-  property var tooltip: null
   property string sock: "" // toggle.sh socket, e.g. "kmdot-volume"
   property bool clickable: true // false = dimmed-static no-op (no backlight)
   required property var popupRef // agnostic: anything with anchorItem
@@ -42,39 +44,49 @@ Item {
     loops: Animation.Infinite
   }
 
-  readonly property string labelText: {
-    if (root.busy) return ""
-    if (root.glyph !== "" && root.text !== "") return root.glyph + " " + root.text
-    return root.glyph + root.text
-  }
-
   function openPopup() {
     if (!root.clickable) return
-    if (root.popupRef) root.popupRef.anchorItem = root
+    if (root.popupRef && root.popupRef.anchorItem !== undefined) root.popupRef.anchorItem = root
     if (root.sock !== "") toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh " + root.sock])
   }
 
   ModulePill {
     id: pill
     anchors.centerIn: parent
-    width: Math.max(30, label.implicitWidth + 20)
-    height: 30
+    width: root.width
+    height: 32
     active: root.active
     fill: root.fill
     disabled: !root.clickable
     hovered: mouse.containsMouse
     pressed: mouse.pressed
 
-    Text {
-      id: label
+    Row {
+      id: moduleLabel
       anchors.centerIn: parent
-      text: root.labelText
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 15
-      color: root.busy ? Tokens.primary : (root.active ? root.on_color : Colors.text_alt)
-      opacity: root.dimmed ? 0.4 : 1.0
-      rotation: root.busy ? root.spinAngle : 0
-      transformOrigin: Item.Center
+      spacing: root.glyph !== "" && root.text !== "" && !root.busy ? 5 : 0
+
+      R1Icon {
+        visible: root.busy || root.glyph !== ""
+        glyph: root.busy ? "" : root.glyph
+        iconName: root.busy ? "" : root.iconName
+        font.family: "JetBrainsMono Nerd Font Propo"
+        font.pixelSize: 24
+        color: root.busy ? Tokens.primary : (root.active ? root.on_color : root.foreground)
+        opacity: root.dimmed ? 0.4 : 1.0
+        rotation: root.busy ? root.spinAngle : 0
+        transformOrigin: Item.Center
+      }
+
+      Text {
+        visible: !root.busy && root.text !== ""
+        text: root.text
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: root.textSize
+        font.weight: Font.Medium
+        color: root.active ? root.on_color : root.foreground
+        opacity: root.dimmed ? 0.4 : 1.0
+      }
     }
   }
 
@@ -87,12 +99,6 @@ Item {
     onClicked: root.openPopup()
     onWheel: {
       root.wheeled(wheel)
-    }
-    onEntered: {
-      if (root.tooltip && root.tooltipText !== "") root.tooltip.show(root, root.tooltipText)
-    }
-    onExited: {
-      if (root.tooltip) root.tooltip.hide()
     }
   }
 

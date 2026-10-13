@@ -12,12 +12,21 @@ Item {
   property color trackColor: Tokens.surfaceContainerHighest
   property color fillColor: Tokens.primary
   property int barRadius: 5
+  property color thumbColor: root.fillColor
+  property int thumbWidth: 18
+  property int thumbHeight: 18
+  property int thumbRadius: thumbWidth / 2
+  property real trackHeight: Math.max(4, root.height - 7)
+  property real dragValue: root.value
+  readonly property real displayedValue: mouse.pressed ? root.dragValue : root.value
 
   signal changed(real v)
 
   function setFromX(x) {
     const v = Math.max(0, Math.min(1, x / root.width))
-    root.value = v
+    // The caller owns value. Assigning to it here would break its binding to
+    // PipeWire/DisplayState, leaving the thumb stale after external changes.
+    root.dragValue = v
     root.changed(v)
   }
 
@@ -27,7 +36,7 @@ Item {
       right: parent.right
       verticalCenter: parent.verticalCenter
     }
-    height: Math.max(4, parent.height - 7)
+    height: root.trackHeight
     radius: root.barRadius
     color: root.trackColor
   }
@@ -38,20 +47,20 @@ Item {
       left: parent.left
       verticalCenter: parent.verticalCenter
     }
-    width: root.value * root.width
-    height: Math.max(4, parent.height - 7)
+    width: root.displayedValue * root.width
+    height: root.trackHeight
     radius: root.barRadius
     color: root.fillColor
   }
 
   Rectangle {
     id: knob
-    x: root.value * root.width - width / 2
+    x: root.displayedValue * root.width - width / 2
     y: parent.height / 2 - height / 2
-    width: 18
-    height: 18
-    radius: width / 2
-    color: root.fillColor
+    width: root.thumbWidth
+    height: root.thumbHeight
+    radius: root.thumbRadius
+    color: root.thumbColor
 
     Behavior on width {
       NumberAnimation { duration: 120 }
@@ -65,12 +74,12 @@ Item {
       State {
         name: "pressed"
         when: mouse.pressed
-        PropertyChanges { width: 22; height: 22 }
+        PropertyChanges { target: knob; width: root.thumbWidth + 4; height: root.thumbHeight + 4 }
       },
       State {
         name: "hovered"
         when: mouse.containsMouse && !mouse.pressed
-        PropertyChanges { width: 20; height: 20 }
+        PropertyChanges { target: knob; width: root.thumbWidth + 2; height: root.thumbHeight + 2 }
       }
     ]
   }
@@ -80,12 +89,11 @@ Item {
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onPressed: root.setFromX(mouse.x)
-    onPositionChanged: if (pressed) root.setFromX(mouse.x)
-    onWheel: {
+    onPressed: event => root.setFromX(event.x)
+    onPositionChanged: event => { if (pressed) root.setFromX(event.x) }
+    onWheel: wheel => {
       const step = root.wheelStep * (wheel.angleDelta.y > 0 ? 1 : -1)
       const v = Math.max(0, Math.min(1, root.value + step))
-      root.value = v
       root.changed(v)
     }
   }

@@ -8,8 +8,11 @@ LauncherBase {
 
   sockName: "kmdot-launcher"
   title: "Search applications"
+  headerTitle: "Applications"
+  resultsLabel: "SUGGESTED"
+  cardHeight: root.query.trim() !== "" && root.resultCount === 0 && !root.loading ? 400 : 608
   countNoun: "app"
-  footerHint: "\u2191\u2193 navigate \u00b7 \u23ce launch \u00b7 esc close"
+  footerHint: "\u2191\u2193 navigate \u00b7 \u23ce launch"
 
   property var apps: []
 

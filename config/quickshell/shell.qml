@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Notifications
 import "components"
@@ -10,6 +11,7 @@ Scope {
   id: shellRoot
 
   property var activeLauncher: null
+  property var openingSurface: null
   property bool hasNotifications: false
   property AppLauncher appLauncher: AppLauncher { scope: shellRoot }
   property KmdotLauncher kmdotLauncher: KmdotLauncher { scope: shellRoot }
@@ -35,6 +37,7 @@ Scope {
   property DisplayPopup displayPopup: DisplayPopup { scope: shellRoot }
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
   property NotificationPopup notificationPopup: NotificationPopup { scope: shellRoot }
+  property NotificationReplyPopup notificationReplyPopup: NotificationReplyPopup { scope: shellRoot }
 
   // Keep all radio views in one registry. The stores deliberately do not know
   // about overlays; this is the shell-owned close-all boundary for the two
@@ -48,6 +51,8 @@ Scope {
   // Overlay coordinator: every PopupBase routes open() through here. The toast
   // (notificationPopup) is excluded — it stacks above cards and never closes them.
   function closeAllExcept(except) {
+    const previousOpening = shellRoot.openingSurface
+    shellRoot.openingSurface = except
     const launchers = [shellRoot.appLauncher, shellRoot.kmdotLauncher, shellRoot.systemLauncher,
       shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.keybindsLauncher,
       shellRoot.clipboardLauncher, shellRoot.handyLauncher]
@@ -57,7 +62,7 @@ Scope {
     const popups = [shellRoot.confirmPopup, shellRoot.batteryPopup,
       shellRoot.volumePopup, shellRoot.calendarPopup, shellRoot.serverModeDropdown,
       shellRoot.openCodeUsagePopup, shellRoot.handyPopup, shellRoot.displayPopup,
-      shellRoot.notificationCenter]
+      shellRoot.notificationCenter, shellRoot.notificationReplyPopup]
     for (const p of popups) {
       if (p && p !== except) p.close()
     }
@@ -70,6 +75,7 @@ Scope {
       if (surface.closeLauncher) surface.closeLauncher()
       else if (surface.close) surface.close()
     }
+    shellRoot.openingSurface = previousOpening
   }
 
   NotificationServer {
@@ -150,6 +156,7 @@ Scope {
     model: Quickshell.screens
 
 PanelWindow {
+        id: barWindow
         required property var modelData
         screen: modelData
 
@@ -160,12 +167,8 @@ PanelWindow {
         }
 
         color: Colors.surface
-        implicitHeight: 42
+        implicitHeight: 48
         exclusionMode: ExclusionMode.Auto
-
-      Tooltip {
-        id: tooltip
-      }
 
       IpcHandler {
         target: "notifications"
@@ -198,33 +201,27 @@ PanelWindow {
         id: leftGroup
         anchors {
           left: parent.left
-          leftMargin: 10
+          leftMargin: 12
           verticalCenter: parent.verticalCenter
         }
-        spacing: 8
+        spacing: 12
 
+        Kmdot {}
         Workspaces {}
       }
 
-      Row {
+      Item {
         id: centerGroup
+        width: calendarModule.width
+        height: 32
         anchors {
           horizontalCenter: parent.horizontalCenter
           verticalCenter: parent.verticalCenter
         }
-        spacing: 8
-
-        AttentionMode {
-          tooltip: tooltip
-        }
-        Kmdot {}
         Clock {
+          id: calendarModule
+          anchors.centerIn: parent
           popupRef: calendarPopup
-        }
-        Dnd {
-          id: dndModule
-          tooltip: tooltip
-          hasNotifications: shellRoot.hasNotifications
         }
       }
 
@@ -232,7 +229,7 @@ PanelWindow {
         id: rightGroup
         anchors {
           right: parent.right
-          rightMargin: 10
+          rightMargin: 12
           verticalCenter: parent.verticalCenter
         }
         spacing: 8
@@ -240,37 +237,35 @@ PanelWindow {
         HiddenModules {
           id: hiddenTray
           stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened
-          OpenCodeUsage {
-            tooltip: tooltip
-            popupRef: openCodeUsagePopup
-          }
-          Handy {
-            tooltip: tooltip
-            popupRef: handyPopup
-          }
+          AttentionMode {}
           ServerMode {
             popupRef: serverModeDropdown
           }
+          OpenCodeUsage {
+            popupRef: openCodeUsagePopup
+          }
+          Handy {
+            popupRef: handyPopup
+          }
+        }
+        Display {
+          popupRef: displayPopup
+        }
+        Audio {
+          popupRef: volumePopup
         }
         Network {
-          tooltip: tooltip
           popupRef: wifiDropdown
         }
         Bluetooth {
-          tooltip: tooltip
           popupRef: bluetoothDropdown
         }
-        Audio {
-          tooltip: tooltip
-          popupRef: volumePopup
-        }
         Battery {
-          tooltip: tooltip
           popupRef: batteryPopup
         }
-        Display {
-          tooltip: tooltip
-          popupRef: displayPopup
+        Dnd {
+          id: dndModule
+          hasNotifications: shellRoot.hasNotifications
         }
       }
     }

@@ -5,8 +5,14 @@ import "../components"
 
 Item {
   id: root
-  implicitHeight: 30
-  width: row.width
+  implicitHeight: 32
+  width: 196
+
+  Rectangle {
+    anchors.fill: parent
+    radius: 16
+    color: Colors.base
+  }
 
   function workspace(id) {
     for (const ws of Hyprland.workspaces.values) {
@@ -28,7 +34,9 @@ Item {
 
   Row {
     id: row
-    spacing: 0
+    anchors.fill: parent
+    anchors.margins: 4
+    spacing: 2
 
     Repeater {
       model: 5
@@ -44,10 +52,11 @@ Item {
             return ws ? ws.urgent : false
           }
 
-          width: label.implicitWidth + 26
-          height: 30
+          width: 36
+          height: 28
+          anchors.verticalCenter: parent.verticalCenter
           radius: height / 2
-          color: active ? Tokens.primaryContainer
+          color: active ? Colors.primary_container
                : urgent ? Tokens.errorContainer
                : "transparent"
           Behavior on color {
@@ -60,11 +69,11 @@ Item {
             id: label
             anchors.centerIn: parent
             text: wsId.toString()
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 15
-            font.weight: parent.active ? Font.Bold : Font.Normal
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 14
+            font.weight: Font.DemiBold
             color: parent.urgent ? Tokens.on_error_container
-                 : parent.active ? Tokens.on_primary_container
+                 : parent.active ? Colors.on_primary_container
                  : mouseArea.containsMouse ? Colors.text
                  : Colors.text_alt
           }

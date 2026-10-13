@@ -10,14 +10,16 @@ CAPTURE="$SCRIPT_DIR/clipboard-capture.sh"
 
 mkdir -p "$CACHE/text" "$CACHE/img" "$CACHE/thumb"
 
+# Check first: re-syncing must not spawn duplicate daemons stuck waiting for
+# the history lock before discovering the existing watcher set.
+if pgrep -f "wl-paste .*--watch.*clipboard-capture" >/dev/null 2>&1; then
+  exit 0
+fi
+
 # Prune stale entries (older than the TTL) so a previous session's history
 # doesn't survive beyond a day.
 if [ -f "$SCRIPT_DIR/clipboard-list.sh" ]; then
   "$SCRIPT_DIR/clipboard-list.sh" >/dev/null 2>&1 || true
-fi
-
-if pgrep -f "wl-paste .*--watch.*clipboard-capture" >/dev/null 2>&1; then
-  exit 0
 fi
 
 wl-paste --watch "$CAPTURE" &

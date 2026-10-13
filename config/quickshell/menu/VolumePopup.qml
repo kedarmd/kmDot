@@ -8,13 +8,18 @@ import "../components"
 PopupBase {
   id: root
   sockName: "kmdot-volume"
-  cardWidth: 340
+  cardWidth: 424
+  cardMinHeight: 792
 
   // anchorItem seam: set by the bar module before toggling (see PopupBase).
   property var sinks: []
   property var sources: []
+  property bool sinkListRecovering: false
+  property bool sourceListRecovering: false
 
   readonly property var source: Pipewire.defaultAudioSource
+  readonly property var availableBluetoothAudioDevices: BluetoothStore.devices.filter(d =>
+    d.paired && !d.connected && d.icon === "")
 
   // Keeps every listed node bound. This is load-bearing, not an optimization:
   // an untracked PwNode sits at ready=false with volume 0 and writes silently
@@ -26,9 +31,8 @@ PopupBase {
     objects: root.sinks.concat(root.sources)
   }
 
-  // Two device sections now share one card, so each list shows ~2.4 rows and
-  // scrolls past that. Without a shared cap the card can grow past the screen
-  // height (bar offset 48 + two 330px lists + NowPlaying).
+  // Two device sections share one card. Extra hardware devices scroll inside
+  // their short lists so the primary controls stay visible.
   readonly property int listMaxHeight: 176
 
   // PwNode exposes isSink/isStream but NO isSource, so capture nodes have to be
@@ -90,6 +94,13 @@ PopupBase {
     const all = Pipewire.nodes.values ? Pipewire.nodes.values : []
     const arr = all.filter(n => n && n.isSink && !n.isStream)
     root.sortDevices(arr)
+    if (arr.length === 0 && root.sinks.length > 0) {
+      root.sinkListRecovering = true
+      sinkEmptyGrace.restart()
+      return
+    }
+    sinkEmptyGrace.stop()
+    root.sinkListRecovering = false
     if (!root.sameIds(arr, root.sinks)) root.sinks = arr
   }
 
@@ -97,12 +108,31 @@ PopupBase {
     const all = Pipewire.nodes.values ? Pipewire.nodes.values : []
     const arr = all.filter(n => root.isMicNode(n))
     root.sortDevices(arr)
+    if (arr.length === 0 && root.sources.length > 0) {
+      root.sourceListRecovering = true
+      sourceEmptyGrace.restart()
+      return
+    }
+    sourceEmptyGrace.stop()
+    root.sourceListRecovering = false
     if (!root.sameIds(arr, root.sources)) root.sources = arr
+  }
+
+  Timer {
+    id: sinkEmptyGrace
+    interval: 2500
+    onTriggered: { root.sinks = []; root.sinkListRecovering = false }
+  }
+  Timer {
+    id: sourceEmptyGrace
+    interval: 2500
+    onTriggered: { root.sources = []; root.sourceListRecovering = false }
   }
 
   function refreshItems() {
     root.rebuildSinks()
     root.rebuildSources()
+    BluetoothStore.refresh()
   }
 
   // Live input-level meter (pavucontrol's bouncing bar). One capture at a
@@ -133,7 +163,16 @@ PopupBase {
     root.micLevel = 0
   }
 
-  function openedChange() { if (root.opened) root.startMeter(); else root.stopMeter() }
+  function openedChange() {
+    if (root.opened) {
+      root.startMeter()
+      BluetoothStore.refresh()
+      if (BluetoothStore.enabled) BluetoothStore.startDiscovery()
+    } else {
+      root.stopMeter()
+      BluetoothStore.stopDiscovery()
+    }
+  }
   onSourceChanged: if (root.opened) root.startMeter()
 
   Process {
@@ -152,387 +191,154 @@ PopupBase {
     interval: 3000
     repeat: true
     running: root.opened
-    onTriggered: { root.rebuildSinks(); root.rebuildSources(); root.startMeter() }
+    onTriggered: { root.rebuildSinks(); root.rebuildSources(); BluetoothStore.refresh(); root.startMeter() }
   }
 
-  // Card body content (fed to the base Column via the default alias).
+// Content follows the 424 × 792 Penpot Sound panel. The two device lists keep
+// their own short scroll area, so extra PipeWire devices retain gain and mute.
+Column {
+  width: parent.width
+  spacing: 0
 
-        NowPlaying {
-          id: nowPlaying
-        }
+  Row {
+    width: parent.width
+    height: 40
+    spacing: 16
+    R1Icon { glyph: "\uf028"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+    Text { text: "Sound"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+  }
 
-        Rectangle {
-          visible: nowPlaying.visible
-          width: parent.width
-          height: 1
-          color: Tokens.divider
-        }
+  Item { width: 1; height: 24 }
 
-        Text {
-          width: parent.width
-          text: "Output devices"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.muted
-        }
+  Rectangle {
+    width: parent.width
+    height: 160
+    radius: 24
+    color: Colors.surface_alt
+    NowPlaying { id: nowPlaying; anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 } }
+    Column {
+      visible: nowPlaying.player === null
+      anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 24 }
+      spacing: 8
+      R1Icon { glyph: "\uf001"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
+      Text { text: "Nothing playing"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; font.weight: Font.DemiBold }
+      Text { text: "Media controls appear here when a player is active."; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap; width: parent.width }
+    }
+  }
 
-        Text {
-          width: parent.width
-          visible: root.sinks.length === 0
-          text: "No output devices"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.muted
-        }
+  Item { width: 1; height: 24 }
+  Text { width: parent.width; height: 20; text: "OUTPUT DEVICES"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.muted; verticalAlignment: Text.AlignVCenter }
+  Item { width: 1; height: 20 }
 
-        ListView {
-          id: sinkList
-          width: parent.width
-          height: Math.min(root.sinks.length * 72 + 8, root.listMaxHeight)
-          clip: true
-          spacing: 8
-          model: root.sinks
-          interactive: true
-          flickDeceleration: 2000
-          boundsBehavior: Flickable.StopAtBounds
+  ListView {
+    id: sinkList
+    width: parent.width
+    height: root.sinks.length > 0 ? Math.min(root.sinks.length * 76 + (root.sinks.length - 1) * 24, root.listMaxHeight) : 24
+    clip: true
+    spacing: 24
+    model: root.sinks
+    interactive: true
+    flickDeceleration: 2000
+    boundsBehavior: Flickable.StopAtBounds
+    Text { anchors.centerIn: parent; visible: root.sinks.length === 0; text: root.sinkListRecovering ? "Switching output device…" : "No output devices"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Rectangle {
+      visible: sinkList.contentHeight > sinkList.height
+      width: 4; radius: 2; color: Colors.text_alt; opacity: 0.4
+      anchors.right: parent.right; anchors.rightMargin: 2
+      y: sinkList.contentY * (sinkList.height - height) / Math.max(1, sinkList.contentHeight - sinkList.height)
+      height: Math.max(20, sinkList.height * sinkList.height / sinkList.contentHeight)
+    }
+    delegate: AudioDeviceControl { isInput: false }
+  }
 
-          Rectangle {
-            id: vBar
-            visible: sinkList.contentHeight > sinkList.height
-            width: 4
-            radius: 2
-            color: Colors.text_alt
-            opacity: 0.4
-            anchors.right: parent.right
-            anchors.rightMargin: 2
-            y: sinkList.contentY * (sinkList.height - vBar.height) / Math.max(1, sinkList.contentHeight - sinkList.height)
-            height: Math.max(20, sinkList.height * sinkList.height / sinkList.contentHeight)
-          }
-
-          delegate: Item {
-            id: row
-            required property var modelData
-            width: sinkList.width
-            height: 64
-
-            readonly property var n: row.modelData
-            readonly property var aud: row.n.audio
-            readonly property real vol: row.aud ? row.aud.volume : 0
-            readonly property bool mut: row.aud ? row.aud.muted : false
-            readonly property bool active: row.n === Pipewire.defaultAudioSink
-
-            readonly property string name: row.n.description || row.n.nickname || row.n.name || ""
-
-            readonly property string typeGlyph: {
-              const props = row.n.properties || {}
-              if (props["device.api"] === "bluez5") return "󰂯"
-              const dn = String(props["device.name"] || row.n.name || "")
-              if (dn.indexOf("hdmi") >= 0 || dn.indexOf("dp-") >= 0 || dn.indexOf("display") >= 0) return "\uf26c"
-              return "󰕾"
-            }
-
-            Rectangle {
-              anchors.fill: parent
-              radius: 14
-              color: row.active ? Tokens.primaryContainer : "transparent"
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: Qt.PointingHandCursor
-              onClicked: Pipewire.preferredDefaultAudioSink = row.n
-            }
-
-            Column {
-              anchors {
-                top: parent.top
-                bottom: parent.bottom
-                left: parent.left
-                right: parent.right
-                topMargin: 10
-                bottomMargin: 12
-                leftMargin: 10
-                rightMargin: 10
-              }
-              spacing: 8
-
-              Row {
-                width: parent.width
-                spacing: 8
-
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: row.typeGlyph
-                  font.family: "JetBrainsMono Nerd Font Propo"
-                  font.pixelSize: 15
-                  color: row.active ? Tokens.on_primary_container : Colors.muted
-                }
-
-                Rectangle {
-                  anchors.verticalCenter: parent.verticalCenter
-                  visible: row.active
-                  width: 6
-                  height: 6
-                  radius: 3
-                  color: Tokens.primary
-                }
-
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  width: parent.width - 70
-                  text: row.name
-                  font.family: "JetBrainsMono Nerd Font Propo"
-                  font.pixelSize: 12
-                  color: row.active ? Tokens.on_primary_container : Colors.text_alt
-                  elide: Text.ElideMiddle
-                }
-
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: Math.round(row.vol * 100) + "%"
-                  font.family: "JetBrainsMono Nerd Font Propo"
-                  font.pixelSize: 12
-                  color: row.mut ? Colors.warning : Colors.muted
-                }
-              }
-
-              Row {
-                width: parent.width
-                spacing: 10
-
-                SliderBar {
-                  anchors.verticalCenter: parent.verticalCenter
-                  width: parent.width - 26
-                  height: 11
-                  barRadius: 3
-                  trackColor: row.active ? Tokens.outlineVariant : Colors.surface_alt
-                  value: row.vol
-                  onChanged: if (row.aud) row.aud.volume = v
-                }
-
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  anchors.verticalCenterOffset: 0
-                  text: row.mut ? "\uEEE8" : "\uf026"
-                  font.family: "JetBrainsMono Nerd Font Propo"
-                  font.pixelSize: 13
-                  color: row.mut ? Colors.warning : Colors.text_alt
-
-                  MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: if (row.aud) row.aud.muted = !row.aud.muted
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        Rectangle {
-          width: parent.width
-          height: 1
-          color: Tokens.divider
-        }
-
-        Text {
-          width: parent.width
-          text: "Input devices"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.muted
-        }
-
-        // Live level of the default mic: thin pavucontrol-style bar that
-        // bounces as you speak. Meters the selected mic only (one capture),
-        // so it hides when there is nothing to meter.
+  Item { width: 1; height: 24 }
+  Column {
+    width: parent.width
+    spacing: 24
+    Repeater {
+      model: root.availableBluetoothAudioDevices
+      delegate: Item {
+        required property var modelData
+        width: parent.width
+        height: 24
         Row {
           width: parent.width
-          spacing: 8
-          visible: root.sources.length > 0
-
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: ""
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 12
-            color: root.micLevel > 0.02 ? Colors.success : Colors.muted
-          }
-
-          Rectangle {
-            id: meterTrack
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 22
-            height: 6
-            radius: 3
-            color: Colors.surface_alt
-
-            Rectangle {
-              anchors { left: parent.left; verticalCenter: parent.verticalCenter }
-              width: meterTrack.width * root.micLevel
-              height: parent.height
-              radius: parent.radius
-              color: Tokens.primary
-
-              Behavior on width { NumberAnimation { duration: 80 } }
-            }
-          }
+          height: parent.height
+          Text { width: parent.width - 80; text: modelData.name; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; font.weight: Font.DemiBold; elide: Text.ElideRight; verticalAlignment: Text.AlignVCenter }
+          Text { width: 80; text: "Connect"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; horizontalAlignment: Text.AlignRight; verticalAlignment: Text.AlignVCenter }
         }
+        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: BluetoothStore.activate(modelData) }
+      }
+    }
+  }
 
-        Text {
-          width: parent.width
-          visible: root.sources.length === 0
-          text: "No input devices"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.muted
+  Item { width: 1; height: 20 }
+  Rectangle { width: parent.width; height: 1; color: Tokens.divider }
+  Item { width: 1; height: 23 }
+
+  Row {
+    width: parent.width
+    height: 20
+    Text { width: parent.width - 164; text: "INPUT DEVICES"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.muted; verticalAlignment: Text.AlignVCenter }
+    Rectangle {
+      width: 152; height: 4; radius: 2; anchors.verticalCenter: parent.verticalCenter; color: Tokens.outlineVariant
+      Rectangle { width: parent.width * root.micLevel; height: parent.height; radius: parent.radius; color: Colors.success; Behavior on width { NumberAnimation { duration: 80 } } }
+    }
+  }
+
+  Item { width: 1; height: 20 }
+  ListView {
+    id: sourceList
+    width: parent.width
+    height: root.sources.length > 0 ? Math.min(root.sources.length * 76 + (root.sources.length - 1) * 24, root.listMaxHeight) : 24
+    clip: true
+    spacing: 24
+    model: root.sources
+    interactive: true
+    flickDeceleration: 2000
+    boundsBehavior: Flickable.StopAtBounds
+    Text { anchors.centerIn: parent; visible: root.sources.length === 0; text: root.sourceListRecovering ? "Switching input device…" : "No input devices"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Rectangle {
+      visible: sourceList.contentHeight > sourceList.height
+      width: 4; radius: 2; color: Colors.text_alt; opacity: 0.4
+      anchors.right: parent.right; anchors.rightMargin: 2
+      y: sourceList.contentY * (sourceList.height - height) / Math.max(1, sourceList.contentHeight - sourceList.height)
+      height: Math.max(20, sourceList.height * sourceList.height / sourceList.contentHeight)
+    }
+    delegate: AudioDeviceControl { isInput: true }
+  }
+
+  Item { width: 1; height: 28 }
+  Column {
+    width: parent.width
+    spacing: 0
+    Repeater {
+      model: root.availableBluetoothAudioDevices
+      delegate: Rectangle {
+        required property var modelData
+        width: parent.width; height: 72; radius: 16; color: Colors.surface_alt
+        R1Icon { x: 16; width: 24; height: 24; anchors.verticalCenter: parent.verticalCenter; glyph: ""; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+        Column {
+          x: 56; width: parent.width - 96; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+          Text { width: parent.width; text: modelData.name + " microphone"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
+          Text { text: "Not connected"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
         }
+        R1Icon { anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf105"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18 }
+        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: BluetoothStore.activate(modelData) }
+      }
+    }
+  }
 
-        ListView {
-          id: sourceList
-          width: parent.width
-          height: Math.min(root.sources.length * 72 + 8, root.listMaxHeight)
-          clip: true
-          spacing: 8
-          model: root.sources
-          interactive: true
-          flickDeceleration: 2000
-          boundsBehavior: Flickable.StopAtBounds
-
-          Rectangle {
-            id: srcBar
-            visible: sourceList.contentHeight > sourceList.height
-            width: 4
-            radius: 2
-            color: Colors.text_alt
-            opacity: 0.4
-            anchors.right: parent.right
-            anchors.rightMargin: 2
-            y: sourceList.contentY * (sourceList.height - srcBar.height) / Math.max(1, sourceList.contentHeight - sourceList.height)
-            height: Math.max(20, sourceList.height * sourceList.height / sourceList.contentHeight)
-          }
-
-          delegate: Item {
-            id: micRow
-            required property var modelData
-            width: sourceList.width
-            height: 64
-
-            readonly property var n: micRow.modelData
-            readonly property var aud: micRow.n.audio
-            readonly property real vol: micRow.aud ? micRow.aud.volume : 0
-            readonly property bool mut: micRow.aud ? micRow.aud.muted : false
-            readonly property bool active: micRow.n === Pipewire.defaultAudioSource
-
-            readonly property string name: micRow.n.description || micRow.n.nickname || micRow.n.name || ""
-
-            // A headset mic arrives over bluez5, so it gets the same literal
-            // bluetooth char the output rows use; everything else gets
-            // fa-microphone. Both are embedded as LITERAL characters, never as
-            // \uXXXX escapes of 5-hex-digit PUA codepoints (see the glyph
-            // footgun in AGENTS.md). md-microphone (U+F04D) was rejected: the
-            // font maps that slot to fa-stop, which renders as a square.
-            readonly property string typeGlyph: {
-              const props = micRow.n.properties || {}
-              if (props["device.api"] === "bluez5") return "󰂯"
-              return ""
-            }
-
-            Rectangle {
-              anchors.fill: parent
-              radius: 14
-              color: micRow.active ? Tokens.primaryContainer : "transparent"
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: Qt.PointingHandCursor
-              onClicked: Pipewire.preferredDefaultAudioSource = micRow.n
-            }
-
-            Column {
-              anchors {
-                top: parent.top
-                bottom: parent.bottom
-                left: parent.left
-                right: parent.right
-                topMargin: 10
-                bottomMargin: 12
-                leftMargin: 10
-                rightMargin: 10
-              }
-              spacing: 8
-
-              Row {
-                width: parent.width
-                spacing: 8
-
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: micRow.typeGlyph
-                  font.family: "JetBrainsMono Nerd Font Propo"
-                  font.pixelSize: 15
-                  color: micRow.active ? Tokens.on_primary_container : Colors.muted
-                }
-
-                Rectangle {
-                  anchors.verticalCenter: parent.verticalCenter
-                  visible: micRow.active
-                  width: 6
-                  height: 6
-                  radius: 3
-                  color: Tokens.primary
-                }
-
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  width: parent.width - 70
-                  text: micRow.name
-                  font.family: "JetBrainsMono Nerd Font Propo"
-                  font.pixelSize: 12
-                  color: micRow.active ? Tokens.on_primary_container : Colors.text_alt
-                  elide: Text.ElideMiddle
-                }
-
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: Math.round(micRow.vol * 100) + "%"
-                  font.family: "JetBrainsMono Nerd Font Propo"
-                  font.pixelSize: 12
-                  color: micRow.mut ? Colors.warning : Colors.muted
-                }
-              }
-
-              Row {
-                width: parent.width
-                spacing: 10
-
-                SliderBar {
-                  anchors.verticalCenter: parent.verticalCenter
-                  width: parent.width - 26
-                  height: 11
-                  barRadius: 3
-                  trackColor: micRow.active ? Tokens.outlineVariant : Colors.surface_alt
-                  value: micRow.vol
-                  onChanged: if (micRow.aud) micRow.aud.volume = v
-                }
-
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  anchors.verticalCenterOffset: 0
-                  text: micRow.mut ? "\uEEE8" : ""
-                  font.family: "JetBrainsMono Nerd Font Propo"
-                  font.pixelSize: 13
-                  color: micRow.mut ? Colors.warning : Colors.text_alt
-
-                  MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: if (micRow.aud) micRow.aud.muted = !micRow.aud.muted
-                  }
-                }
-              }
-            }
-          }
-        }
+  Item { width: 1; height: 20 }
+  Text {
+    width: parent.width
+    height: 52
+    text: "Select a device to make it the default.\nThe microphone meter is active while this panel is open."
+    wrapMode: Text.WordWrap
+    font.family: "JetBrainsMono Nerd Font"
+    font.pixelSize: 12
+    color: Colors.text_alt
+    verticalAlignment: Text.AlignTop
+  }
+}
 }

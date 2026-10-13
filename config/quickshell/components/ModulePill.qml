@@ -7,7 +7,7 @@ import qs
 // their label + MouseArea around this and drive hovered/pressed.
 Rectangle {
   id: root
-  implicitHeight: 30
+  implicitHeight: 32
 
   property bool active: false
   property color fill: Tokens.primaryContainer

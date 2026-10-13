@@ -5,7 +5,8 @@ import "../components"
 PopupBase {
   id: root
   title: "Pair Bluetooth device"
-  cardWidth: 360
+  cardWidth: 424
+  cardMinHeight: 440
   socketEnabled: false
 
   // Thin adapter over the BluetoothStore singleton (issue #61): the device
@@ -17,6 +18,7 @@ PopupBase {
   readonly property string errorText: BluetoothStore.errorText
   readonly property bool discovering: BluetoothStore.discovering
   readonly property bool radioAllowed: BluetoothStore.enabled
+  readonly property var pairableDevices: root.devices.filter(d => !d.paired)
   // Injected by the opening surface: back navigation returns here without
   // coupling this form to a specific dropdown instance.
   property var returnPopup: null
@@ -65,39 +67,44 @@ PopupBase {
   Column {
     width: parent.width; spacing: 12
     Row { width: parent.width; spacing: 10
-      PillButton { id: backButton; width: 30; filled: true; glyph: "\uf060"; onClicked: root.goBack() }
-      Text { id: bluetoothIcon; text: "󰂯"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
-      Text { id: titleText; text: "Pair Bluetooth device"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
-      Item { width: Math.max(1, parent.width - backButton.width - bluetoothIcon.implicitWidth - titleText.implicitWidth - 30); height: 1 }
+      R1Icon { id: bluetoothIcon; glyph: "󰂯"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
+      Text { id: titleText; text: "Pair a device"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
     }
-    Text { width: parent.width; text: "Select a nearby device to pair. PIN confirmation is handled by the Bluetooth agent."; wrapMode: Text.Wrap; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+    Text { width: parent.width; text: "Choose a nearby device to start pairing."; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { text: root.discovering ? "DISCOVERING NEARBY DEVICES" : "NEARBY DEVICES"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; font.weight: Font.DemiBold }
     Item {
       id: devicesViewport
       width: parent.width
-      height: 300
+      height: Math.min(Math.max(devicesContent.implicitHeight, 48), 176)
       Flickable {
       id: devicesList
       anchors.fill: parent
       clip: true
       contentWidth: width
-      contentHeight: devicesContent.implicitHeight
+        contentHeight: devicesContent.implicitHeight
       interactive: true
       boundsBehavior: Flickable.StopAtBounds
       Column {
         id: devicesContent
         width: devicesList.width - 8
-        spacing: 6
+        spacing: 8
         Repeater {
-          model: root.devices
+          model: root.pairableDevices
           delegate: Rectangle {
             required property var modelData
-            width: parent.width; height: 44; radius: 12; color: Tokens.surfaceContainerHighest
-            Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData.name || "Unknown device"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
-            Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; visible: root.busyPath === modelData.path; text: "\uf013"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo" }
+            width: parent.width; height: 72; radius: 16; color: Colors.surface_alt
+            Row { anchors.fill: parent; anchors.margins: 16; spacing: 16
+              R1Icon { glyph: modelData.icon; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter }
+              Column { width: parent.width - 72; anchors.verticalCenter: parent.verticalCenter
+                Text { width: parent.width; text: modelData.name || "Unknown device"; color: Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
+                Text { width: parent.width; text: root.busyPath === modelData.path ? root.statusText : "Ready to pair"; color: Colors.text_alt; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+              }
+              R1Icon { anchors.verticalCenter: parent.verticalCenter; glyph: root.busyPath === modelData.path ? "\uf110" : "\uf105"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16 }
+            }
             MouseArea { anchors.fill: parent; enabled: root.radioAllowed && !root.busyPath; onClicked: root.activate(modelData) }
           }
         }
-        Text { visible: root.devices.length === 0; text: root.discovering ? "Scanning for devices..." : "No nearby devices found"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
+        Text { visible: root.pairableDevices.length === 0; text: root.discovering ? "Scanning for devices…" : "No nearby devices found"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
       }
       }
       Rectangle {
@@ -113,6 +120,7 @@ PopupBase {
         height: Math.max(24, devicesList.height * devicesList.height / devicesList.contentHeight)
       }
     }
-    Text { visible: root.statusText !== ""; width: parent.width; text: root.statusText; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+    Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; wrapMode: Text.Wrap; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { width: parent.width; text: "You may be asked to confirm a PIN or passkey."; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
   }
 }

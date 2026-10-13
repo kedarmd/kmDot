@@ -6,12 +6,14 @@ import "../components"
 PopupBase {
   id: root
   title: "Add Wi-Fi connection"
-  cardWidth: 360
+  cardWidth: 424
+  cardMinHeight: root.failed ? 464 : 416
   socketEnabled: false
-  focusItem: ssidInput
+  focusItem: root.enteringSsid ? ssidInput : passwordInput
 
   property string ssid: ""
   property string password: ""
+  property bool enteringSsid: false
   property bool editingExisting: false
   property bool busy: false
   property string resultText: ""
@@ -38,7 +40,11 @@ PopupBase {
   }
 
   function openedChange() {
-    if (root.opened) ssidInput.forceActiveFocus()
+    if (root.opened) {
+      root.enteringSsid = root.ssid.trim() === ""
+      if (!root.enteringSsid) passwordInput.forceActiveFocus()
+      else ssidInput.forceActiveFocus()
+    }
     else Wifi.errorText = ""
   }
 
@@ -76,20 +82,27 @@ PopupBase {
   Column {
     width: parent.width; spacing: 12
     Row { width: parent.width; spacing: 10
-      PillButton { id: backButton; width: 30; filled: true; glyph: "\uf060"; onClicked: root.goBack() }
-      Text { id: wifiIcon; text: "󰤨"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
-      Text { id: titleText; text: "Add Wi-Fi connection"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
-      Item { width: Math.max(1, parent.width - backButton.width - wifiIcon.implicitWidth - titleText.implicitWidth - 30); height: 1 }
+      R1Icon { id: wifiIcon; glyph: "󰤨"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
+      Text { id: titleText; text: root.failed ? "Try again" : "Join a network"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+      Item { width: Math.max(1, parent.width - wifiIcon.implicitWidth - titleText.implicitWidth - 30); height: 1 }
     }
-    Text { text: "Network name (SSID)"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
-    Rectangle { width: parent.width; height: 34; radius: 8; color: Tokens.surfaceContainerHighest
-      TextInput { id: ssidInput; anchors.fill: parent; anchors.margins: 9; text: root.ssid; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; onTextChanged: root.ssid = text }
+    Text { visible: !root.enteringSsid; text: root.ssid; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold }
+    Text { visible: !root.enteringSsid; width: parent.width; text: root.failed ? "The connection failed. Check your password and retry." : "Enter the password for this secured network."; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { visible: root.enteringSsid; text: "Network name (SSID)"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Rectangle { visible: root.enteringSsid; width: parent.width; height: 34; radius: 8; color: Tokens.surfaceContainerHighest
+      TextInput { id: ssidInput; anchors.fill: parent; anchors.margins: 9; text: root.ssid; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; onTextChanged: root.ssid = text }
     }
-    Text { text: "Password"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
-    Rectangle { width: parent.width; height: 34; radius: 8; color: Tokens.surfaceContainerHighest
-      TextInput { id: passwordInput; anchors.fill: parent; anchors.margins: 9; echoMode: TextInput.Password; text: root.password; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; onTextChanged: root.password = text; onAccepted: root.connect() }
+    Text { text: !root.enteringSsid ? "PASSWORD" : "Password"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; font.weight: Font.DemiBold; topPadding: !root.enteringSsid ? 24 : 0 }
+    Rectangle { width: parent.width; height: !root.enteringSsid ? 56 : 34; radius: !root.enteringSsid ? 16 : 8; color: Colors.surface_alt; border.width: root.failed ? 2 : 0; border.color: Colors.error
+      TextInput { id: passwordInput; anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: 16; anchors.rightMargin: !root.enteringSsid ? 48 : 16; height: parent.height - 12; echoMode: TextInput.Password; text: root.password; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; onTextChanged: root.password = text; onAccepted: root.connect() }
+      R1Icon { visible: !root.enteringSsid; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf023"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16 }
     }
-    PillButton { width: parent.width; filled: true; active: root.busy; text: root.busy ? "Connecting..." : "Connect"; enabled: root.radioAllowed; opacity: root.radioAllowed ? 1 : 0.5; onClicked: root.connect() }
-    Text { visible: root.failed && root.resultText !== ""; width: parent.width; text: root.resultText; wrapMode: Text.Wrap; color: Colors.error; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+    Text { visible: !root.enteringSsid; text: "Your password is stored by NetworkManager."; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { visible: root.failed && root.resultText !== ""; width: parent.width; text: root.resultText; wrapMode: Text.Wrap; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+  }
+  bottomContent: Row {
+    width: parent.width; height: 40; spacing: 8
+    PillButton { width: (parent.width - 8) / 2; filled: true; text: "Cancel"; textSize: 14; enabled: !root.busy; onClicked: root.goBack() }
+    PillButton { width: (parent.width - 8) / 2; active: true; fillColor: Colors.primary; activeTextColor: Colors.surface; textSize: 14; text: root.busy ? "Connecting…" : root.failed ? "Try again" : "Connect"; enabled: root.radioAllowed && !root.busy && root.ssid.trim() !== "" && (root.editingExisting || root.password !== ""); onClicked: root.connect() }
   }
 }

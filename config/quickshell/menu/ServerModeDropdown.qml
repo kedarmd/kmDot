@@ -8,7 +8,8 @@ import "../components/serverstatus.js" as ServerStatus
 PopupBase {
   id: root
   sockName: "kmdot-server"
-  cardWidth: 360
+  cardWidth: 424
+  cardMinHeight: root.errorText && root.failedService ? 424 : 576
 
   property string mode: "off"
   property string inhibitor: "inactive"
@@ -17,6 +18,8 @@ PopupBase {
   property string jellyfin: "inactive"
   property string busyAction: ""
   property string errorText: ""
+  property string failedService: ""
+  property string failedServiceAction: ""
   readonly property bool busy: root.busyAction !== ""
 
   readonly property bool on: root.mode === "on"
@@ -36,6 +39,7 @@ PopupBase {
 
   function toggleServerMode(noServices) {
     root.errorText = ""
+    root.failedService = ""
     root.busyAction = noServices ? "mode:nosvc" : "mode"
     const flag = noServices ? " --no-services" : ""
     modeProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/server-mode.sh " + (root.on ? "off" : "on") + flag])
@@ -44,6 +48,8 @@ PopupBase {
   function serviceAction(name, action) {
     root.errorText = ""
     root.busyAction = "service:" + name
+    root.failedService = name
+    root.failedServiceAction = action
     serviceProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/server-mode.sh service " + name + " " + action])
   }
 
@@ -88,298 +94,118 @@ PopupBase {
     }
   }
 
-        Item {
-          width: parent.width
-          height: 34
-
-          Text {
-            id: hdrGlyph
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            text: "\uf233"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 24
-            color: root.on ? Colors.success : Colors.text_alt
-          }
-
-          Text {
-            id: hdrTitle
-            anchors.left: hdrGlyph.right
-            anchors.leftMargin: 10
-            anchors.verticalCenter: parent.verticalCenter
-            text: "Server mode"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 16
-            font.weight: Font.DemiBold
-            color: Colors.text
-          }
-
-          Text {
-            id: hdrStatus
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.on ? "On" : "Off"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 14
-            font.weight: Font.DemiBold
-            color: root.on ? Colors.success : Colors.muted
-          }
-        }
-
-        Row {
-          width: parent.width
-          spacing: 8
-
-          PillButton {
-            width: (parent.width - 8) / 2
-            height: 32
-            active: root.on
-            enabled: !root.busy
-            fillColor: Tokens.primaryContainer
-            activeTextColor: Tokens.on_primary_container
-            glyph: root.busyAction === "mode" ? "\uf013" : (root.on ? "\uf011" : "\uf233")
-            glyphSize: 12
-            text: root.busyAction === "mode" ? "Working\u2026" : (root.on ? "Turn Off" : "Turn On")
-            textSize: 12
-            onClicked: root.toggleServerMode(false)
-          }
-
-          PillButton {
-            width: (parent.width - 8) / 2
-            height: 32
-            active: root.on
-            enabled: !root.busy
-            fillColor: Tokens.primaryContainer
-            activeTextColor: Tokens.on_primary_container
-            glyph: root.busyAction === "mode:nosvc" ? "\uf013" : ""
-            glyphSize: 12
-            text: root.busyAction === "mode:nosvc" ? "Working\u2026" : (root.on ? "Mode Only: Off" : "Mode Only: On")
-            textSize: 12
-            onClicked: root.toggleServerMode(true)
-          }
-        }
-
-        Text {
-          visible: root.errorText !== ""
-          width: parent.width
-          text: root.errorText
-          color: Colors.error
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 11
-          wrapMode: Text.WordWrap
-        }
-
+  Item {
+    visible: !(root.errorText && root.failedService)
+    width: parent.width
+    height: 528 + (root.errorText ? errorCard.height + 16 : 0)
+    Row {
+      spacing: 16
+      R1Icon { glyph: "\uf233"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "Server mode"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
+    }
+    Text {
+      y: 64; width: parent.width - 56
+      text: "Keep the laptop available"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; color: Colors.text
+    }
+    Text {
+      y: 91; width: parent.width - 56
+      text: "Sleep " + (root.inhibitor === "active" ? "blocked" : "allowed") + " · Screen follows idle"
+      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt
+    }
+    Rectangle {
+      y: 68; anchors.right: parent.right; width: 48; height: 28; radius: 14
+      color: root.on ? Colors.primary : Colors.border
+      opacity: root.busy ? 0.38 : 1
+      Rectangle { x: root.on ? 24 : 4; y: 4; width: 20; height: 20; radius: 10; color: root.on ? Colors.surface : Colors.text_alt }
+      MouseArea { anchors.fill: parent; enabled: !root.busy; cursorShape: Qt.PointingHandCursor; onClicked: root.toggleServerMode(true) }
+    }
+    Row {
+      y: 140; width: parent.width; spacing: 8
+      PillButton {
+        width: 224; height: 40; filled: true; active: true; enabled: !root.busy; textSize: 14
+        text: root.busyAction === "mode" ? "Working…" : root.on ? "Turn off + services" : "Turn on + services"
+        onClicked: root.toggleServerMode(false)
+      }
+      PillButton {
+        width: parent.width - 232; height: 40; filled: true; inactiveFillColor: Colors.surface_alt; enabled: !root.busy; textSize: 14
+        text: root.busyAction === "mode:nosvc" ? "Working…" : "Mode only"
+        onClicked: root.toggleServerMode(true)
+      }
+    }
+    Text { y: 212; text: "SERVICES"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
+    Column {
+      y: 240; width: parent.width; spacing: 8
+      Repeater {
+        model: [{name: "Tailscale", service: "tailscale", state: root.tailscale, detail: root.tailscaleIp || "Private network", glyph: "\uf0ac"},
+                {name: "Jellyfin", service: "jellyfin", state: root.jellyfin, detail: "Media server", glyph: "\uf04b"}]
         Rectangle {
-          width: parent.width
-          height: 1
-          color: Tokens.divider
-        }
-
-        Text {
-          width: parent.width
-          text: "Services"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.muted
-        }
-
-        Row {
-          width: parent.width
-          height: 34
-          spacing: 10
-
+          required property var modelData
+          width: parent.width; height: 72; radius: 16
+          color: modelData.state === "active" ? Colors.primary_container : Colors.surface_alt
+          R1Icon { x: 16; y: 24; glyph: modelData.glyph; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.text }
+          Text { x: 56; y: 12; width: parent.width - 144; text: modelData.name; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold; color: Colors.text }
           Text {
-            anchors.verticalCenter: parent.verticalCenter
-            width: 18
-            horizontalAlignment: Text.AlignHCenter
-            text: "\uEF09"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 15
-            color: root.tailscale === "active" ? Colors.primary : Colors.muted
+            x: 56; y: 38; width: parent.width - 144
+            text: (modelData.state === "active" ? "Running" : "Stopped") + " · " + modelData.detail
+            font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt; elide: Text.ElideRight
           }
-
-          Column {
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 64 - 18 - 20
-            spacing: 2
-
-            Text {
-              width: parent.width
-              text: "Tailscale"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 12
-              font.weight: Font.DemiBold
-              color: Colors.text
-            }
-
-            Text {
-              width: parent.width
-              text: root.tailscale === "active"
-                ? (root.tailscaleIp ? root.tailscaleIp + " \u00b7 Running" : "Running")
-                : "Stopped"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 11
-              color: root.tailscale === "active" ? Colors.success : Colors.warning
-              elide: Text.ElideMiddle
-            }
-          }
-
           PillButton {
-            anchors.verticalCenter: parent.verticalCenter
-            width: 64
-            enabled: !root.busy
-            active: root.tailscale === "active"
-            fillColor: Tokens.primaryContainer
-            activeTextColor: Tokens.on_primary_container
-            glyph: root.busyAction === "service:tailscale" ? "\uf013" : ""
-            glyphSize: 11
-            text: root.tailscale === "active" ? "Stop" : "Start"
-            textSize: 11
-            onClicked: root.serviceAction("tailscale", root.tailscale === "active" ? "stop" : "start")
+            anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
+            width: 72; height: 40; filled: true; inactiveFillColor: Colors.surface; textSize: 14; enabled: !root.busy
+            text: root.busyAction === "service:" + modelData.service ? "…" : modelData.state === "active" ? "Stop" : "Start"
+            onClicked: root.serviceAction(modelData.service, modelData.state === "active" ? "stop" : "start")
           }
         }
-
-        Row {
-          width: parent.width
-          height: 34
-          spacing: 10
-
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            width: 18
-            horizontalAlignment: Text.AlignHCenter
-            text: "\uf008"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 15
-            color: root.jellyfin === "active" ? Colors.primary : Colors.muted
-          }
-
-          Column {
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 64 - 18 - 20
-            spacing: 2
-
-            Text {
-              width: parent.width
-              text: "Jellyfin"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 12
-              font.weight: Font.DemiBold
-              color: Colors.text
-            }
-
-            Text {
-              width: parent.width
-              text: root.jellyfin === "active" ? "Running" : "Stopped"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 11
-              color: root.jellyfin === "active" ? Colors.success : Colors.warning
-            }
-          }
-
-          PillButton {
-            anchors.verticalCenter: parent.verticalCenter
-            width: 64
-            enabled: !root.busy
-            active: root.jellyfin === "active"
-            fillColor: Tokens.primaryContainer
-            activeTextColor: Tokens.on_primary_container
-            glyph: root.busyAction === "service:jellyfin" ? "\uf013" : ""
-            glyphSize: 11
-            text: root.jellyfin === "active" ? "Stop" : "Start"
-            textSize: 11
-            onClicked: root.serviceAction("jellyfin", root.jellyfin === "active" ? "stop" : "start")
-          }
-        }
-
-        Rectangle {
-          width: parent.width
-          height: 1
-          color: Tokens.divider
-        }
-
-        Text {
-          width: parent.width
-          text: "Battery"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.muted
-        }
-
-        Text {
-          width: parent.width
-          text: root.on
-            ? "Background drainers suspended: docker, containerd, Handy, blueman, kmdot-music, uvicorn. Screen behaves per the normal hypridle config."
-            : "On enter, docker, containerd, Handy, blueman, kmdot-music and uvicorn are suspended. Edit ~/.config/kmdot/server-mode.conf to change."
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 11
-          color: Colors.muted
-          wrapMode: Text.WordWrap
-          lineHeight: 1.2
-        }
-
-        Rectangle {
-          width: parent.width
-          height: 1
-          color: Tokens.divider
-        }
-
-        Item {
-          width: parent.width
-          height: 24
-
-          Text {
-            id: sleepText
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            text: (root.inhibitor === "active" ? "\uf023" : "\uf09c") + " Sleep " + (root.inhibitor === "active" ? "blocked" : "allowed")
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 10
-            color: root.inhibitor === "active" ? Colors.success : Colors.muted
-          }
-
-          Text {
-            id: busyText
-            anchors.right: refreshBtn.left
-            anchors.rightMargin: 8
-            anchors.verticalCenter: parent.verticalCenter
-            visible: root.busy
-            text: "\uf013"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 12
-            color: Colors.primary
-          }
-
-          Rectangle {
-            id: refreshBtn
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-            width: 56
-            height: 22
-            radius: height / 2
-            color: "transparent"
-            border.color: Tokens.outlineVariant
-            border.width: 1
-            Text {
-              anchors.centerIn: parent
-              text: "\uf021"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 12
-              color: Colors.text_alt
-            }
-            StateLayer {
-              anchors.fill: parent
-              radius: parent.radius
-              hovered: refreshMouse.containsMouse
-              pressed: refreshMouse.pressed
-            }
-            MouseArea {
-              id: refreshMouse
-              anchors.fill: parent
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.refresh()
-            }
-          }
-        }
+      }
+    }
+    Rectangle {
+      y: 424; width: parent.width; height: 104; radius: 16; color: Colors.surface_alt
+      R1Icon { x: 16; y: 16; glyph: root.inhibitor === "active" ? "\uf023" : "\uf09c"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.text }
+      Text { x: 56; y: 16; text: "Sleep is " + (root.inhibitor === "active" ? "blocked" : "allowed"); font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; color: Colors.text }
+      Text {
+        x: 16; y: 48; width: parent.width - 32
+        text: "Battery safeguards remain active.\nService controls are independent of the mode."
+        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt; wrapMode: Text.WordWrap
+      }
+    }
+    Rectangle {
+      id: errorCard
+      y: 544; width: parent.width; height: errorLabel.implicitHeight + 32; radius: 16; color: Colors.surface_alt; visible: !!root.errorText
+      Text {
+        id: errorLabel
+        x: 16; y: 16; width: parent.width - 32; text: root.errorText
+        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; color: Colors.error; wrapMode: Text.Wrap
+      }
+    }
+  }
+  Item {
+    visible: !!root.errorText && !!root.failedService
+    width: parent.width; height: 376
+    Row {
+      spacing: 16
+      R1Icon { iconName: "server"; font.pixelSize: 24; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "Server mode"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
+    }
+    Text {
+      y: 64; width: parent.width
+      text: "Couldn't " + root.failedServiceAction + " " + (root.failedService === "jellyfin" ? "Jellyfin" : "Tailscale")
+      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.error; wrapMode: Text.WordWrap
+    }
+    Text {
+      y: 112; width: parent.width; height: 64
+      text: "Server mode is still " + (root.on ? "on" : "off") + ". You can retry or leave the service unchanged.\n" + root.errorText
+      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt; wrapMode: Text.Wrap; maximumLineCount: 3; elide: Text.ElideRight
+    }
+    Rectangle {
+      y: 192; width: parent.width; height: 72; radius: 16; color: Colors.primary_container
+      R1Icon { x: 16; y: 24; iconName: root.failedService === "jellyfin" ? "globe" : "play"; font.pixelSize: 24; color: Colors.text }
+      Text { x: 56; y: 12; text: root.failedService === "jellyfin" ? "Tailscale" : "Jellyfin"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; color: Colors.text }
+      Text { x: 56; y: 38; text: (root.failedService === "jellyfin" ? root.tailscale : root.jellyfin) === "active" ? "Running · Unaffected" : "Stopped · Unaffected"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
+    }
+    Row {
+      y: 336; width: parent.width; spacing: 8
+      PillButton { width: (parent.width - 8) / 2; height: 40; filled: true; text: "Close"; textSize: 14; onClicked: root.close() }
+      PillButton { width: (parent.width - 8) / 2; height: 40; active: true; text: "Retry service"; textSize: 14; onClicked: root.serviceAction(root.failedService, root.failedServiceAction) }
+    }
+  }
 }

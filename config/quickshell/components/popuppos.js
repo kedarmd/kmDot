@@ -33,6 +33,6 @@ function cardXFor(centerGX, cardWidth, screen) {
   const sX = screen ? screen.x : 0
   const sW = screen ? screen.width : 0
   const cx = centerGX - sX - cardWidth / 2
-  if (sW < cardWidth + 20) return Math.max(10, cx)
-  return Math.max(10, Math.min(sW - cardWidth - 10, cx))
+  if (sW < cardWidth + 32) return Math.max(16, cx)
+  return Math.max(16, Math.min(sW - cardWidth - 16, cx))
 }

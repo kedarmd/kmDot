@@ -13,23 +13,24 @@ end
 
 local binds = {}
 
-local proxy
-proxy = setmetatable({}, {
-  __index = function()
-    return proxy
-  end,
-  __call = function()
-    return nil
-  end,
-})
+local function proxy(path)
+  return setmetatable({}, {
+    __index = function(_, member)
+      return proxy(path == "" and member or path .. "." .. member)
+    end,
+    __call = function(_, ...)
+      return { path = path, args = { ... } }
+    end,
+  })
+end
 
 hl = {
-  dsp = proxy,
+  dsp = proxy(""),
 }
 
-hl.bind = function(key, _, _)
+hl.bind = function(key, action, _)
   local info = debug.getinfo(2, "l")
-  binds[#binds + 1] = { key = key, line = info.currentline }
+  binds[#binds + 1] = { key = key, line = info.currentline, action = action }
 end
 
 local chunk = assert(loadfile(file))
@@ -38,6 +39,31 @@ chunk()
 local function trailing_comment(text)
   local comment = text:match("%-%-%s*(.-)%s*$")
   return comment
+end
+
+local function action_target(action)
+  if not action then
+    return ""
+  end
+
+  if action.path == "exec_cmd" then
+    local command = tostring(action.args[1] or "")
+    local target = command:match("toggle%.sh%s+([%w%-_]+)")
+    if target then
+      return target
+    end
+    if command:match("launcher%.sh") then
+      return "kmdot-launcher"
+    end
+    if command ~= "" then
+      return "exec:" .. command
+    end
+  end
+
+  if action.path == "exit" then
+    return "dsp:exit"
+  end
+  return ""
 end
 
 for _, b in ipairs(binds) do
@@ -84,9 +110,5 @@ for _, b in ipairs(binds) do
     end
   end
 
-  if comment then
-    print(b.key .. "   " .. comment)
-  else
-    print(b.key)
-  end
+  print(b.key .. "\t" .. (comment or "") .. "\t" .. action_target(b.action))
 end

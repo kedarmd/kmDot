@@ -5,26 +5,25 @@ import "../components"
 
 Item {
   id: root
-  implicitHeight: 30
-  width: Math.max(30, label.implicitWidth + 20)
+  implicitHeight: 32
+  width: 40
 
   ModulePill {
     id: pill
     anchors.centerIn: parent
-    width: Math.max(30, label.implicitWidth + 20)
-    height: 30
+    width: 40
+    height: 32
     active: true
     fill: Tokens.primaryContainer
     hovered: mouse.containsMouse
     pressed: mouse.pressed
 
-    Text {
+    R1Icon {
       id: label
       anchors.centerIn: parent
-      text: " kmDot"
+      iconName: "kmdot"
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 15
-      font.weight: Font.DemiBold
+      font.pixelSize: 24
       color: Tokens.on_primary_container
     }
   }

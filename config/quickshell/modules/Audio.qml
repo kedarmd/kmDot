@@ -25,6 +25,7 @@ BarModule {
     return ""
   }
   text: muted ? "Mute" : Math.round(volume * 100) + "%"
+  iconName: "audio"
   active: root.muted
   fill: Tokens.warningContainer
   on_color: Tokens.on_warning_container

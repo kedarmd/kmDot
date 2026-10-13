@@ -9,22 +9,43 @@ LauncherBase {
 
   sockName: "kmdot-clipboard"
   title: "Clipboard"
-  footerHint: "\u2191\u2193 navigate \u00b7 \u23ce copy \u00b7 tab clear \u00b7 esc close"
-  footerActionText: "Clear"
-  footerActionGlyph: "\uf2ed"
-  emptyText: "Clipboard history is empty"
+  searchPlaceholder: "Search clipboard history…"
+  headerTitle: root.previewMode ? "Image preview" : "Clipboard"
+  cardHeight: root.previewMode ? 624 : root.pool.length === 0 && !root.loading ? 400 : 600
+  closeOnActivate: false
+  footerHint: root.previewMode
+    ? "\u23ce copy image \u00b7 esc back"
+    : (root.resultCount > 0 ? "\u2191\u2193 navigate \u00b7 \u23ce copy" : "")
+  footerActionText: root.previewMode || root.loading || root.pool.length === 0 ? "" : "Clear history"
+  footerActionVisible: false
+  emptyText: root.pool.length === 0 ? "Copy text or an image to see it here." : "No matching entries"
+  emptyIconName: "clipboard"
   loadingText: "Loading clipboard…"
-  // Launchers with a footer pill hide the count (wifi/bluetooth convention) —
-  // the count text would collide with the pill at the footer's right edge.
+  listStatusText: root.previewMode || root.pool.length === 0 ? "" : "History expires after 24 hours"
+  listStatusActionText: root.previewMode || root.loading || root.pool.length === 0 ? "" : "Clear history"
+  listStatusActionWidth: 160
+  detailMode: root.previewMode
+  searchEnabled: !root.previewMode
+  detailContent: imagePreview
   countShown: false
+
+  property bool previewMode: false
+  property var previewItem: null
 
   function fmtTime(epoch) {
     const now = Math.floor(Date.now() / 1000)
     const delta = Math.max(0, now - epoch)
-    if (delta < 60) return "just now"
-    if (delta < 3600) return Math.floor(delta / 60) + "m ago"
-    if (delta < 86400) return Math.floor(delta / 3600) + "h ago"
-    return Math.floor(delta / 86400) + "d ago"
+    if (delta < 60) return "Just now"
+    if (delta < 3600) {
+      const n = Math.floor(delta / 60)
+      return n + (n === 1 ? " minute ago" : " minutes ago")
+    }
+    if (delta < 86400) {
+      const n = Math.floor(delta / 3600)
+      return n + (n === 1 ? " hour ago" : " hours ago")
+    }
+    const n = Math.floor(delta / 86400)
+    return n + (n === 1 ? " day ago" : " days ago")
   }
 
   function refreshItems() {
@@ -42,25 +63,39 @@ LauncherBase {
     const hash = parts[0]
     const type = parts[1]
     const epoch = parseInt(parts[2], 10) || 0
-    const snippet = parts[3] || (type === "img" ? "Image" : "")
+    const isImage = type === "img"
+    const snippet = parts[3] || (isImage ? "Image" : "")
     const preview = parts.length > 4 ? parts[4] : ""
+    const body = parts.length > 5 ? parts[5] : ""
+    const detail = parts.length > 6 ? parts[6] : ""
+    const imageSource = parts.length > 7 ? parts[7] : preview
 
     root.pool = root.pool.concat([{
       hash: hash,
       label: snippet || "(empty)",
-      subtitle: root.fmtTime(epoch),
-      glyph: type === "img" ? "" : "\uf0ea",
-      icon: type === "img" ? preview : ""
+      subtitle: (isImage ? "Image" : "Text") + " · " + root.fmtTime(epoch),
+      body: body,
+      meta: isImage ? "Copy image" : "Copy",
+      glyph: isImage ? "" : "\uf0ea",
+      icon: isImage ? preview : "",
+      imageSource: isImage ? imageSource : "",
+      previewSubtitle: isImage && detail
+        ? detail.replace(" · ", " · Copied " + root.fmtTime(epoch) + " · ")
+        : "PNG image · Copied " + root.fmtTime(epoch),
+      isImage: isImage
     }])
+  }
+
+  function copyItem(item) {
+    if (item && item.hash)
+      root.runCommand("$HOME/.config/kmdot/quickshell/scripts/clipboard-copy.sh " + item.hash)
   }
 
   Process {
     id: listProc
     stdout: SplitParser {
       splitMarker: "\n"
-      onRead: function(data) {
-        root.addLine(data)
-      }
+      onRead: function(data) { root.addLine(data) }
     }
     onExited: root.loading = false
   }
@@ -71,10 +106,101 @@ LauncherBase {
   }
 
   onActivated: function(item) {
-    root.runCommand("$HOME/.config/kmdot/quickshell/scripts/clipboard-copy.sh " + item.hash)
+    if (root.previewMode) {
+      root.copyItem(root.previewItem)
+      return
+    }
+    if (item.isImage) {
+      root.previewItem = item
+      root.previewMode = true
+      return
+    }
+    root.copyItem(item)
+    root.closeLauncher()
+  }
+
+  onDetailBackRequested: root.previewMode = false
+
+  function onOpenedChange() {
+    if (!root.opened) {
+      root.previewMode = false
+      root.previewItem = null
+    }
   }
 
   onFooterActionClicked: {
     clearProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/clipboard-clear.sh"])
+  }
+
+  Component {
+    id: imagePreview
+
+    Item {
+      Rectangle {
+        id: imageFrame
+        anchors { top: parent.top; left: parent.left; right: parent.right }
+        height: 304
+        radius: 24
+        color: Colors.base
+
+        Rectangle {
+          anchors { top: parent.top; left: parent.left; right: parent.right; margins: 16 }
+          height: 24
+          radius: 12
+          color: Colors.surface_high
+        }
+
+        Image {
+          anchors.centerIn: parent
+          width: Math.min(368, parent.width - 32)
+          height: 208
+          source: root.previewItem ? root.previewItem.imageSource : ""
+          fillMode: Image.PreserveAspectFit
+          asynchronous: true
+        }
+      }
+
+      Text {
+        anchors { top: imageFrame.bottom; left: parent.left; right: parent.right; topMargin: 32 }
+        text: root.previewItem ? root.previewItem.label : "Image"
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: 20
+        font.weight: Font.DemiBold
+        color: Colors.text
+        elide: Text.ElideRight
+      }
+
+      Text {
+        anchors { top: imageFrame.bottom; left: parent.left; right: parent.right; topMargin: 76 }
+        text: root.previewItem ? root.previewItem.previewSubtitle : "PNG image"
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: 12
+        color: Colors.text_alt
+        elide: Text.ElideRight
+      }
+
+      Rectangle {
+        width: 160
+        height: 40
+        radius: 20
+        anchors { top: imageFrame.bottom; horizontalCenter: parent.horizontalCenter; topMargin: 96 }
+        color: Tokens.primary
+
+        Text {
+          anchors.centerIn: parent
+          text: "Copy image"
+          font.family: "JetBrainsMono Nerd Font"
+          font.pixelSize: 14
+          font.weight: Font.DemiBold
+          color: Tokens.on_primary_container
+        }
+
+        MouseArea {
+          anchors.fill: parent
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.copyItem(root.previewItem)
+        }
+      }
+    }
   }
 }

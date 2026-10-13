@@ -7,7 +7,8 @@ import "../components"
 PopupBase {
   id: root
   sockName: "kmdot-opencode-usage"
-  cardWidth: 430
+  cardWidth: 424
+  cardMinHeight: root.tab === 0 ? 576 : 528
 
   property int tab: 0
   property var report: null
@@ -15,6 +16,7 @@ PopupBase {
 
   function refreshItems() {
     if (usageProc.running) return
+    errorText = ""
     usageProc.exec(["sh", "-c", "node \"$HOME/.config/kmdot/quickshell/scripts/opencode-usage.mjs\""])
   }
   function formatTokens(value) {
@@ -24,6 +26,15 @@ PopupBase {
     return String(Math.round(value || 0))
   }
   function formatCost(value) { return "$" + Number(value || 0).toFixed(2) }
+  function formatModelName(value) {
+    return String(value || "Unknown model")
+      .replace(/[\/_-]+/g, " ")
+      .replace(/\b\w/g, character => character.toUpperCase())
+  }
+  function formatUpdated(value) {
+    if (!value) return "Updated just now"
+    return "Updated " + new Date(value).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+  }
   function applyReport(text) {
     const trimmed = String(text).trim()
     if (trimmed === "") return
@@ -44,41 +55,64 @@ PopupBase {
 
   Item {
     width: parent.width
-    height: 34
-    Text { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; text: ""; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 23; color: Colors.primary }
-    Text { anchors.left: parent.left; anchors.leftMargin: 34; anchors.verticalCenter: parent.verticalCenter; text: "OpenCode usage"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; font.weight: Font.DemiBold; color: Colors.text }
-    Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: root.report ? "7 days" : "Loading"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; color: Colors.muted }
+    height: 48
+    R1Icon { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf080"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.text }
+    Text { anchors.left: parent.left; anchors.leftMargin: 40; anchors.verticalCenter: parent.verticalCenter; text: "OpenCode usage"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
   }
 
   Row {
     width: parent.width
     spacing: 8
-    PillButton { width: (parent.width - 8) / 2; text: "Daily"; active: root.tab === 0; onClicked: root.tab = 0 }
-    PillButton { width: (parent.width - 8) / 2; text: "Models"; active: root.tab === 1; onClicked: root.tab = 1 }
+    PillButton { width: (parent.width - 8) / 2; text: "Daily"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.tab = 0 }
+    PillButton { width: (parent.width - 8) / 2; text: "Models"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.tab = 1 }
   }
 
-  Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; color: Colors.error; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; wrapMode: Text.WordWrap }
-  Text { visible: !root.report && root.errorText === ""; width: parent.width; text: "Loading usage data…"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
+  Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
+  Text { visible: !root.report && root.errorText === ""; width: parent.width; text: "Loading usage data…"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
 
   Column {
+    id: dailyContent
     visible: !!root.report && root.tab === 0
     width: parent.width
     spacing: 8
-    Repeater {
-      model: root.report ? root.report.days : []
-      delegate: Item {
-        required property var modelData
-        width: parent.width
-        height: 38
-        readonly property real maximum: {
-          let max = 1
-          for (const day of (root.report ? root.report.days : [])) max = Math.max(max, day.tokens)
-          return max
-        }
-        Text { anchors.left: parent.left; anchors.verticalCenter: progressTrack.verticalCenter; width: 42; text: modelData.label; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
-        Text { anchors.right: parent.right; anchors.top: parent.top; text: root.formatTokens(modelData.tokens) + " · " + root.formatCost(modelData.cost); color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12 }
-        Rectangle { id: progressTrack; anchors.left: parent.left; anchors.leftMargin: 48; anchors.right: parent.right; anchors.top: parent.top; anchors.topMargin: 22; height: 8; radius: 4; color: Tokens.surfaceContainerHighest
-          Rectangle { width: parent.width * modelData.tokens / maximum; height: parent.height; radius: 4; color: Colors.primary }
+    Text { width: parent.width; text: root.report ? root.formatCost(root.report.total.cost) : "—"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 48; font.weight: Font.DemiBold }
+    Text { width: parent.width; text: root.report ? root.formatTokens(root.report.total.tokens) + " tokens in the last 7 days" : ""; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { width: parent.width; text: "Daily activity · steps"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Item {
+      id: activityChart
+      width: parent.width
+      height: 156
+      readonly property real maximum: {
+        let max = 1
+        for (const day of (root.report ? root.report.days : [])) max = Math.max(max, day.steps)
+        return max
+      }
+      Row {
+        anchors.fill: parent
+        Repeater {
+          model: root.report ? root.report.days : []
+          delegate: Item {
+            required property var modelData
+            width: activityChart.width / Math.max(1, root.report ? root.report.days.length : 7)
+            height: activityChart.height
+            Rectangle {
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              anchors.bottomMargin: 24
+              width: 32
+              height: Math.max(3, 112 * modelData.steps / activityChart.maximum)
+              radius: 8
+              color: modelData.date === root.report.days[root.report.days.length - 1].date ? Colors.primary : Tokens.primaryContainer
+            }
+            Text {
+              anchors.horizontalCenter: parent.horizontalCenter
+              anchors.bottom: parent.bottom
+              text: modelData.label.slice(0, 1)
+              color: Colors.text_alt
+              font.family: "JetBrainsMono Nerd Font"
+              font.pixelSize: 12
+            }
+          }
         }
       }
     }
@@ -89,19 +123,22 @@ PopupBase {
     visible: !!root.report && root.tab === 1
     width: parent.width
     height: Math.min(300, contentHeight)
-    spacing: 6
+    spacing: 8
     interactive: contentHeight > height
     clip: true
     model: root.report ? root.report.models : []
     delegate: Rectangle {
       required property var modelData
-      width: modelList.width - 8
-      height: 48
-      radius: 8
-      color: Tokens.surfaceContainerHighest
-      Text { anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top; anchors.topMargin: 8; anchors.leftMargin: 12; anchors.rightMargin: 12; text: modelData.model; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; elide: Text.ElideMiddle }
-      Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.bottom: parent.bottom; anchors.bottomMargin: 7; text: root.formatTokens(modelData.tokens) + " tokens"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
-      Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.bottom: parent.bottom; anchors.bottomMargin: 7; text: root.formatCost(modelData.cost); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
+      width: modelList.width
+      height: 72
+      radius: 16
+      color: Colors.surface_alt
+      R1Icon { anchors.left: parent.left; anchors.leftMargin: 16; anchors.verticalCenter: parent.verticalCenter; width: 24; height: 24; glyph: "\uf120"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+      Column { anchors.left: parent.left; anchors.leftMargin: 56; anchors.right: trailing.left; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+        Text { width: parent.width; text: root.formatModelName(modelData.model); color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
+        Text { width: parent.width; text: root.formatTokens(modelData.tokens) + " tokens · " + root.formatCost(modelData.cost); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; elide: Text.ElideRight }
+      }
+      R1Icon { id: trailing; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf054"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14 }
     }
     Rectangle {
       visible: modelList.contentHeight > modelList.height
@@ -112,21 +149,20 @@ PopupBase {
       z: 2
       anchors.right: parent.right
       anchors.rightMargin: 1
-      y: modelList.contentY * (modelList.height - height)
-        / Math.max(1, modelList.contentHeight - modelList.height)
+      y: modelList.contentY * (modelList.height - height) / Math.max(1, modelList.contentHeight - modelList.height)
       height: Math.max(24, modelList.height * modelList.height / modelList.contentHeight)
     }
   }
 
-  Item {
+  bottomContent: Item {
     width: parent.width
-    height: 42
+    height: 48
     Column {
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
-      Text { text: "7-day total"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 11 }
-      Text { text: root.report ? root.formatTokens(root.report.total.tokens) + " tokens · " + root.formatCost(root.report.total.cost) : "—"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14; font.weight: Font.DemiBold }
+      Text { text: root.tab === 0 ? root.formatUpdated(root.report ? root.report.generatedAt : 0) : "7-day total"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+      Text { visible: root.tab === 1; text: root.report ? root.formatTokens(root.report.total.tokens) + " tokens · " + root.formatCost(root.report.total.cost) : "—"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
     }
-    PillButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: "Refresh"; glyph: ""; enabled: !usageProc.running; onClicked: root.refreshItems() }
+    PillButton { visible: root.tab === 0; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: 120; text: "Refresh"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; enabled: !usageProc.running; onClicked: root.refreshItems() }
   }
 }

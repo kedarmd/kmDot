@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import "../components"
 import qs
 
@@ -7,19 +8,51 @@ LauncherBase {
   id: root
 
   sockName: "kmdot-kmdot"
-  title: "kmDot"
-  footerHint: "\u2191\u2193 navigate \u00b7 \u23ce open \u00b7 esc close"
+  title: "Search apps, settings, and actions…"
+  headerTitle: root.query.trim() === "" ? "Kmdot" : "Search"
+  cardHeight: root.query.trim() === "" ? 728 : 472
+  listTopMargin: 24
+  footerHint: "\u2191\u2193 navigate \u00b7 \u23ce open"
+
+  property var shortcutMap: ({})
+  property var _shortcutOutput: ({})
 
   // NOTE: keep glyphs in the BMP (<= \uffff); non-BMP nerd glyphs (e.g. \uf0aa5) desync the QML lexer.
   items: [
-    { label: "Applications", glyph: "\uf108", action: "apps" },
-    { label: "Clipboard", glyph: "\uf0ea", action: "clipboard" },
-    { label: "Connections", glyph: "\uf1eb", action: "connections" },
-    { label: "Handy", glyph: "\uf130", action: "handy" },
-    { label: "Keybinds", glyph: "\uf11c", action: "keybinds" },
-    { label: "System", glyph: "\uf013", action: "system" },
-    { label: "Themes", glyph: "\uefcc", action: "themes" }
+    { label: "Applications", subtitle: "Open an app", shortcutTarget: "kmdot-launcher", glyph: "\uf00a", action: "apps" },
+    { label: "Clipboard", subtitle: "Recent text and images", shortcutTarget: "kmdot-clipboard", glyph: "\uf0ea", action: "clipboard" },
+    { label: "Connections", subtitle: "Wi-Fi and Bluetooth", shortcutTarget: "kmdot-connections", glyph: "\uf1eb", action: "connections" },
+    { label: "Handy", subtitle: "Models and transcriptions", shortcutTarget: "kmdot-handy-launcher", glyph: "\uf130", action: "handy" },
+    { label: "Keybinds", subtitle: "Your keyboard shortcuts", shortcutTarget: "kmdot-keybinds", glyph: "\uf11c", action: "keybinds" },
+    { label: "System", subtitle: "Lock, suspend, and power", shortcutTarget: "kmdot-system", glyph: "\uf013", action: "system" },
+    { label: "Appearance", subtitle: "Change color theme", shortcutTarget: "kmdot-theme", glyph: "\uf1fc", action: "themes" }
   ]
+
+  function formatShortcut(key) {
+    return String(key).split(/\s*\+\s*/).map(function(part) {
+      const upper = part.toUpperCase()
+      if (upper === "SUPER") return "Super"
+      if (upper === "SHIFT") return "Shift"
+      if (upper === "CTRL" || upper === "CONTROL") return "Ctrl"
+      if (upper === "ALT") return "Alt"
+      if (upper === "ESCAPE" || upper === "ESC") return "Esc"
+      if (upper === "RETURN") return "Enter"
+      if (upper === "SPACE") return "Space"
+      return part.length === 1 ? upper : part
+    }).join(" ")
+  }
+
+  function withShortcut(item) {
+    const key = item.shortcutTarget ? root.shortcutMap[item.shortcutTarget] : ""
+    return Object.assign({}, item, { meta: key ? root.formatShortcut(key) : "" })
+  }
+
+  function refreshItems() {
+    root.pool = root.items.map(item => root.withShortcut(item))
+    root._shortcutOutput = ({})
+    keybindsProc.exec(["sh", "-c",
+      "lua ~/.config/kmdot/hyprland/scripts/keybinds.lua ~/.config/kmdot/hyprland/keybinds.lua"])
+  }
 
   // Nested search: children of Connections/System ride the query as clones
   // tagged with their section (rendered as the row subtitle). Sources are the
@@ -34,8 +67,8 @@ LauncherBase {
   function nestedItems() {
     if (!root.scope) return []
     const s = root.scope
-    return nest(s.connectionsLauncher.items, "Connections")
-      .concat(nest(s.systemLauncher.items, "System"))
+    return nest(s.connectionsLauncher.items.map(item => root.withShortcut(item)), "Connections")
+      .concat(nest(s.systemLauncher.items.map(item => root.withShortcut(item)), "System"))
   }
 
   // Breadcrumb display for nested results only ("Connections → Wi-Fi"); plain
@@ -71,6 +104,25 @@ LauncherBase {
     }
     out.sort((a, b) => b.score - a.score)
     return out
+  }
+
+  Process {
+    id: keybindsProc
+    stdout: SplitParser {
+      splitMarker: "\n"
+      onRead: function(data) {
+        const line = String(data).replace(/[\r\n]+$/, "")
+        if (!line.trim()) return
+        const fields = line.split("\t")
+        if (fields.length >= 3 && fields[0] && fields[2])
+          root._shortcutOutput[fields[2]] = fields[0]
+      }
+    }
+    onExited: function(exitCode) {
+      if (exitCode !== 0) root._shortcutOutput = ({})
+      root.shortcutMap = Object.assign({}, root._shortcutOutput)
+      root.pool = root.items.map(item => root.withShortcut(item))
+    }
   }
 
   onActivated: function(item) {

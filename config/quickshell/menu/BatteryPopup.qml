@@ -8,18 +8,16 @@ import "../components"
 PopupBase {
   id: root
   sockName: "kmdot-battery"
-  cardWidth: 380
+  cardWidth: 424
+  // Keep the card close to its content; the current 624px fixed height leaves
+  // a large unused area below the power profile note.
+  cardMinHeight: 0
 
   // anchorItem seam: set by the bar module before toggling (see PopupBase).
   property var points: []
   property var _raw: []
   property bool graphHovered: false
   property real graphHoverX: 0
-  // Epoch (seconds) marking where the current graph begins. Points older than
-  // this are dropped, so the graph starts fresh after a full charge or a manual
-  // clear. 0 = show the full UPower history window.
-  property var graphStartEpoch: 0
-  property bool _wasFull: false
 
   readonly property var battery: UPower.displayDevice
   readonly property bool present: battery ? battery.isPresent : false
@@ -39,13 +37,6 @@ PopupBase {
     : root.charging || root.full ? Colors.success
     : root.discharging ? Colors.warning
     : Colors.muted
-
-  // When the battery first reaches fully-charged (100%), clear the old graph so
-  // the newer 100% point is the fresh starting point for the new charge cycle.
-  onFullChanged: {
-    if (root.full && !root._wasFull) root.clearGraph()
-    root._wasFull = root.full
-  }
 
   function isProfileActive(profile) {
     return PowerProfiles.profile === profile
@@ -142,22 +133,13 @@ PopupBase {
     }
     root._raw = []
     pts.reverse()
-    const start = root.graphStartEpoch
-    const filtered = start > 0 ? pts.filter(p => p.epoch >= start) : pts
-    root.points = root.downsample(filtered)
+    root.points = root.downsample(pts)
     graphCanvas.requestPaint()
   }
 
   function loadHistory() {
     root._raw = []
     histProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/battery-history.sh"])
-  }
-
-  // Reset the graph so it only shows data from this moment onward (fresh start).
-  function clearGraph() {
-    root.graphStartEpoch = Math.floor(Date.now() / 1000)
-    root.points = []
-    graphCanvas.requestPaint()
   }
 
   function refreshItems() {
@@ -183,314 +165,125 @@ PopupBase {
     onExited: root.buildHistory()
   }
 
-  // Card body content (fed to the base Column via the default alias).
+  // Card body follows the approved Penpot battery panel.
+  Column {
+    width: parent.width
+    spacing: 16
 
-        Row {
+    Row {
+      width: parent.width
+      spacing: 12
+      R1Icon { glyph: "󰁹"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "Battery"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+    }
+
+    Column {
+      width: parent.width
+      spacing: 4
+      Row {
+        spacing: 8
+        Text { id: percentValue; text: root.present ? root.percent.toString() : "—"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 48; font.weight: Font.DemiBold; color: root.charging ? Colors.success : Colors.text }
+        Text { text: "%"; visible: root.present; anchors.baseline: percentValue.baseline; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; color: root.charging ? Colors.success : Colors.text_alt }
+      }
+      Text {
+        width: parent.width
+        text: !root.present ? "No battery detected" : root.charging ? "Charging" : (root.full ? "Fully charged" : "Until your next recharge")
+        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: root.charging ? 24 : 16; color: Colors.text
+      }
+      Text {
+        width: parent.width
+        text: "About " + (root.formatTime(root.charging ? battery.timeToFull : battery.timeToEmpty) || "—") + (root.charging ? " until full · Charging at " : " remaining · Using ") + root.rate.toFixed(1) + " W"
+        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt
+        visible: root.present && !root.full
+      }
+    }
+
+    Rectangle {
+      width: parent.width
+      visible: root.present && !root.charging
+      radius: 24
+      color: Colors.surface_alt
+      implicitHeight: chartColumn.implicitHeight + 32
+      Column {
+        id: chartColumn
+        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
+        spacing: 8
+        Text { text: "LAST 12 HOURS"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
+        Item {
           width: parent.width
-          spacing: 10
-
+          height: 102
           Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.charging ? "\uf0e7 " + root.batteryGlyph() : root.batteryGlyph()
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 26
-            color: root.charging ? Colors.success : Colors.text
+            anchors.centerIn: parent
+            visible: root.points.length < 2
+            text: "No charge history yet"
+            font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt
           }
-
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.percent + "%"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 26
-            font.weight: Font.DemiBold
-            color: Colors.text
-          }
-
-          Item { width: 1; height: 1 }
-
-          Text {
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.statusWord
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 14
-            color: root.statusColor
-            horizontalAlignment: Text.AlignRight
-          }
-        }
-
-        Text {
-          width: parent.width
-          visible: !root.full
-          text: root.charging
-            ? "Charging at " + root.rate.toFixed(1) + " W"
-            : "Discharging at " + root.rate.toFixed(1) + " W"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 13
-          color: Colors.text_alt
-        }
-
-        Text {
-          width: parent.width
-          visible: !root.full
-          text: root.charging
-            ? "Full in " + (battery.timeToFull > 0 ? root.formatTime(battery.timeToFull) : "\u2014")
-            : "\u2248 " + (battery.timeToEmpty > 0 ? root.formatTime(battery.timeToEmpty) : "\u2014") + " left"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 13
-          color: Colors.muted
-        }
-
-        Rectangle {
-          width: parent.width
-          height: 1
-          color: Tokens.divider
-        }
-
-        Row {
-          width: parent.width
-          spacing: 8
-
-          Text {
-            id: usageTitle
-            anchors.verticalCenter: parent.verticalCenter
-            text: "Battery usage"
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 12
-            color: Colors.muted
-          }
-
-          Item {
-            width: Math.max(0, parent.width - usageTitle.implicitWidth - clearBtn.width - 16)
-            height: 1
-          }
-
-          Rectangle {
-            id: clearBtn
-            anchors.verticalCenter: parent.verticalCenter
-            height: 20
-            width: clearRow.implicitWidth + 14
-            radius: height / 2
-            color: clearHover.containsMouse ? Tokens.stateHover : "transparent"
-            border.width: 1
-            border.color: Tokens.outlineVariant
-
-            Row {
-              id: clearRow
-              anchors.centerIn: parent
-              spacing: 4
-
-              Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "\uf2ed"
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 11
-                color: Colors.text_alt
-              }
-
-              Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "Clear"
-                font.family: "JetBrainsMono Nerd Font Propo"
-                font.pixelSize: 11
-                color: Colors.text_alt
-              }
-            }
-
-            MouseArea {
-              id: clearHover
-              anchors.fill: parent
-              hoverEnabled: true
-              cursorShape: Qt.PointingHandCursor
-              onClicked: root.clearGraph()
-            }
-          }
-        }
-
-        Canvas {
-          id: graphCanvas
-          width: parent.width
-          height: 120
-
-          Rectangle {
-            visible: root.graphHovered && root.points.length >= 2
-            x: root.graphHoverX
-            y: 14
-            width: 1
-            height: graphCanvas.height - 18
-            color: Colors.muted
-            opacity: 0.55
-          }
-
-          Rectangle {
-            visible: root.graphHovered && root.points.length >= 2
-            width: 8
-            height: 8
-            radius: 4
-            x: root.graphHoverX - width / 2
-            y: root.graphYForPct(root.graphPctAtEpoch(root.graphEpochAtX(root.graphHoverX))) - height / 2
-            color: Colors.primary
-            border.width: 2
-            border.color: Tokens.surfaceContainerLow
-          }
-
-          Rectangle {
-            visible: root.graphHovered && root.points.length >= 2
-            width: hoverLabel.implicitWidth + 16
-            height: 30
-            radius: 7
-            x: Math.max(0, Math.min(graphCanvas.width - width,
-              root.graphHoverX - width / 2))
-            y: 0
-            color: Tokens.surfaceContainerHighest
-            border.width: 1
-            border.color: Tokens.outlineVariant
-            z: 2
-
-            Text {
-              id: hoverLabel
-              anchors.centerIn: parent
-              text: root.hhmm(root.graphEpochAtX(root.graphHoverX)) + "  "
-                + Math.round(root.graphPctAtEpoch(root.graphEpochAtX(root.graphHoverX))) + "%"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              font.pixelSize: 11
-              color: Colors.text
-            }
-          }
-
-          MouseArea {
+          Row {
             anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton
-            onEntered: {
-              root.graphHovered = true
-              root.graphHoverX = Math.max(2, Math.min(graphCanvas.width - 2, mouseX))
+            spacing: 6
+            Column {
+              width: 24
+              height: parent.height - 8
+              spacing: 0
+              Text { text: "100"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
+              Item { width: 1; height: 14 }
+              Text { text: "50"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
+              Item { width: 1; height: 14 }
+              Text { text: "0"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
             }
-            onPositionChanged: {
-              root.graphHoverX = Math.max(2, Math.min(graphCanvas.width - 2, mouseX))
+            Canvas {
+              id: graphCanvas
+              width: parent.width - 30
+              height: parent.height
+              onPaint: {
+                const ctx = getContext("2d")
+                if (!ctx) return
+                ctx.clearRect(0, 0, width, height)
+                const pts = root.points
+                const L = 2, R = 2, T = 8, B = 8
+                const w = width - L - R, h = height - T - B
+                const Y = p => T + (100 - p) / 100 * h
+                ctx.lineWidth = 1
+                ctx.strokeStyle = Colors.border
+                for (const val of [0, 50, 100]) {
+                  ctx.beginPath(); ctx.moveTo(L, Y(val)); ctx.lineTo(L + w, Y(val)); ctx.stroke()
+                }
+                if (pts.length < 2) return
+                const t0 = pts[0].epoch
+                const span = Math.max(1, pts[pts.length - 1].epoch - t0)
+                const X = e => L + (e - t0) / span * w
+                ctx.beginPath(); ctx.moveTo(X(pts[0].epoch), Y(pts[0].pct))
+                for (let n = 1; n < pts.length; n++) ctx.lineTo(X(pts[n].epoch), Y(pts[n].pct))
+                ctx.strokeStyle = Colors.primary; ctx.lineWidth = 2; ctx.stroke()
+                const last = pts[pts.length - 1], lx = X(last.epoch), ly = Y(last.pct)
+                ctx.fillStyle = Colors.primary; ctx.beginPath(); ctx.arc(lx, ly, 2, 0, Math.PI * 2); ctx.fill()
+                ctx.font = '11px "JetBrainsMono Nerd Font"'; ctx.fillStyle = Colors.primary
+                ctx.fillText(Math.round(last.pct) + "%", Math.max(2, Math.min(width - 30, lx - 18)), Math.min(height - 1, ly + 18))
+              }
             }
-            onExited: root.graphHovered = false
-          }
-
-          onPaint: {
-            const ctx = getContext("2d")
-            if (!ctx) return
-            ctx.clearRect(0, 0, width, height)
-            const pts = root.points
-            if (pts.length < 2) return
-
-            const L = 2
-            const R = 2
-            const T = 14
-            const B = 4
-            const w = width - L - R
-            const h = height - T - B
-            const t0 = pts[0].epoch
-            const t1 = pts[pts.length - 1].epoch
-            const span = Math.max(1, t1 - t0)
-            const X = (e) => L + (e - t0) / span * w
-            const Y = (p) => T + (100 - p) / 100 * h
-
-            ctx.lineWidth = 1
-            ctx.strokeStyle = Tokens.outlineVariant
-            ctx.beginPath()
-            ctx.moveTo(L, Y(50))
-            ctx.lineTo(L + w, Y(50))
-            ctx.stroke()
-
-            ctx.font = "10px 'JetBrainsMono Nerd Font Propo'"
-            ctx.fillStyle = Colors.muted
-            ctx.fillText("50%", L + 2, Y(50) - 3)
-
-            ctx.beginPath()
-            ctx.moveTo(X(pts[0].epoch), Y(pts[0].pct))
-            for (let i = 1; i < pts.length; i++) ctx.lineTo(X(pts[i].epoch), Y(pts[i].pct))
-            ctx.strokeStyle = Colors.primary
-            ctx.lineWidth = 2
-            ctx.stroke()
-
-            const lx = X(pts[pts.length - 1].epoch)
-            const ly = Y(pts[pts.length - 1].pct)
-            ctx.fillStyle = Colors.primary
-            ctx.beginPath()
-            ctx.arc(lx, ly, 3, 0, Math.PI * 2)
-            ctx.fill()
-
-            ctx.fillStyle = Colors.text
-            ctx.fillText(Math.round(pts[pts.length - 1].pct) + "%",
-              Math.max(2, Math.min(L + w - 30, lx - 12)), T - 4)
           }
         }
-
         Row {
           width: parent.width
-          Text {
-            id: startTimeText
-            text: root.points.length > 0 ? root.hhmm(root.points[0].epoch) : ""
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 10
-            color: Colors.muted
-          }
-          Item {
-            width: parent.width - startTimeText.implicitWidth - nowText.implicitWidth
-            height: 1
-          }
-          Text {
-            id: nowText
-            text: root.points.length > 0 ? "now" : ""
-            font.family: "JetBrainsMono Nerd Font Propo"
-            font.pixelSize: 10
-            color: Colors.muted
-          }
+          Text { id: startTimeText; text: root.points.length > 0 ? root.hhmm(root.points[0].epoch) : ""; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
+          Item { width: parent.width - startTimeText.implicitWidth - nowText.implicitWidth; height: 1 }
+          Text { id: nowText; text: "Now"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
         }
+      }
+    }
 
-        Rectangle {
-          width: parent.width
-          height: 1
-          color: Tokens.divider
-        }
-
-        Text {
-          width: parent.width
-          text: "Power profile"
-          font.family: "JetBrainsMono Nerd Font Propo"
-          font.pixelSize: 12
-          color: Colors.muted
-        }
-
-        Row {
-          width: parent.width
-          spacing: 8
-
-          PillButton {
-            width: (parent.width - 16) / 3
-            height: 30
-            filled: true
-            active: root.isProfileActive(PowerProfile.PowerSaver)
-            text: "Power Saver"
-            textSize: 12
-            onClicked: PowerProfiles.profile = PowerProfile.PowerSaver
-          }
-
-          PillButton {
-            width: (parent.width - 16) / 3
-            height: 30
-            filled: true
-            active: root.isProfileActive(PowerProfile.Balanced)
-            text: "Balanced"
-            textSize: 12
-            onClicked: PowerProfiles.profile = PowerProfile.Balanced
-          }
-
-          PillButton {
-            width: (parent.width - 16) / 3
-            height: 30
-            opacity: PowerProfiles.hasPerformanceProfile ? 1.0 : 0.4
-            filled: true
-            active: root.isProfileActive(PowerProfile.Performance)
-            enabled: PowerProfiles.hasPerformanceProfile
-            text: "Performance"
-            textSize: 12
-            onClicked: PowerProfiles.profile = PowerProfile.Performance
-          }
-        }
+    Text { width: parent.width; text: "POWER PROFILE"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
+    Row {
+      width: parent.width
+      spacing: 8
+      PillButton { width: (parent.width - 16) / 3; height: 40; filled: true; active: root.isProfileActive(PowerProfile.PowerSaver); text: "Saver"; textSize: 14; onClicked: PowerProfiles.profile = PowerProfile.PowerSaver }
+      PillButton { width: (parent.width - 16) / 3; height: 40; filled: true; active: root.isProfileActive(PowerProfile.Balanced); text: "Balanced"; textSize: 14; onClicked: PowerProfiles.profile = PowerProfile.Balanced }
+      PillButton { width: (parent.width - 16) / 3; height: 40; filled: true; active: root.isProfileActive(PowerProfile.Performance); enabled: PowerProfiles.hasPerformanceProfile; text: "Performance"; textSize: 14; onClicked: PowerProfiles.profile = PowerProfile.Performance }
+    }
+    Text {
+      width: parent.width
+      text: !PowerProfiles.hasPerformanceProfile ? "Performance is unavailable on this device." : PowerProfiles.profile === PowerProfile.PowerSaver ? "Lower power use for longer battery life." : PowerProfiles.profile === PowerProfile.Performance ? "More power for demanding tasks." : "Balanced power for everyday work."
+      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt
+    }
+  }
 }

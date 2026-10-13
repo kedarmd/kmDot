@@ -10,8 +10,14 @@ LauncherBase {
 
   sockName: "kmdot-wifi"
   title: "Wi-Fi"
-  footerHint: "↑↓ navigate · ⏎ connect · tab toggle · esc close"
+  searchPlaceholder: "Search networks…"
+  headerTitle: "Wi-Fi"
+  cardHeight: 592
+  footerHint: "↑↓ navigate · ⏎ connect/disconnect · tab toggle"
   countShown: false
+  footerActionVisible: false
+  listStatusActionText: root.footerActionText
+  listStatusActionWidth: 160
   loadingText: "Scanning for networks..."
   // Items decide whether to close themselves — the password flow keeps the launcher open.
   closeOnActivate: false
@@ -27,6 +33,13 @@ LauncherBase {
 
   function sigGlyph(sig) { return WifiJs.signalGlyph(sig) }
 
+  function signalLabel(signal) {
+    if (signal >= 75) return "Excellent signal"
+    if (signal >= 50) return "Good signal"
+    if (signal >= 25) return "Fair signal"
+    return "Weak signal"
+  }
+
   function refreshItems() {
     root.promptSsid = ""
     Wifi.errorText = ""
@@ -36,16 +49,21 @@ LauncherBase {
 
   function syncFooter() {
     root.footerActionGlyph = Wifi.enabled ? "" : ""
-    root.footerActionText = Wifi.enabled ? "Wi-Fi On" : "Wi-Fi Off"
+    root.footerActionText = Wifi.enabled ? "Wi-Fi on" : "Wi-Fi off"
     root.footerActionActive = Wifi.enabled
   }
 
   function buildPool() {
     const items = []
     for (const n of Wifi.networks) {
+      const descriptor = n.active ? "Connected · Secured"
+        : n.open ? "Open network · " + root.signalLabel(n.signal)
+        : n.saved ? "Saved · " + root.signalLabel(n.signal)
+        : "Secured · " + root.signalLabel(n.signal)
       items.push({
         label: n.ssid,
-        subtitle: (n.active ? "active · " : "") + (n.open ? "Open" : n.security) + " · " + root.sigGlyph(n.signal) + " " + n.signal + "%",
+        subtitle: descriptor,
+        meta: n.active ? "Disconnect" : "Connect",
         glyph: "",
         ssid: n.ssid,
         active: !!n.active,

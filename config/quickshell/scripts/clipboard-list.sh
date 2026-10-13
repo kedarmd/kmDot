@@ -46,14 +46,28 @@ human_size() {
 while IFS=$'\t' read -r h type epoch snippet; do
   [ -n "$h" ] || continue
   preview=""
+  image_path=""
+  body=""
+  detail=""
   if [ "$type" = "img" ]; then
     size="$(stat -c %s "$IMG_DIR/$h.png" 2>/dev/null || printf '0')"
-    snippet="Image · $(human_size "$size")"
+    dimensions=""
+    if command -v magick >/dev/null 2>&1; then
+      dimensions="$(magick identify -format '%wx%h' "$IMG_DIR/$h.png" 2>/dev/null || true)"
+    elif command -v identify >/dev/null 2>&1; then
+      dimensions="$(identify -format '%wx%h' "$IMG_DIR/$h.png" 2>/dev/null || true)"
+    fi
+    snippet="Image$( [ -n "$dimensions" ] && printf ' · %s' "${dimensions/x/ × }" )"
+    detail="PNG image · $(human_size "$size")"
     if [ -f "$THUMB_DIR/$h.png" ]; then
       preview="$THUMB_DIR/$h.png"
     else
       preview="$IMG_DIR/$h.png"
     fi
+    image_path="$IMG_DIR/$h.png"
+  else
+    body="$(tail -n +2 "$TEXT_DIR/$h" 2>/dev/null | tr '\t\r\n' '   ')"
+    body="${body:0:600}"
   fi
-  printf '%s\t%s\t%s\t%s\t%s\n' "$h" "$type" "$epoch" "$snippet" "$preview"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$h" "$type" "$epoch" "$snippet" "$preview" "$body" "$detail" "$image_path"
 done < "$INDEX"

@@ -44,7 +44,8 @@ BarModule {
   }
 
   glyph: root.btEnabled ? "󰂯" : "󰂲"
-  active: root.btEnabled && root.connectedCount > 0
+  active: false
+  iconName: "bluetooth"
   fill: Tokens.primaryContainer
   on_color: Tokens.on_primary_container
   dimmed: !root.btEnabled

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import qs
@@ -7,7 +8,9 @@ import "../components"
 PopupBase {
   id: root
   sockName: "kmdot-handy"
-  cardWidth: 500
+  cardWidth: 424
+  cardMinHeight: root.tab === 0 ? 536 : 624
+  cardMaxHeight: root.tab === 0 ? Math.max(536, root.modelListHeight + 272) : 624
 
   property int tab: 0
   // Reads, mutations, AND playback served by the HandyStore singleton
@@ -28,10 +31,46 @@ PopupBase {
   readonly property real positionMs: HandyStore.positionMs
   readonly property real durationMs: HandyStore.durationMs
   readonly property string effectiveError: HandyStore.errorText
-  readonly property real listHeight: 440
+  property int selectedHistoryId: history.length > 0 ? history[0].id : -1
+  readonly property real modelListHeight: Math.max(72, Math.min(440, models.length * 72 + Math.max(0, models.length - 1) * 8))
+  readonly property real historyListHeight: history.length === 0 ? 72 : 408
   // Two-click delete confirm: first click arms the row's pill ("Sure?"), the
   // second (within 3s) deletes.
   property int confirmId: -1
+  property var pendingDeleteRow: null
+
+  function requestDelete(row) {
+    if (root.busy || !root.scope || !root.scope.confirmPopup) return
+    root.pendingDeleteRow = row
+    root.scope.confirmPopup.ask("Delete recording?", root.historyTitle(row.timestamp), {
+      cardHeight: 392,
+      showKeyboardHints: false,
+      titleGlyph: "\uf1f8", titleGlyphColor: Colors.text, titleSize: 24,
+      messageSize: 20, messageWeight: Font.DemiBold,
+      supportingText: "This deletes the recording and its transcription. This action cannot be undone.",
+      confirmText: "Delete", cancelText: "Keep recording", buttonTextSize: 14,
+      confirmFill: Colors.error, confirmTextColor: Colors.surface,
+      topGap: 14, actionGap: 136
+    })
+  }
+
+  Connections {
+    target: root.scope ? root.scope.confirmPopup : null
+    function onConfirmed() {
+      if (!root.pendingDeleteRow) return
+      const row = root.pendingDeleteRow
+      root.pendingDeleteRow = null
+      root.remove(row)
+      root.open()
+    }
+    function onCancelled() {
+      if (!root.pendingDeleteRow) return
+      root.pendingDeleteRow = null
+      // A different overlay may be replacing the confirmation. Reopen only
+      // for a direct Cancel/Escape/backdrop dismissal, not during coordination.
+      if (!root.scope.openingSurface) root.open()
+    }
+  }
 
   function refreshItems() { refresh() }
   // Closing one surface never stops playback here — audio survives switching
@@ -56,9 +95,31 @@ PopupBase {
   function fmtTime(epoch) {
     return new Date(epoch * 1000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
   }
+  function historyTitle(epoch) {
+    const date = new Date(Number(epoch || 0) * 1000)
+    const now = new Date()
+    const day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    const days = Math.round((today - day) / 86400000)
+    let hour = date.getHours()
+    const suffix = hour >= 12 ? "PM" : "AM"
+    hour = hour % 12 || 12
+    const time = hour + ":" + String(date.getMinutes()).padStart(2, "0") + " " + suffix
+    if (days === 0) return "Today, " + time
+    if (days === 1) return "Yesterday, " + time
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ", " + time
+  }
   function fmtDur(ms) {
     const total = Math.max(0, Math.floor(Number(ms || 0) / 1000))
     return Math.floor(total / 60) + ":" + String(total % 60).padStart(2, "0")
+  }
+  function modelDescription(model) {
+    const name = String(model.name || "")
+    if (/whisper.*large/i.test(name)) return "Whisper · Multilingual"
+    if (/parakeet/i.test(name)) return "Fast English transcription"
+    if (/whisper.*small/i.test(name)) return "Whisper · Lightweight"
+    if (/canary/i.test(name)) return "Multilingual transcription"
+    return "Installed transcription model"
   }
   // Playback is store-owned (issue #55): toggle delegates, never overlaps —
   // starting a recording here switches the one shared player even if the
@@ -79,7 +140,6 @@ PopupBase {
     HandyStore.saveText(row.id, text)
   }
   function copy(text) { copyProc.exec(["sh", "-c", "printf '%s' \"$1\" | wl-copy", "kmdot", text]) }
-
   Timer {
     id: confirmTimer
     interval: 3000
@@ -91,6 +151,8 @@ PopupBase {
   Connections {
     target: HandyStore
     function onHistoryChanged() {
+      if (root.selectedHistoryId < 0 || !HandyStore.history.find(row => row.id === root.selectedHistoryId))
+        root.selectedHistoryId = HandyStore.history.length > 0 ? HandyStore.history[0].id : -1
       if (root.confirmId < 0) return
       for (let i = 0; i < HandyStore.history.length; i++) {
         if (HandyStore.history[i].id === root.confirmId) return
@@ -101,45 +163,58 @@ PopupBase {
   Process { id: copyProc }
 
         Item {
-          width: parent.width; height: 34
-          Text { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; text: "\uf130"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 23; color: Colors.primary }
-          Text { anchors.left: parent.left; anchors.leftMargin: 34; anchors.verticalCenter: parent.verticalCenter; text: "Handy"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; font.weight: Font.DemiBold; color: Colors.text }
-          Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: root.busy ? "Working" : (root.tab === 0 ? "Models" : "History"); font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; color: Colors.muted }
+          width: parent.width; height: 28
+          R1Icon { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: 2; width: 24; height: 24; glyph: "\uf130"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+          Text { anchors.left: parent.left; anchors.leftMargin: 40; anchors.verticalCenter: parent.verticalCenter; text: "Handy"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
+          Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: root.busy ? "Working" : ""; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.muted }
         }
 
+        Item { width: parent.width; height: 4 }
         Row {
           width: parent.width; spacing: 8
-          PillButton { width: (parent.width - 8) / 2; text: "Models"; active: root.tab === 0; onClicked: root.tab = 0 }
-          PillButton { width: (parent.width - 8) / 2; text: "History"; active: root.tab === 1; onClicked: root.tab = 1 }
+          PillButton { width: (parent.width - 8) / 2; text: "Models"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Tokens.surfaceContainer; active: root.tab === 0; onClicked: root.tab = 0 }
+          PillButton { width: (parent.width - 8) / 2; text: "History"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Tokens.surfaceContainer; active: root.tab === 1; onClicked: root.tab = 1 }
         }
-        Text { visible: root.effectiveError !== ""; width: parent.width; text: root.effectiveError; color: Colors.error; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; wrapMode: Text.WordWrap }
+        Text { visible: root.effectiveError !== ""; width: parent.width; height: visible ? implicitHeight : 0; text: root.effectiveError; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
 
         ListView {
           id: modelList
           visible: root.tab === 0
           width: parent.width
-          height: root.listHeight
-          spacing: 6
+          height: root.modelListHeight
+          spacing: 8
           clip: true
           interactive: contentHeight > height
           model: root.models
           delegate: Rectangle {
             required property var modelData
-            width: modelList.width - 8; height: 52; radius: 8
+            width: modelList.width; height: 72; radius: 16
             color: modelData.id === root.selectedModel ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
-            Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.right: check.left; anchors.top: parent.top; anchors.topMargin: 8; text: modelData.name; color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; font.weight: modelData.id === root.selectedModel ? Font.DemiBold : Font.Normal; elide: Text.ElideRight }
-            Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.right: check.left; anchors.bottom: parent.bottom; anchors.bottomMargin: 7; text: modelData.engine; color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10; elide: Text.ElideRight }
-            Text { id: check; anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData.id === root.selectedModel ? "\uf00c" : ""; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14 }
+            R1Icon { anchors.left: parent.left; anchors.leftMargin: 16; anchors.verticalCenter: parent.verticalCenter; width: 24; height: 24; glyph: "\uf130"; color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+            Column { anchors.left: parent.left; anchors.leftMargin: 56; anchors.right: trailing.left; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+              Text { width: parent.width; text: modelData.name; color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: modelData.id === root.selectedModel ? Font.DemiBold : Font.Normal; elide: Text.ElideRight }
+              Text { width: parent.width; text: root.modelDescription(modelData); color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; elide: Text.ElideRight }
+            }
+            R1Icon { id: trailing; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: modelData.id === root.selectedModel ? "\uf00c" : "\uf054"; color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14 }
             MouseArea { anchors.fill: parent; enabled: !root.busy; onClicked: root.selectModel(modelData.id) }
           }
         }
 
-        ListView {
-          id: historyList
+        Item {
           visible: root.tab === 1
           width: parent.width
-          height: root.listHeight
-          spacing: 8
+          height: root.historyListHeight + 16
+          ListView {
+          id: historyList
+          onVisibleChanged: {
+            if (!visible) return
+            root.selectedHistoryId = root.history.length > 0 ? root.history[0].id : -1
+            Qt.callLater(function() { historyList.positionViewAtBeginning() })
+          }
+          anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 16 }
+          width: parent.width
+          height: root.historyListHeight
+          spacing: 16
           clip: true
           interactive: contentHeight > height
           model: root.history
@@ -147,80 +222,178 @@ PopupBase {
             id: historyRow
             required property var modelData
             readonly property bool isPlaying: root.playingId === modelData.id
-            width: historyList.width - 8; height: Math.max(editor.implicitHeight, 36) + (modelData.audioAvailable ? 76 : 44); radius: 8
-            color: Tokens.surfaceContainerHighest
+            readonly property bool selected: root.selectedHistoryId === modelData.id
+            width: historyList.width; height: selected ? 320 : 72; radius: selected ? 24 : 16
+            color: Tokens.surfaceContainer
             Text {
-              anchors.left: parent.left; anchors.leftMargin: 10; anchors.verticalCenter: actionsRow.verticalCenter
-              text: root.fmtTime(modelData.timestamp); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10; width: 105; elide: Text.ElideRight
-            }
-            Row {
-              id: actionsRow
-              anchors.right: parent.right; anchors.rightMargin: 10; anchors.top: parent.top; anchors.topMargin: 7; spacing: 8
-              PillButton { width: 62; height: 24; text: "Save"; glyph: "\uf0c7"; glyphSize: 10; textSize: 10; enabled: !root.busy; onClicked: root.save(modelData, editor.text) }
-              PillButton { width: 66; height: 24; text: "Copy"; glyph: "\uf0c5"; glyphSize: 10; textSize: 10; enabled: !root.busy; onClicked: root.copy(editor.text) }
-              PillButton { width: 84; height: 24; text: root.busyId === modelData.id && root.busyAction === "retry" ? "Retrying" : (modelData.audioAvailable ? "Retry" : "No audio"); glyph: modelData.audioAvailable ? "\uf2f1" : "\uf071"; glyphSize: 10; textSize: 10; enabled: !root.busy && modelData.audioAvailable; onClicked: root.retry(modelData) }
-              PillButton {
-                width: 62; height: 24
-                readonly property bool armed: root.confirmId === modelData.id
-                readonly property bool deleting: root.busyId === modelData.id && root.busyAction === "delete"
-                text: deleting ? "Deleting" : (armed ? "Sure?" : "Delete")
-                glyph: deleting ? "\uf110" : (armed ? "\uf071" : "\uf2ed")
-                glyphSize: 10; textSize: 10
-                active: armed
-                enabled: !root.busy
-                onClicked: {
-                  if (armed) { confirmTimer.stop(); root.remove(modelData) }
-                  else { root.confirmId = modelData.id; confirmTimer.restart() }
-                }
-              }
+              visible: historyRow.selected
+              anchors.left: parent.left; anchors.leftMargin: 16; anchors.top: parent.top; anchors.topMargin: 20
+              text: root.historyTitle(modelData.timestamp); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; font.weight: Font.DemiBold
             }
             TextEdit {
               id: editor
-              anchors.left: parent.left; anchors.leftMargin: 10; anchors.right: parent.right; anchors.rightMargin: 10; anchors.top: actionsRow.bottom; anchors.topMargin: 5
-              width: parent.width - 20; height: Math.max(36, implicitHeight); text: modelData.text; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; wrapMode: TextEdit.Wrap; selectByMouse: true; persistentSelection: true
+              visible: historyRow.selected
+              anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
+              width: parent.width - 32; height: 112; clip: true; text: modelData.text; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; wrapMode: TextEdit.Wrap; selectByMouse: true; persistentSelection: true
+              anchors.leftMargin: 16; anchors.rightMargin: 16; anchors.topMargin: 56
               readOnly: root.busy && root.busyId !== modelData.id
             }
             Item {
-              visible: modelData.audioAvailable
-              anchors { left: parent.left; right: parent.right; margins: 10; top: editor.bottom; topMargin: 7 }
-              height: 24
-              PillButton {
+              visible: historyRow.selected && modelData.audioAvailable
+              anchors { left: parent.left; right: parent.right; margins: 16; top: editor.bottom; topMargin: 20 }
+              height: 58
+              Rectangle {
+                anchors { left: parent.left; right: parent.right; top: parent.top }
+                height: 4; color: Colors.border
+                Rectangle {
+                  anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                  width: parent.width * (historyRow.isPlaying ? root.progress : 0)
+                  color: Colors.primary
+                  Behavior on width { NumberAnimation { duration: 120 } }
+                }
+              }
+              Item {
                 id: playButton
-                anchors { left: parent.left; verticalCenter: parent.verticalCenter }
-                width: 30; height: 24; active: historyRow.isPlaying
-                glyph: historyRow.isPlaying ? "\uf04d" : "\uf04b"; glyphSize: 11
-                enabled: !root.busy && modelData.audioAvailable
-                onClicked: root.togglePlay(modelData)
+                anchors { left: parent.left; verticalCenter: retryButton.verticalCenter }
+                width: 24; height: 24
+                Shape {
+                  anchors.fill: parent
+                  visible: historyRow.isPlaying
+                  ShapePath {
+                    strokeColor: Colors.text; strokeWidth: 1.8; fillColor: "transparent"
+                    capStyle: ShapePath.RoundCap
+                    startX: 8; startY: 4
+                    PathLine { x: 8; y: 20 }
+                    PathMove { x: 16; y: 4 }
+                    PathLine { x: 16; y: 20 }
+                  }
+                }
+                Shape {
+                  anchors.fill: parent
+                  visible: !historyRow.isPlaying
+                  ShapePath {
+                    strokeColor: Colors.text; strokeWidth: 1.8; fillColor: "transparent"
+                    capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+                    startX: 8; startY: 5
+                    PathLine { x: 18; y: 12 }
+                    PathLine { x: 8; y: 19 }
+                    PathLine { x: 8; y: 5 }
+                  }
+                }
+                MouseArea { anchors.fill: parent; enabled: !root.busy && modelData.audioAvailable; cursorShape: Qt.PointingHandCursor; onClicked: root.togglePlay(modelData) }
               }
               Text {
                 id: timeText
-                anchors { left: playButton.right; leftMargin: 8; verticalCenter: parent.verticalCenter }
-                width: 78
-                horizontalAlignment: Text.AlignHCenter
+                anchors { left: playButton.right; leftMargin: 16; verticalCenter: playButton.verticalCenter }
                 text: (historyRow.isPlaying ? root.fmtDur(root.positionMs) : "0:00")
                   + " / "
                   + ((historyRow.isPlaying && root.durationMs > 0) ? root.fmtDur(root.durationMs)
                     : (modelData.durationMs != null ? root.fmtDur(modelData.durationMs) : "--:--"))
                 color: historyRow.isPlaying ? Colors.text : Colors.text_alt
-                font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10
+                font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12
               }
-              Rectangle {
-                anchors { left: timeText.right; leftMargin: 8; right: parent.right; verticalCenter: parent.verticalCenter }
-                height: 6; radius: 3; color: Colors.muted
-                Rectangle {
-                  anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
-                  width: parent.width * (historyRow.isPlaying ? root.progress : 0)
-                  radius: 3; color: Colors.primary
-                  Behavior on width { NumberAnimation { duration: 120 } }
-                }
+              PillButton {
+                id: retryButton
+                anchors { right: parent.right; bottom: parent.bottom }
+                width: 104; height: 40
+                text: root.busyId === modelData.id && root.busyAction === "retry" ? "Retrying" : (modelData.audioAvailable ? "Retry" : "No audio")
+                textSize: 14; emphasized: true; filled: true; inactiveFillColor: Tokens.surfaceContainer
+                enabled: !root.busy && modelData.audioAvailable
+                onClicked: root.retry(modelData)
               }
             }
+            Shape {
+              visible: historyRow.selected
+              anchors.right: parent.right; anchors.rightMargin: 16; anchors.top: parent.top; anchors.topMargin: 20
+              width: 24; height: 24
+              ShapePath {
+                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
+                strokeWidth: 1.8; fillColor: "transparent"
+                capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+                startX: 3; startY: 6
+                PathLine { x: 21; y: 6 }
+              }
+              ShapePath {
+                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
+                strokeWidth: 1.8; fillColor: "transparent"
+                capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+                startX: 9; startY: 6
+                PathLine { x: 9; y: 3 }
+                PathLine { x: 15; y: 3 }
+                PathLine { x: 15; y: 6 }
+              }
+              ShapePath {
+                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
+                strokeWidth: 1.8; fillColor: "transparent"
+                capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
+                startX: 6; startY: 6
+                PathLine { x: 7; y: 21 }
+                PathLine { x: 17; y: 21 }
+                PathLine { x: 18; y: 6 }
+              }
+              ShapePath {
+                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
+                strokeWidth: 1.8; fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                startX: 10; startY: 10
+                PathLine { x: 10; y: 17 }
+              }
+              ShapePath {
+                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
+                strokeWidth: 1.8; fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                startX: 14; startY: 10
+                PathLine { x: 14; y: 17 }
+              }
+              MouseArea { anchors.fill: parent; anchors.margins: -8; enabled: !root.busy; onClicked: root.requestDelete(modelData) }
+            }
+            Row {
+              visible: historyRow.selected
+              anchors.left: parent.left; anchors.right: parent.right; anchors.leftMargin: 16; anchors.rightMargin: 16; anchors.bottom: parent.bottom; anchors.bottomMargin: 16; spacing: 8
+              PillButton { width: 164; height: 40; text: "Copy"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Tokens.surfaceContainer; enabled: !root.busy; onClicked: root.copy(editor.text) }
+              PillButton { width: parent.width - 172; height: 40; text: "Save changes"; textSize: 14; emphasized: true; filled: true; active: true; fillColor: Colors.primary; inactiveFillColor: Colors.primary; activeTextColor: Colors.surface; enabled: !root.busy; onClicked: root.save(modelData, editor.text) }
+            }
+            R1Icon {
+              visible: !historyRow.selected
+              anchors.left: parent.left; anchors.leftMargin: 16; anchors.verticalCenter: parent.verticalCenter
+              glyph: "\uf130"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 18
+            }
+            Column {
+              visible: !historyRow.selected
+              anchors.left: parent.left; anchors.leftMargin: 56; anchors.right: parent.right; anchors.rightMargin: 24; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+              Text { width: parent.width; text: root.historyTitle(modelData.timestamp); color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; elide: Text.ElideRight }
+              Text { width: parent.width; text: String(modelData.text || "").replace(/\s+/g, " ").trim(); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; elide: Text.ElideRight }
+            }
+            R1Icon { visible: !historyRow.selected; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf054"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 13 }
+            MouseArea { anchors.fill: parent; enabled: !historyRow.selected; onClicked: root.selectedHistoryId = modelData.id }
           }
         }
-
-        Item {
-          width: parent.width; height: 24
-          Text { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; text: root.busy ? "Updating Handy…" : (root.tab === 0 ? root.models.length + " installed model(s)" : root.history.length + " recent recording(s)"); color: Colors.muted; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 10 }
-          PillButton { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: 72; height: 24; text: "Refresh"; glyph: "\uf021"; glyphSize: 10; textSize: 10; enabled: !root.busy; onClicked: root.refresh() }
         }
+
+  bottomContent: Item {
+    width: parent.width
+    height: root.tab === 0 ? 88 : 18
+    Text {
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      text: root.busy ? "Updating Handy…" : (root.tab === 0 ? "Selecting a model restarts Handy in the background." : root.history.length + " recent recordings · Select text to edit")
+      color: Colors.text_alt
+      font.family: "JetBrainsMono Nerd Font"
+      font.pixelSize: 12
+      elide: Text.ElideRight
+      height: root.tab === 0 ? 24 : 18
+    }
+    PillButton {
+      visible: root.tab === 0
+      width: parent.width
+      anchors.bottom: parent.bottom
+      height: 40
+      text: "Refresh models"
+      filled: true
+      active: true
+      enabled: !root.busy
+      onClicked: root.refresh()
+    }
+  }
 }

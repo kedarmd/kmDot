@@ -48,7 +48,8 @@ BarModule {
     if (s <= 0.75) return "󰤥"
     return "󰤨"
   }
-  active: connected && !disabled
+  active: false
+  iconName: "wifi"
   fill: Tokens.primaryContainer
   on_color: Tokens.on_primary_container
   dimmed: disabled

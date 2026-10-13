@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import "../components"
-import "../components/bluetooth.js" as BtJs
 import qs
 
 LauncherBase {
@@ -9,8 +8,14 @@ LauncherBase {
 
   sockName: "kmdot-bluetooth"
   title: "Bluetooth"
-  footerHint: "↑↓ navigate · ⏎ connect/disconnect · tab toggle · esc close"
+  searchPlaceholder: "Search devices…"
+  headerTitle: "Bluetooth"
+  cardHeight: 592
+  footerHint: "↑↓ navigate · ⏎ connect/pair · tab toggle"
   countShown: false
+  footerActionVisible: false
+  listStatusActionText: root.footerActionText
+  listStatusActionWidth: 160
   loadingText: "Scanning for devices..."
   // Pairing keeps the launcher open; connect/disconnect close it explicitly.
   closeOnActivate: false
@@ -23,16 +28,16 @@ LauncherBase {
   itemActions: [{ key: Qt.Key_Delete, ctrl: true, hint: "Ctrl+Del forget" }]
 
   function batterySuffix(d) {
-    return BtJs.batteryLabel(d.batteryAvailable, d.battery)
+    return d.batteryAvailable ? " · Battery " + d.battery + "%" : ""
   }
 
   function syncFooter() {
     const on = BluetoothStore.enabled
     root.footerHint = BluetoothStore.errorText !== ""
       ? BluetoothStore.errorText
-      : "↑↓ navigate · ⏎ connect/disconnect · tab toggle · esc close"
+      : "↑↓ navigate · ⏎ connect/pair · tab toggle"
     root.footerActionGlyph = on ? "" : ""
-    root.footerActionText = on ? "Bluetooth On" : "Bluetooth Off"
+    root.footerActionText = on ? "Bluetooth on" : "Bluetooth off"
     root.footerActionActive = on
   }
 
@@ -60,13 +65,14 @@ LauncherBase {
       let subtitle
       if (d.connected) subtitle = "Connected" + root.batterySuffix(d)
       else if (d.pairing || (BluetoothStore.busyPath === d.path && BluetoothStore.busyAction === "pair")) subtitle = "Pairing…"
-      else if (d.paired) subtitle = "Paired" + root.batterySuffix(d)
-      else subtitle = "Not paired"
+      else if (d.paired) subtitle = "Paired · Not connected"
+      else subtitle = "Available to pair"
       if (BluetoothStore.busyPath === d.path && BluetoothStore.busyAction === "connect") subtitle = "Connecting…"
       else if (BluetoothStore.busyPath === d.path && BluetoothStore.busyAction === "disconnect") subtitle = "Disconnecting…"
       items.push({
         label: d.name,
         subtitle: subtitle,
+        meta: d.connected ? "Disconnect" : (d.paired ? "Connect" : "Pair"),
         glyph: d.icon,
         device: d.device,
         path: d.path,

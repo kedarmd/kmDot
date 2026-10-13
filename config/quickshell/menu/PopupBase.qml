@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import qs
+import "../components"
 import "../components/popuppos.js" as Pos
 
 PanelWindow {
@@ -12,17 +13,6 @@ PanelWindow {
   color: Qt.rgba(0, 0, 0, 0)
   focusable: true
 
-  BackgroundEffect.blurRegion: Region {
-    item: root.contentItem
-
-    Region {
-      intersection: Intersection.Subtract
-      x: 0
-      y: 0
-      width: root.width
-      height: 42
-    }
-  }
   // NOTE: Pos.primaryScreen (indexed), not .values — the .values snapshot does
   // not track the model (reads empty while screens is populated), which
   // unmapped overlays while opened stayed true. Same reason for the indexed
@@ -46,11 +36,14 @@ PanelWindow {
   property string sockName: "kmdot-connection"
   property bool socketEnabled: true
   property string title: "Connections"
-  property real cardWidth: 360
+  property real cardWidth: 424
+  property bool centerCard: false
   // Card vertical chrome (top+bottom padding) and optional height cap (0 = uncapped).
-  // The two height-capped cards override these: Display (600), NotificationCenter (24 + root.height-80).
-  property real cardChrome: 32
+  // Taller panel cards set explicit bounds to match their Penpot frames.
+  property real cardChrome: 48
+  property real cardMinHeight: 0
   property real cardMaxHeight: 0
+  property alias bottomContent: footerSlot.data
   property bool escapeCloses: true
   // Focus seam: the item that should hold keyboard focus while open.
   // Subclasses with their own focus owner override it (Calendar's nav Column,
@@ -155,20 +148,68 @@ PanelWindow {
     Rectangle {
       id: card
       width: root.cardWidth
-      height: root.cardMaxHeight > 0 ? Math.min(body.implicitHeight + root.cardChrome, root.cardMaxHeight) : body.implicitHeight + root.cardChrome
-      radius: 20
-      color: Tokens.surfaceContainerLow
-      anchors { top: parent.top; topMargin: 48 }
-      x: root.anchorGX >= 0
+      height: Math.min(parent.height - 80, root.cardMaxHeight > 0
+        ? Math.min(Math.max(body.implicitHeight + footerSlot.height + (footerSlot.children.length > 0 ? 16 : 0) + root.cardChrome, root.cardMinHeight), root.cardMaxHeight)
+        : Math.max(body.implicitHeight + footerSlot.height + (footerSlot.children.length > 0 ? 16 : 0) + root.cardChrome, root.cardMinHeight))
+      radius: 32
+      color: Colors.surface
+      border.width: 1
+      border.color: Colors.border
+      y: root.centerCard ? (parent.height - card.height) / 2 : 64
+      x: root.centerCard
+        ? (parent.width - card.width) / 2
+        : root.anchorGX >= 0
         ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
-        : parent.width - card.width - 10
+        : parent.width - card.width - 16
 
       MouseArea { anchors.fill: parent }
 
-      Column {
-        id: body
-        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 16 }
-        spacing: 12
+      Flickable {
+        id: bodyViewport
+        anchors {
+          top: parent.top
+          left: parent.left
+          right: parent.right
+          bottom: footerSlot.children.length > 0 ? footerSlot.top : parent.bottom
+          leftMargin: 24
+          rightMargin: 24
+          topMargin: 24
+          bottomMargin: footerSlot.children.length > 0 ? 16 : 24
+        }
+        clip: true
+        contentWidth: width
+        contentHeight: body.implicitHeight
+        interactive: contentHeight > height
+        boundsBehavior: Flickable.StopAtBounds
+        Column {
+          id: body
+          width: bodyViewport.width
+          spacing: 16
+        }
+      }
+
+      Item {
+        id: footerSlot
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: 24; rightMargin: 24; bottomMargin: 24 }
+        height: children.length > 0 ? childrenRect.height : 0
+      }
+
+      R1Icon {
+        width: 24
+        height: 24
+        anchors { top: parent.top; right: parent.right; topMargin: 24; rightMargin: 24 }
+        glyph: "\uf00d"
+        font.family: "JetBrainsMono Nerd Font Propo"
+        font.pixelSize: 16
+        color: Colors.text_alt
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        MouseArea {
+          anchors.fill: parent
+          anchors.margins: -8
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.close()
+        }
       }
     }
   }

@@ -22,25 +22,18 @@ TTL=86400 # 1 day
 
 mkdir -p "$TEXT_DIR" "$IMG_DIR" "$THUMB_DIR"
 
-# The daemon runs two watchers (default + image/png) which can fire for the
-# same clipboard change. Serialize captures (and index/GC writes) so concurrent
-# processes can never interleave writes to the same file — a racy cp once
-# produced a CRC-corrupt PNG that Qt then failed to decode in the launcher.
-exec 9>"$CACHE/.lock"
-flock 9
-
 TMP="$(mktemp "$CACHE/.capture.XXXXXX")"
 trap 'rm -f "$TMP"' EXIT
 
 # For images, explicitly pull image/png from the live clipboard. In this setup,
 # wl-paste --watch may invoke the handler for image offers without piping the
 # image bytes on stdin, so trusting stdin alone loses screenshots.
-if wl-paste --list-types 2>/dev/null | grep -qx 'image/png'; then
+if timeout 2s wl-paste --list-types 2>/dev/null | grep -qx 'image/png'; then
   TYPE="img"
-  wl-paste --type image/png > "$TMP"
+  timeout 5s wl-paste --type image/png > "$TMP" || exit 0
 else
   TYPE="text"
-  cat > "$TMP"
+  timeout 5s cat > "$TMP" || exit 0
 fi
 
 # Skip empty selections (e.g. apps clearing the clipboard).
@@ -55,6 +48,13 @@ if [ "$TYPE" = "text" ] && [ "$(od -An -N8 -tx1 "$TMP" | tr -d ' \n')" = "89504e
 fi
 
 HASH="$(sha256sum "$TMP" | cut -d' ' -f1)"
+
+# Clipboard owners can stop answering requests. Read the payload before taking
+# the history lock, so a stalled owner cannot block every launcher/list/clear.
+# Each capture has a private temporary file; payload publication, index updates,
+# and GC remain serialized and atomic as before.
+exec 9>"$CACHE/.lock"
+flock -w 5 9 || exit 0
 
 # Store the payload atomically (mv = rename on the same filesystem, so the
 # launcher never reads a partially-written file). Idempotent: same hash

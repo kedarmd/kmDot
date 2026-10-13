@@ -5,9 +5,8 @@ import "../components"
 
 Item {
   id: root
-  implicitHeight: 30
+  implicitHeight: 32
   width: Math.max(30, label.implicitWidth + 20)
-  required property var tooltip
 
   property bool attentionOn: false
 
@@ -23,7 +22,7 @@ Item {
     id: pill
     anchors.centerIn: parent
     width: Math.max(30, label.implicitWidth + 20)
-    height: 30
+    height: 32
     active: root.attentionOn
     fill: Tokens.primaryContainer
     hovered: mouse.containsMouse
@@ -34,7 +33,7 @@ Item {
       anchors.centerIn: parent
       text: root.attentionOn ? "\uf06e" : "\uf070"
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 15
+      font.pixelSize: 20
       color: root.attentionOn ? Tokens.on_primary_container : Colors.text_alt
       opacity: root.attentionOn || mouse.containsMouse ? 1.0 : 0.0
       Behavior on opacity {
@@ -52,8 +51,6 @@ Item {
     onClicked: {
       toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/attention-mode.sh " + (root.attentionOn ? "off" : "on")])
     }
-    onEntered: root.tooltip.show(root, root.tooltipText)
-    onExited: root.tooltip.hide()
   }
 
   Process {

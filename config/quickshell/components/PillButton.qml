@@ -9,25 +9,37 @@ Rectangle {
 
   property bool active: false
   property bool filled: false
+  property bool keyboardSelected: false
+  property bool emphasized: false
   property bool enabled: true
   property string text: ""
   property string glyph: ""
   property real glyphSize: 12
-  property real textSize: 12
+  property real textSize: 14
   property color fillColor: Tokens.primaryContainer
-  property color inactiveFillColor: Tokens.surfaceContainerHighest
+  property color inactiveFillColor: Colors.surface_alt
   property color activeTextColor: Tokens.on_primary_container
 
   signal clicked
 
+  activeFocusOnTab: root.enabled
+  Keys.onReturnPressed: if (root.enabled) root.clicked()
+  Keys.onEnterPressed: if (root.enabled) root.clicked()
+  Keys.onSpacePressed: if (root.enabled) root.clicked()
+
   property real horizontalPadding: 12
 
-  implicitHeight: 30
+  implicitHeight: 40
   implicitWidth: row.implicitWidth + horizontalPadding * 2
   radius: height / 2
+  opacity: root.enabled ? 1 : 0.38
   color: !root.enabled ? root.inactiveFillColor
+    : root.pressed ? Tokens.primaryContainer
+    : root.hovering ? Colors.border
     : root.active ? root.fillColor
     : root.filled ? root.inactiveFillColor : "transparent"
+  border.width: root.keyboardSelected || root.activeFocus ? 2 : 0
+  border.color: Colors.primary
 
   Behavior on color {
     ColorAnimation {
@@ -38,19 +50,19 @@ Rectangle {
   readonly property bool hovering: mouse.containsMouse
   readonly property bool pressed: mouse.pressed
   readonly property color fg: !root.enabled
-    ? Tokens.stateDisabled
-    : root.active
+    ? Colors.text
+    : root.pressed || root.active
       ? root.activeTextColor
-      : (root.hovering ? Tokens.on_surface : Tokens.on_surface_variant)
+      : (root.hovering || root.filled ? Colors.text : Tokens.on_surface_variant)
 
   Row {
     id: row
     anchors.centerIn: parent
     spacing: 6
 
-    Text {
+    R1Icon {
       visible: root.glyph !== ""
-      text: root.glyph
+      glyph: root.glyph
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: root.glyphSize
       font.weight: root.active ? Font.Bold : Font.Normal
@@ -60,19 +72,11 @@ Rectangle {
     Text {
       visible: root.text !== ""
       text: root.text
-      font.family: "JetBrainsMono Nerd Font Propo"
+      font.family: "JetBrainsMono Nerd Font"
       font.pixelSize: root.textSize
-      font.weight: root.active ? Font.Bold : Font.Normal
+      font.weight: root.active || root.emphasized ? Font.DemiBold : Font.Normal
       color: root.fg
     }
-  }
-
-  StateLayer {
-    anchors.fill: parent
-    radius: parent.radius
-    hovered: root.hovering
-    pressed: root.pressed
-    enabled: root.enabled
   }
 
   MouseArea {

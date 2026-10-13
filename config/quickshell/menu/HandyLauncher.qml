@@ -9,39 +9,45 @@ LauncherBase {
 
   sockName: "kmdot-handy-launcher"
   title: "Handy"
+  searchPlaceholder: "Search installed models…"
+  headerTitle: root.mode === 0 ? "Handy" : "History"
+  cardHeight: root.mode === 0 ? 576 : root.busyAction === "retry" ? 464 : 608
   countShown: false
+  listToolbar: modeTabs
+  listStatusText: root.mode === 0 ? "Selecting a model restarts Handy." : ""
   loadingText: "Loading Handy\u2026"
   emptyText: root.mode === 0 ? "No installed models" : "No recordings yet"
   // History view drops the search bar so bare keys (Delete/Backspace) reach
   // the list; a title row takes its slot.
   searchEnabled: root.mode === 0
-  headerGlyph: "\uf130"
-  headerText: "Handy History"
+  headerGlyph: ""
+  headerText: ""
 
   // Mode pill: shows the current mode; Tab or click flips it.
-  footerActionGlyph: "\uf0ec"
+  footerActionGlyph: ""
   footerActionActive: true
   footerActionText: root.mode === 0 ? "Models" : "History"
+  footerActionVisible: false
   // Store mutation/fetch errors surface here (the launcher has no error
   // line; the footer hint is its plain-language error surface).
   footerHint: HandyStore.errorText !== ""
     ? HandyStore.errorText
     : (root.mode === 0
-      ? "\u2191\u2193 navigate \u00b7 \u23ce select \u00b7 esc close"
+      ? "\u2191\u2193 navigate \u00b7 \u23ce select"
       : (root.confirmId >= 0
         ? "Del again to confirm"
-        : "\u2191\u2193 navigate \u00b7 \u23ce copy \u00b7 esc close"))
+        : "\u23ce copy"))
   // Secondary chords are History-only (retry/play); empty in Models mode so
   // the auto-appended hints disappear too.
   itemActions: root.mode === 1 ? [
-    { key: Qt.Key_R, ctrl: true, hint: "^R retry" },
-    { key: Qt.Key_P, ctrl: true, hint: "^P play" }
+    { key: Qt.Key_P, ctrl: true, hint: "Ctrl+P play" },
+    { key: Qt.Key_R, ctrl: true, hint: "Ctrl+R retry" }
   ] : []
   // Bare Delete/Backspace delete the selected recording (History-only; the
   // searchless nav surface is what makes bare keys safe here).
   bareKeyActions: root.mode === 1 ? [
     { key: Qt.Key_Delete, hint: "Del delete" },
-    { key: Qt.Key_Backspace, hint: "\u232b delete" }
+    { key: Qt.Key_Backspace, hint: "⌫ delete" }
   ] : []
 
   // 0 = Models, 1 = History. Opens on Models to mirror the tray popup's tabs.
@@ -78,6 +84,33 @@ LauncherBase {
     return "0:00 / " + (row.durationMs != null ? fmtDur(row.durationMs) : "--:--")
   }
 
+  function historyTitle(row) {
+    const raw = Number(row.timestamp || 0)
+    if (!raw) return row.title || "Recording"
+    const date = new Date(raw > 1000000000000 ? raw : raw * 1000)
+    const now = new Date()
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    const startDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+    const daysAgo = Math.round((startToday - startDate) / 86400000)
+    let hour = date.getHours()
+    const ampm = hour >= 12 ? "PM" : "AM"
+    hour = hour % 12 || 12
+    const time = hour + ":" + String(date.getMinutes()).padStart(2, "0") + " " + ampm
+    if (daysAgo === 0) return "Today, " + time
+    if (daysAgo === 1) return "Yesterday, " + time
+    const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][date.getMonth()]
+    return month + " " + date.getDate() + ", " + time
+  }
+
+  function modelSubtitle(model) {
+    const name = String(model.name || "")
+    if (/whisper.*large/i.test(name)) return "Whisper · Multilingual"
+    if (/parakeet/i.test(name)) return "Fast English transcription"
+    if (/whisper.*small/i.test(name)) return "Whisper · Lightweight"
+    if (/canary/i.test(name)) return "Multilingual transcription"
+    return String(model.engine || "Installed model")
+  }
+
   // ---- data (reads via HandyStore; one in-flight pair shared with popup) ----
   // Busy state is store-owned: opening the launcher never resets an
   // in-flight mutation, it only queues a coalesced refresh behind it.
@@ -109,12 +142,15 @@ LauncherBase {
   // ---- pool ----
   function rebuildPool() {
     if (root.mode === 0) {
-      root.pool = root.models.map(m => ({ kind: "model", modelId: m.id, label: m.name, subtitle: m.engine }))
+      root.pool = root.models.map(m => ({ kind: "model", modelId: m.id, label: m.name, subtitle: root.modelSubtitle(m), glyph: "\uf130" }))
+      const selected = root.models.findIndex(m => m.id === root.selectedModel)
+      if (selected >= 0) root.selectedIndex = selected
     } else {
       root.pool = root.history.map(row => ({
         kind: "history",
         row,
-        label: row.title || "Recording",
+        label: root.historyTitle(row),
+        glyph: "\uf130",
         body: String(row.text || "").replace(/\s+/g, " ").trim(),
         subtitle: playbackSubtitle(row),
         searchText: (row.title || "") + " " + (row.text || "")
@@ -136,12 +172,18 @@ LauncherBase {
 
   // ---- row-local seams ----
   function itemStatusGlyph(item) {
-    if (item.kind === "model") return item.modelId === root.selectedModel ? "\uf00c" : ""
+    if (item.kind === "model") return ""
     if (root.busyId === item.row.id && root.busyAction === "retry") return "\uf110"
     if (root.confirmId === item.row.id) return "\uf071"
     if (root.busyId === item.row.id && root.busyAction === "delete") return "\uf110"
-    if (root.playingId === item.row.id) return "\uf04c"
-    return item.row.audioAvailable ? "\uf04b" : ""
+    return ""
+  }
+  function itemMeta(item) {
+    if (item.kind === "model") return item.modelId === root.selectedModel ? "Selected" : ""
+    if (root.busyId === item.row.id) return ""
+    if (root.confirmId === item.row.id) return "Delete"
+    if (root.playingId === item.row.id) return "Pause"
+    return item.row.audioAvailable ? "Play" : ""
   }
   function itemSubtitleLive(item) {
     if (item.kind !== "history") return itemSubtitle(item)
@@ -151,9 +193,11 @@ LauncherBase {
       const total = root.durationMs > 0
         ? root.durationMs
         : (item.row.durationMs != null ? item.row.durationMs : 0)
-      return fmtDur(root.positionMs) + " / " + (total > 0 ? fmtDur(total) : "--:--")
+      return "Playing · " + fmtDur(root.positionMs) + " / " + (total > 0 ? fmtDur(total) : "--:--")
     }
-    return playbackSubtitle(item.row)
+    return item.row.audioAvailable
+      ? fmtDur(item.row.durationMs || 0) + " · Ready to copy"
+      : ""
   }
   function itemProgress(item) {
     if (item.kind === "history" && root.playingId === item.row.id)
@@ -236,4 +280,47 @@ LauncherBase {
   }
 
   Process { id: copyProc }
+
+  Component {
+    id: modeTabs
+    Row {
+      width: parent.width
+      spacing: 16
+
+      Repeater {
+        model: ["Models", "History"]
+        delegate: Rectangle {
+          required property string modelData
+          required property int index
+          width: (parent.width - parent.spacing) / 2
+          height: 40
+          radius: 20
+          color: root.mode === index ? Tokens.primaryContainer : Colors.surface_alt
+
+          Text {
+            anchors.centerIn: parent
+            text: modelData
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 14
+            font.weight: root.mode === index ? Font.DemiBold : Font.Medium
+            color: root.mode === index ? Tokens.on_primary_container : Colors.text_alt
+          }
+
+          MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+              if (root.mode === index) return
+              root.mode = index
+              root.confirmId = -1
+              root.resetQuery()
+              root.selectedIndex = 0
+              root.rebuildPool()
+              root.recompute()
+            }
+          }
+        }
+      }
+    }
+  }
 }
