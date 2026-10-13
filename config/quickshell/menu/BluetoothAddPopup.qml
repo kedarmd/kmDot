@@ -104,7 +104,7 @@ PopupBase {
             MouseArea { anchors.fill: parent; enabled: root.radioAllowed && !root.busyPath; onClicked: root.activate(modelData) }
           }
         }
-        Text { visible: root.pairableDevices.length === 0; text: root.discovering ? "Scanning for devices…" : "No nearby devices found"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+        Text { visible: root.pairableDevices.length === 0; text: root.discovering ? "Scanning for devices…" : "No nearby devices found"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
       }
       }
       Rectangle {
@@ -120,7 +120,7 @@ PopupBase {
         height: Math.max(24, devicesList.height * devicesList.height / devicesList.contentHeight)
       }
     }
-    Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; wrapMode: Text.Wrap; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; wrapMode: Text.Wrap; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
     Text { width: parent.width; text: "You may be asked to confirm a PIN or passkey."; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
   }
 }

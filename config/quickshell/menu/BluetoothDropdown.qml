@@ -145,9 +145,9 @@ PopupBase {
         id: bluetoothListContent
         width: bluetoothList.width - 8
         spacing: 8
-        Text { visible: !root.adapter; text: "No Bluetooth adapter"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+        Text { visible: !root.adapter; text: "No Bluetooth adapter"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
         Repeater { model: root.devices; delegate: deviceDelegate }
-        Text { visible: root.devices.length === 0; text: root.radioEnabled && root.discovering ? "Scanning for devices..." : (root.radioEnabled ? "No devices found" : "Bluetooth is turned off"); color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+        Text { visible: root.devices.length === 0; text: root.radioEnabled && root.discovering ? "Scanning for devices..." : (root.radioEnabled ? "No devices found" : "Bluetooth is turned off"); color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
       }
       }
       Rectangle {
@@ -163,7 +163,7 @@ PopupBase {
         height: Math.max(24, bluetoothList.height * bluetoothList.height / bluetoothList.contentHeight)
       }
     }
-    Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; wrapMode: Text.Wrap; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; wrapMode: Text.Wrap; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
   }
 
   bottomContent: PillButton {

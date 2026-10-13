@@ -124,7 +124,7 @@ PopupBase {
       width: parent.width
       horizontalAlignment: Text.AlignRight
       text: "\u2190\u2192 choose  \u00b7  Enter activate  \u00b7  Esc cancel"
-      color: Colors.muted
+      color: Tokens.mutedText
       font.family: "JetBrainsMono Nerd Font"
       font.pixelSize: 12
     }

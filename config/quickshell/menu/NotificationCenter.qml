@@ -437,7 +437,7 @@ PopupBase {
               text: root.relativeTime(groupCol.groupData.entries[0].timestamp)
               font.family: "JetBrainsMono Nerd Font"
               font.pixelSize: 12
-              color: Colors.muted
+              color: Tokens.mutedText
             }
 
             Item {
@@ -606,7 +606,7 @@ PopupBase {
                       text: root.relativeTime(modelData.timestamp)
                       font.family: "JetBrainsMono Nerd Font"
                       font.pixelSize: 12
-                      color: Colors.muted
+                      color: Tokens.mutedText
                     }
 
                     Item {
@@ -696,7 +696,7 @@ PopupBase {
           ? groupsViewport.contentY * (parent.height - height) / (groupsViewport.contentHeight - groupsViewport.height)
           : 0
         radius: 2
-        color: Colors.muted
+        color: Tokens.mutedText
       }
     }
   }
@@ -711,7 +711,7 @@ PopupBase {
       text: historyModel.count + (historyModel.count === 1 ? " notification" : " notifications")
       font.family: "JetBrainsMono Nerd Font"
       font.pixelSize: 12
-      color: Colors.muted
+      color: Tokens.mutedText
     }
     PillButton {
       anchors.right: parent.right

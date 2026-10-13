@@ -1,8 +1,10 @@
 # Quickshell R1 local implementation review
 
-Date: 2026-10-13. User review: in progress; final full-scope acceptance not recorded.
+Date: 2026-10-14. User review: in progress; final full-scope acceptance not recorded.
 
 ## Current status — latest user preferences
+
+The alternate-theme review is recorded separately in [quickshell-theme-visual-validation.md](quickshell-theme-visual-validation.md). That review supersedes the TokyoNight-only token statement below for palette coverage: Catppuccin, Everforest, Nord, and One Dark were rendered independently, with contrast and lock/login limitations recorded there.
 
 The top bar now has Kmdot and Workspaces on the left, with no window-title module. The clock is centered alone. The right group is hidden tray → Display → Audio → Wi-Fi → Bluetooth → Battery → notification bell. The tray expands inline by sliding the chevron left and contains Attention eye, Server mode, OpenCode usage and Handy. The user is trialing this original eye/bell placement for a couple of days. No below-bar tray, Appearance tray icon, or tooltips remain. Super+T still opens Appearance. These explicit preferences supersede older screenshots and the historical follow-ups below.
 
@@ -45,7 +47,7 @@ Wi-Fi and Battery retain the previously requested compact content heights rather
 ## Validation
 
 - **Geometry — reviewed:** live Penpot sizes/positions were read for changed panels, and local captures were compared against their exports. The live Display, Calendar, Server, toast and reply boards have no descendant containment violations. Normal desktop captures were inspected at 1920×1080; exact cross-renderer text baselines and all narrow-screen combinations are not certified.
-- **Tokens — reviewed with limits:** source uses TokyoNight semantic colors, the approved JetBrains Mono family/scale, and exported canonical icon geometry. Penpot manifest and component IDs are preserved. Device-specific icons remain font fallbacks. This is not an exhaustive mechanical audit of every pre-existing QML style value.
+- **Tokens — reviewed with limits:** the original R1 audit checked TokyoNight semantic colors, the approved JetBrains Mono family/scale, and exported canonical icon geometry. Alternate-theme role mappings and contrast are covered by [quickshell-theme-visual-validation.md](quickshell-theme-visual-validation.md). Penpot manifest and component IDs are preserved. Device-specific icons remain font fallbacks. This is not an exhaustive mechanical audit of every pre-existing QML style value.
 - **Visual — advisory:** screenshots are available for consolidated review. Real apps/devices/transcripts, absent media/history, keyboard focus rings, and the earlier compact-height requests explain some differences. Hardware-only conditions are listed below.
 - **Corrections — rechecked:** focused preview and normal-config launches were used after corrections. The final source is deployed via `./sync/quickshell.sh`; the repo and deployed Quickshell trees match. Normal launch reached `Configuration Loaded`; no QML type/property/binding errors were found. `git diff --check` passes. No automated tests or build/CI workflow were added or run.
 

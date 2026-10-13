@@ -174,7 +174,7 @@ PopupBase {
       Text {
         id: errorLabel
         x: 16; y: 16; width: parent.width - 32; text: root.errorText
-        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; color: Colors.error; wrapMode: Text.Wrap
+        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; color: Tokens.errorText; wrapMode: Text.Wrap
       }
     }
   }
@@ -189,7 +189,7 @@ PopupBase {
     Text {
       y: 64; width: parent.width
       text: "Couldn't " + root.failedServiceAction + " " + (root.failedService === "jellyfin" ? "Jellyfin" : "Tailscale")
-      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.error; wrapMode: Text.WordWrap
+      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Tokens.errorText; wrapMode: Text.WordWrap
     }
     Text {
       y: 112; width: parent.width; height: 64

@@ -159,7 +159,7 @@ WlSessionLockSurface {
           width: parent.width
           visible: root.shell.lockError
           text: "Incorrect password. Try again."
-          color: Colors.error
+          color: Tokens.errorText
           font.family: root.fontName
           font.pixelSize: 12
         }
@@ -208,18 +208,20 @@ WlSessionLockSurface {
         { label: "Restart", icon: "refresh", command: ["systemctl", "reboot"] },
         { label: "Suspend", icon: "moon", command: ["systemctl", "suspend"] }
       ]
-      delegate: Column {
+      delegate: Item {
         required property var modelData
         width: 64
-        spacing: 8
+        height: 56
         R1Icon {
-          anchors.horizontalCenter: parent.horizontalCenter
+          x: 20
+          y: 0
           width: 24; height: 24
           iconName: modelData.icon
           font.pixelSize: 24
           color: actionMouse.containsMouse ? Colors.primary : Colors.text
         }
         Text {
+          y: 32
           width: parent.width
           horizontalAlignment: Text.AlignHCenter
           text: modelData.label

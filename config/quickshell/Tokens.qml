@@ -23,7 +23,16 @@ Singleton {
   }
 
   function luminance(c) {
-    return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+    function linear(channel) {
+      return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4)
+    }
+    return 0.2126 * linear(c.r) + 0.7152 * linear(c.g) + 0.0722 * linear(c.b)
+  }
+
+  function contrast(c1, c2) {
+    const a = Tokens.luminance(c1)
+    const b = Tokens.luminance(c2)
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
   }
 
   // Pick dark or light text that reads on a given fill.
@@ -45,12 +54,19 @@ Singleton {
   readonly property color outlineVariant: Colors.outline_variant
   readonly property color divider: Colors.divider
 
+  // Keep canonical comment/error swatches for borders, icons and accents.
+  // Copy rendered on raised dark surfaces must still meet 4.5:1.
+  readonly property color mutedText: Tokens.contrast(Colors.muted, Colors.surface_high) >= 4.5
+    ? Colors.muted : Colors.text
+  readonly property color errorText: Tokens.contrast(Colors.error, Colors.surface_alt) >= 4.5
+    ? Colors.error : Colors.text
+
   // ---- primary ----
   // NOTE: property names must NEVER match `on` + UppERCASE (e.g. onPrimary) —
   // QML parses those as signal handlers, so the property silently never exists
   // and every consumer falls back to black text. Hence snake_case on_*.
   readonly property color primary: Colors.primary
-  readonly property color on_primary: Colors.text
+  readonly property color on_primary: Colors.on_primary
   readonly property color primaryContainer: Colors.primary_container
   readonly property color on_primary_container: Colors.on_primary_container
 

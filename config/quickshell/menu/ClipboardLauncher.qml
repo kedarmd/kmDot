@@ -120,6 +120,10 @@ LauncherBase {
   }
 
   onDetailBackRequested: root.previewMode = false
+  onDetailAcceptRequested: {
+    root.copyItem(root.previewItem)
+    root.closeLauncher()
+  }
 
   function onOpenedChange() {
     if (!root.opened) {
@@ -192,13 +196,16 @@ LauncherBase {
           font.family: "JetBrainsMono Nerd Font"
           font.pixelSize: 14
           font.weight: Font.DemiBold
-          color: Tokens.on_primary_container
+          color: Tokens.on_primary
         }
 
         MouseArea {
           anchors.fill: parent
           cursorShape: Qt.PointingHandCursor
-          onClicked: root.copyItem(root.previewItem)
+          onClicked: {
+            root.copyItem(root.previewItem)
+            root.closeLauncher()
+          }
         }
       }
     }

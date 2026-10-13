@@ -89,7 +89,7 @@ PopupBase {
     Text {
       y: 316; anchors.right: parent.right
       text: root.selectedHasBacklight ? DisplayState.percentFor(DisplayState.selectedDevice) + "%" : "Unavailable"
-      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; color: root.selectedHasBacklight ? Colors.primary : Colors.muted
+      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; color: root.selectedHasBacklight ? Colors.primary : Tokens.mutedText
     }
     SliderBar {
       y: 352; width: parent.width; height: 40; enabled: root.selectedHasBacklight

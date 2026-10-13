@@ -181,17 +181,17 @@ PopupBase {
         id: wifiListContent
         width: wifiList.width - 8
         spacing: 8
-        Text { visible: !root.radioEnabled; width: parent.width; text: "Wi-Fi is turned off"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
-        Text { visible: root.scanning; width: parent.width; text: "Refreshing available networks..."; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+        Text { visible: !root.radioEnabled; width: parent.width; text: "Wi-Fi is turned off"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+        Text { visible: root.scanning; width: parent.width; text: "Refreshing available networks..."; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
         Repeater { model: root.networks; delegate: networkDelegate }
-        Text { visible: !root.scanning && root.availableNetworks.length === 0; text: "No available networks"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+        Text { visible: !root.scanning && root.availableNetworks.length === 0; text: "No available networks"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
       }
       }
       Rectangle {
         visible: wifiList.contentHeight > wifiList.height
         width: 4
         radius: 2
-        color: Colors.muted
+        color: Tokens.mutedText
         opacity: 0.6
         z: 2
         anchors.right: parent.right
@@ -201,7 +201,7 @@ PopupBase {
       }
     }
 
-    Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; wrapMode: Text.Wrap; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; wrapMode: Text.Wrap; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
       PillButton {
         visible: root.radioEnabled && !(root.scanning && root.networks.length === 0)
         width: parent.width

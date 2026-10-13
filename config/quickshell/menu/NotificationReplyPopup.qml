@@ -70,7 +70,7 @@ PopupBase {
         Text {
           anchors.fill: parent; visible: replyInput.text.length === 0
           text: root.notification && root.notification.inlineReplyPlaceholder ? root.notification.inlineReplyPlaceholder : "Write a reply…"
-          font: replyInput.font; color: Colors.muted; wrapMode: Text.WordWrap
+          font: replyInput.font; color: Tokens.mutedText; wrapMode: Text.WordWrap
         }
         Keys.onReturnPressed: event => {
           if (event.modifiers & Qt.ControlModifier) root.sendReply()

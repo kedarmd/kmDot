@@ -88,7 +88,7 @@ PopupBase {
     }
     Text { visible: !root.enteringSsid; text: root.ssid; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold }
     Text { visible: !root.enteringSsid; width: parent.width; text: root.failed ? "The connection failed. Check your password and retry." : "Enter the password for this secured network."; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
-    Text { visible: root.enteringSsid; text: "Network name (SSID)"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { visible: root.enteringSsid; text: "Network name (SSID)"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
     Rectangle { visible: root.enteringSsid; width: parent.width; height: 34; radius: 8; color: Tokens.surfaceContainerHighest
       TextInput { id: ssidInput; anchors.fill: parent; anchors.margins: 9; text: root.ssid; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; onTextChanged: root.ssid = text }
     }
@@ -98,7 +98,7 @@ PopupBase {
       R1Icon { visible: !root.enteringSsid; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf023"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16 }
     }
     Text { visible: !root.enteringSsid; text: "Your password is stored by NetworkManager."; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
-    Text { visible: root.failed && root.resultText !== ""; width: parent.width; text: root.resultText; wrapMode: Text.Wrap; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { visible: root.failed && root.resultText !== ""; width: parent.width; text: root.resultText; wrapMode: Text.Wrap; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
   }
   bottomContent: Row {
     width: parent.width; height: 40; spacing: 8

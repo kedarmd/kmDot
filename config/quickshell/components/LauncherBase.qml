@@ -63,6 +63,7 @@ Item {
 
   signal promptSubmitted(string text)
   signal detailBackRequested()
+  signal detailAcceptRequested()
 
   // Shell scope that owns the launcher instances (set from shell.qml).
   // Used for the activeLauncher coordinator and cross-launcher navigation
@@ -475,7 +476,11 @@ Item {
           else if (event.key === Qt.Key_Up) { root.step(-1); event.accepted = true }
           else if (event.key === Qt.Key_PageUp) { root.step(10); event.accepted = true }
           else if (event.key === Qt.Key_PageDown) { root.step(-10); event.accepted = true }
-          else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) { root.activate(); event.accepted = true }
+          else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            if (root.detailMode) root.detailAcceptRequested()
+            else root.activate()
+            event.accepted = true
+          }
           else if (event.key === Qt.Key_Escape) {
             if (root.detailMode) root.detailBackRequested()
             else root.closeLauncher()
@@ -570,7 +575,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             font.family: "JetBrainsMono Nerd Font Propo"
             font.pixelSize: 16
-            color: Colors.muted
+            color: Tokens.mutedText
           }
 
           TextInput {
@@ -592,7 +597,7 @@ Item {
               visible: parent.text === ""
               text: root.promptMode ? root.promptTitle
                 : (root.searchPlaceholder !== "" ? root.searchPlaceholder : root.title)
-              color: Colors.muted
+              color: Tokens.mutedText
               font.pixelSize: 16
               font.family: parent.font.family
               verticalAlignment: Text.AlignVCenter
@@ -828,7 +833,7 @@ Item {
                 elide: Text.ElideRight
                 font.pixelSize: 12
                 font.family: "JetBrainsMono Nerd Font"
-                color: Colors.text_alt
+                color: root.selectedIndex === index ? Tokens.on_primary_container : Colors.text_alt
                 visible: text !== ""
               }
 
@@ -840,7 +845,7 @@ Item {
                 wrapMode: Text.Wrap
                 font.pixelSize: 12
                 font.family: "JetBrainsMono Nerd Font"
-                color: Colors.text_alt
+                color: root.selectedIndex === index ? Tokens.on_primary_container : Colors.text_alt
               }
             }
           }
@@ -869,7 +874,7 @@ Item {
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: 12
             font.weight: Font.Medium
-            color: Colors.text_alt
+            color: root.selectedIndex === index ? Tokens.on_primary_container : Colors.text_alt
           }
 
           Row {
@@ -996,7 +1001,7 @@ Item {
           visible: !root.loading
           iconName: root.emptyIconName
           font.pixelSize: 24
-          color: Colors.text_alt
+          color: Tokens.errorText
         }
 
         R1Icon {
@@ -1022,7 +1027,7 @@ Item {
           text: root.loading ? root.loadingText : root.emptyText
           font.pixelSize: 14
           font.family: "JetBrainsMono Nerd Font"
-          color: Colors.muted
+          color: Tokens.mutedText
         }
       }
 
@@ -1053,7 +1058,7 @@ Item {
           anchors.horizontalCenter: parent.horizontalCenter
           text: root.promptError
           visible: root.promptError !== ""
-          color: Colors.error
+          color: Tokens.errorText
           font.pixelSize: 14
           font.family: "JetBrainsMono Nerd Font"
           horizontalAlignment: Text.AlignHCenter
@@ -1112,7 +1117,7 @@ Item {
             text: root.promptMode ? root.promptHint : root.fullFooterHint
             font.pixelSize: 12
             font.family: "JetBrainsMono Nerd Font"
-            color: Colors.muted
+            color: Tokens.mutedText
             // Keep the hint within its own space so it never runs underneath the
             // right-aligned footer pill (e.g. bluetooth/wifi on-off button).
             elide: Text.ElideRight
@@ -1135,7 +1140,7 @@ Item {
               : root.closeHint
             font.pixelSize: 12
             font.family: "JetBrainsMono Nerd Font"
-            color: Colors.muted
+            color: Tokens.mutedText
             horizontalAlignment: Text.AlignRight
             visible: root.countShown || (root.closeHint !== "" && (!root.footerActionVisible || root.footerActionText === ""))
             width: visible ? (root.countShown ? footerCountText.implicitWidth : 116) : 0
@@ -1168,7 +1173,7 @@ Item {
               text: root.footerActionGlyph
               font.pixelSize: 12
               font.family: "JetBrainsMono Nerd Font"
-              color: root.footerActionActive ? Tokens.on_primary_container : Colors.muted
+              color: root.footerActionActive ? Tokens.on_primary_container : Tokens.mutedText
             }
 
             Text {
@@ -1177,7 +1182,7 @@ Item {
               font.pixelSize: 12
               font.family: "JetBrainsMono Nerd Font"
               font.weight: root.footerActionActive ? Font.Bold : Font.Normal
-              color: root.footerActionActive ? Tokens.on_primary_container : Colors.muted
+              color: root.footerActionActive ? Tokens.on_primary_container : Tokens.mutedText
             }
           }
 

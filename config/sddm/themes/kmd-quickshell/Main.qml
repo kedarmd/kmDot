@@ -236,7 +236,7 @@ Rectangle {
           width: parent.width
           visible: root.showError
           text: root.errorMessage
-          color: errorColor
+          color: textColor
           font.family: root.fontName
           font.pixelSize: 12
         }

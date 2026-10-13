@@ -67,8 +67,8 @@ PopupBase {
     PillButton { width: (parent.width - 8) / 2; text: "Models"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.tab = 1 }
   }
 
-  Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
-  Text { visible: !root.report && root.errorText === ""; width: parent.width; text: "Loading usage data…"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+  Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
+  Text { visible: !root.report && root.errorText === ""; width: parent.width; text: "Loading usage data…"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
 
   Column {
     id: dailyContent
@@ -77,7 +77,7 @@ PopupBase {
     spacing: 8
     Text { width: parent.width; text: root.report ? root.formatCost(root.report.total.cost) : "—"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 48; font.weight: Font.DemiBold }
     Text { width: parent.width; text: root.report ? root.formatTokens(root.report.total.tokens) + " tokens in the last 7 days" : ""; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
-    Text { width: parent.width; text: "Daily activity · steps"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { width: parent.width; text: "Daily activity · steps"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
     Item {
       id: activityChart
       width: parent.width
@@ -144,7 +144,7 @@ PopupBase {
       visible: modelList.contentHeight > modelList.height
       width: 4
       radius: 2
-      color: Colors.muted
+              color: Tokens.mutedText
       opacity: 0.6
       z: 2
       anchors.right: parent.right
@@ -160,7 +160,7 @@ PopupBase {
     Column {
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
-      Text { text: root.tab === 0 ? root.formatUpdated(root.report ? root.report.generatedAt : 0) : "7-day total"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+      Text { text: root.tab === 0 ? root.formatUpdated(root.report ? root.report.generatedAt : 0) : "7-day total"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
       Text { visible: root.tab === 1; text: root.report ? root.formatTokens(root.report.total.tokens) + " tokens · " + root.formatCost(root.report.total.cost) : "—"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
     }
     PillButton { visible: root.tab === 0; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; width: 120; text: "Refresh"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; enabled: !usageProc.running; onClicked: root.refreshItems() }

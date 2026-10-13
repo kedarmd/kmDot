@@ -227,7 +227,7 @@ Column {
   }
 
   Item { width: 1; height: 24 }
-  Text { width: parent.width; height: 20; text: "OUTPUT DEVICES"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.muted; verticalAlignment: Text.AlignVCenter }
+  Text { width: parent.width; height: 20; text: "OUTPUT DEVICES"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Tokens.mutedText; verticalAlignment: Text.AlignVCenter }
   Item { width: 1; height: 20 }
 
   ListView {
@@ -240,7 +240,7 @@ Column {
     interactive: true
     flickDeceleration: 2000
     boundsBehavior: Flickable.StopAtBounds
-    Text { anchors.centerIn: parent; visible: root.sinks.length === 0; text: root.sinkListRecovering ? "Switching output device…" : "No output devices"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { anchors.centerIn: parent; visible: root.sinks.length === 0; text: root.sinkListRecovering ? "Switching output device…" : "No output devices"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
     Rectangle {
       visible: sinkList.contentHeight > sinkList.height
       width: 4; radius: 2; color: Colors.text_alt; opacity: 0.4
@@ -279,7 +279,7 @@ Column {
   Row {
     width: parent.width
     height: 20
-    Text { width: parent.width - 164; text: "INPUT DEVICES"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.muted; verticalAlignment: Text.AlignVCenter }
+  Text { width: parent.width - 164; text: "INPUT DEVICES"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Tokens.mutedText; verticalAlignment: Text.AlignVCenter }
     Rectangle {
       width: 152; height: 4; radius: 2; anchors.verticalCenter: parent.verticalCenter; color: Tokens.outlineVariant
       Rectangle { width: parent.width * root.micLevel; height: parent.height; radius: parent.radius; color: Colors.success; Behavior on width { NumberAnimation { duration: 80 } } }
@@ -297,7 +297,7 @@ Column {
     interactive: true
     flickDeceleration: 2000
     boundsBehavior: Flickable.StopAtBounds
-    Text { anchors.centerIn: parent; visible: root.sources.length === 0; text: root.sourceListRecovering ? "Switching input device…" : "No input devices"; color: Colors.muted; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+    Text { anchors.centerIn: parent; visible: root.sources.length === 0; text: root.sourceListRecovering ? "Switching input device…" : "No input devices"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
     Rectangle {
       visible: sourceList.contentHeight > sourceList.height
       width: 4; radius: 2; color: Colors.text_alt; opacity: 0.4

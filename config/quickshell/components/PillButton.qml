@@ -10,6 +10,7 @@ Rectangle {
   property bool active: false
   property bool filled: false
   property bool keyboardSelected: false
+  property bool outlined: false
   property bool emphasized: false
   property bool enabled: true
   property string text: ""
@@ -33,13 +34,16 @@ Rectangle {
   implicitWidth: row.implicitWidth + horizontalPadding * 2
   radius: height / 2
   opacity: root.enabled ? 1 : 0.38
-  color: !root.enabled ? root.inactiveFillColor
-    : root.pressed ? Tokens.primaryContainer
-    : root.hovering ? Colors.border
-    : root.active ? root.fillColor
-    : root.filled ? root.inactiveFillColor : "transparent"
-  border.width: root.keyboardSelected || root.activeFocus ? 2 : 0
-  border.color: Colors.primary
+  // Interaction states darken the fill instead of switching to a brighter
+  // border swatch. This keeps the active foreground readable in every theme,
+  // including One Dark where border is intentionally not a text surface.
+  color: !root.enabled ? (root.outlined ? "transparent" : root.inactiveFillColor)
+    : root.outlined ? (root.pressed ? Tokens.mix(Colors.surface_alt, Colors.base, 0.12) : root.hovering ? Colors.surface_alt : "transparent")
+    : root.active ? Tokens.mix(root.fillColor, Colors.base, root.pressed ? 0.12 : root.hovering ? 0.08 : 0)
+    : root.filled ? Tokens.mix(root.inactiveFillColor, Colors.base, root.pressed ? 0.12 : root.hovering ? 0.08 : 0)
+    : root.hovering ? Colors.surface_alt : "transparent"
+  border.width: root.keyboardSelected || root.activeFocus ? 2 : root.outlined ? 1 : 0
+  border.color: root.keyboardSelected || root.activeFocus ? Colors.primary : Colors.outline_variant
 
   Behavior on color {
     ColorAnimation {
@@ -53,7 +57,7 @@ Rectangle {
     ? Colors.text
     : root.pressed || root.active
       ? root.activeTextColor
-      : (root.hovering || root.filled ? Colors.text : Tokens.on_surface_variant)
+    : (root.outlined || root.hovering || root.filled ? Colors.text : Tokens.on_surface_variant)
 
   Row {
     id: row

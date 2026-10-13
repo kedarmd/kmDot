@@ -166,16 +166,16 @@ PopupBase {
           width: parent.width; height: 28
           R1Icon { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: 2; width: 24; height: 24; glyph: "\uf130"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
           Text { anchors.left: parent.left; anchors.leftMargin: 40; anchors.verticalCenter: parent.verticalCenter; text: "Handy"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
-          Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: root.busy ? "Working" : ""; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.muted }
+          Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: root.busy ? "Working" : ""; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Tokens.mutedText }
         }
 
         Item { width: parent.width; height: 4 }
         Row {
           width: parent.width; spacing: 8
-          PillButton { width: (parent.width - 8) / 2; text: "Models"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Tokens.surfaceContainer; active: root.tab === 0; onClicked: root.tab = 0 }
-          PillButton { width: (parent.width - 8) / 2; text: "History"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Tokens.surfaceContainer; active: root.tab === 1; onClicked: root.tab = 1 }
+          PillButton { width: (parent.width - 8) / 2; text: "Models"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.tab = 0 }
+          PillButton { width: (parent.width - 8) / 2; text: "History"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.tab = 1 }
         }
-        Text { visible: root.effectiveError !== ""; width: parent.width; height: visible ? implicitHeight : 0; text: root.effectiveError; color: Colors.error; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
+        Text { visible: root.effectiveError !== ""; width: parent.width; height: visible ? implicitHeight : 0; text: root.effectiveError; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
 
         ListView {
           id: modelList
@@ -350,7 +350,7 @@ PopupBase {
             Row {
               visible: historyRow.selected
               anchors.left: parent.left; anchors.right: parent.right; anchors.leftMargin: 16; anchors.rightMargin: 16; anchors.bottom: parent.bottom; anchors.bottomMargin: 16; spacing: 8
-              PillButton { width: 164; height: 40; text: "Copy"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Tokens.surfaceContainer; enabled: !root.busy; onClicked: root.copy(editor.text) }
+              PillButton { width: 164; height: 40; text: "Copy"; textSize: 14; emphasized: true; outlined: true; enabled: !root.busy; onClicked: root.copy(editor.text) }
               PillButton { width: parent.width - 172; height: 40; text: "Save changes"; textSize: 14; emphasized: true; filled: true; active: true; fillColor: Colors.primary; inactiveFillColor: Colors.primary; activeTextColor: Colors.surface; enabled: !root.busy; onClicked: root.save(modelData, editor.text) }
             }
             R1Icon {

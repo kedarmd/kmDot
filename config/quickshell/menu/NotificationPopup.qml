@@ -243,7 +243,7 @@ PanelWindow {
                 text: root.relativeTime(modelData.timestamp)
                 font.family: "JetBrainsMono Nerd Font"
                 font.pixelSize: 12
-                color: Colors.muted
+                color: Tokens.mutedText
               }
 
               R1Icon {
@@ -255,7 +255,7 @@ PanelWindow {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 16
-                color: Colors.muted
+                color: Tokens.mutedText
 
                 MouseArea {
                   anchors.fill: parent
