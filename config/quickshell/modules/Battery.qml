@@ -54,7 +54,10 @@ BarModule {
   }
   text: capacity + "%"
   iconName: "battery"
-  active: false
+  // Keep the charging state visible in the bar, not only inside the popup.
+  // The success-tonal pill provides a stable theme-aware background while the
+  // bolt glyph and percentage remain readable in the same compact module.
+  active: root.charging
   foreground: root.capacity <= 15 ? Colors.error : root.capacity <= 30 ? Colors.warning : Colors.text
   fill: root.charging ? Tokens.successContainer
       : root.capacity <= 15 ? Tokens.errorContainer
