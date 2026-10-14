@@ -18,14 +18,14 @@ BarModule {
 
   tooltipText: "Volume: " + Math.round(volume * 100) + "%"
 
-  glyph: {
-    if (muted) return ""
-    if (volume <= 0.333) return ""
-    if (volume <= 0.666) return ""
-    return ""
-  }
+  glyph: ""
   text: muted ? "Mute" : Math.round(volume * 100) + "%"
-  iconName: "audio"
+  iconName: {
+    if (muted || volume <= 0.01) return "audio-off"
+    if (volume <= 0.333) return "audio-low"
+    if (volume <= 0.666) return "audio-medium"
+    return "audio"
+  }
   active: root.muted
   fill: Tokens.warningContainer
   on_color: Tokens.on_warning_container

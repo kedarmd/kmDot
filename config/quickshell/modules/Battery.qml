@@ -44,19 +44,17 @@ BarModule {
     return Math.round(seconds / 60) + " minutes"
   }
 
-  glyph: {
-    if (charging) return ""
-    if (capacity <= 20) return ""
-    if (capacity <= 40) return ""
-    if (capacity <= 60) return ""
-    if (capacity <= 80) return ""
-    return ""
-  }
+  glyph: ""
   text: capacity + "%"
-  iconName: "battery"
+  iconName: {
+    if (capacity <= 20) return "battery-empty"
+    if (capacity <= 40) return "battery-low"
+    if (capacity <= 60) return "battery-medium"
+    return "battery"
+  }
   // Keep the charging state visible in the bar, not only inside the popup.
-  // The success-tonal pill provides a stable theme-aware background while the
-  // bolt glyph and percentage remain readable in the same compact module.
+  // The icon encodes charge level only, so charging is carried by the
+  // success-tonal pill plus bold percentage in this same compact module.
   active: root.charging
   foreground: root.capacity <= 15 ? Colors.error : root.capacity <= 30 ? Colors.warning : Colors.text
   fill: root.charging ? Tokens.successContainer

@@ -38,18 +38,19 @@ BarModule {
     ? ("Connected to: " + (net ? net.name : "Wired Connection"))
     : (disabled ? "Wi-Fi disabled" : "Disconnected")
 
-  glyph: {
-    if (disabled) return "󰤮"
-    if (wiredConnected()) return "󰈁"
-    if (!net) return "󰤯"
-    var s = net.signalStrength
-    if (s <= 0.25) return "󰤟"
-    if (s <= 0.5) return "󰤢"
-    if (s <= 0.75) return "󰤥"
-    return "󰤨"
+  glyph: ""
+  iconName: {
+    if (disabled || wiredConnected() || !net) return "wifi"
+    // Quickshell exposes this as a percentage on current releases, while
+    // older versions returned a 0..1 fraction. Normalize both forms before
+    // applying the icon thresholds.
+    var s = Number(net.signalStrength)
+    if (s > 1) s /= 100
+    if (s <= 0.25) return "wifi-low"
+    if (s <= 0.5) return "wifi-medium"
+    return "wifi"
   }
   active: false
-  iconName: "wifi"
   fill: Tokens.primaryContainer
   on_color: Tokens.on_primary_container
   dimmed: disabled

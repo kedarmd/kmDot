@@ -71,7 +71,7 @@ Item {
       spacing: root.glyph !== "" && root.text !== "" && !root.busy ? 5 : 0
 
       R1Icon {
-        visible: root.busy || root.glyph !== ""
+        visible: root.busy || root.glyph !== "" || root.iconName !== ""
         glyph: root.busy ? "" : root.glyph
         iconName: root.busy ? "" : root.iconName
         font.family: "JetBrainsMono Nerd Font Propo"
