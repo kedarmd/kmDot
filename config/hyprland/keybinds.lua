@@ -96,7 +96,7 @@ hl.bind("PRINT", hl.dsp.exec_cmd("hyprshot -m region")) -- Screenshot region
 
 -- Custom scripts
 hl.bind(mod .. " + J", hl.dsp.layout("togglesplit")) -- Toggle split layout
-hl.bind("SUPER + CTRL + SPACE", hl.dsp.exec_cmd("~/.config/kmdot/hyprland/scripts/cycle_wallpapers.sh")) -- Cycle wallpapers
+hl.bind("SUPER + CTRL + SPACE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-wallpaper'")) -- Wallpaper switcher (quickshell)
 
 hl.bind(
 	mod .. " + I",

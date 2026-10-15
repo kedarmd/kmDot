@@ -31,6 +31,7 @@ Scope {
   property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
   property ClipboardLauncher clipboardLauncher: ClipboardLauncher { scope: shellRoot }
   property HandyLauncher handyLauncher: HandyLauncher { scope: shellRoot }
+  property WallpaperLauncher wallpaperLauncher: WallpaperLauncher { scope: shellRoot }
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }
   property VolumePopup volumePopup: VolumePopup { scope: shellRoot }
   property CalendarPopup calendarPopup: CalendarPopup { scope: shellRoot }
@@ -58,7 +59,7 @@ Scope {
     shellRoot.openingSurface = except
     const launchers = [shellRoot.appLauncher, shellRoot.kmdotLauncher, shellRoot.systemLauncher,
       shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.keybindsLauncher,
-      shellRoot.clipboardLauncher, shellRoot.handyLauncher]
+      shellRoot.clipboardLauncher, shellRoot.handyLauncher, shellRoot.wallpaperLauncher]
     for (const l of launchers) {
       if (l && l !== except) l.closeLauncher()
     }
