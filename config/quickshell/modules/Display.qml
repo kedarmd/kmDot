@@ -7,6 +7,7 @@ import "../components"
 BarModule {
   id: root
   sock: "kmdot-display"
+  iconSize: 20
 
   glyph: ""
   clickable: DisplayState.barHasBacklight

@@ -6,7 +6,8 @@ import "../components"
 BarModule {
   id: root
   sock: "kmdot-volume"
-  labelSpacing: 8
+  labelSpacing: 0
+  smoothIconColor: true
 
   PwObjectTracker {
     objects: Pipewire.defaultAudioSink ? [Pipewire.defaultAudioSink] : []
@@ -27,9 +28,7 @@ BarModule {
     if (volume <= 0.666) return "audio-medium"
     return "audio"
   }
-  active: root.muted
-  fill: Tokens.warningContainer
-  on_color: Tokens.on_warning_container
+  iconForeground: root.muted ? Colors.warning : root.foreground
 
   onWheeled: wheel => {
     if (!root.audio) return

@@ -12,7 +12,7 @@ import qs
 Item {
   id: root
   implicitHeight: 32
-  width: Math.max(36, moduleLabel.implicitWidth + 12)
+  width: Math.max(40, moduleLabel.implicitWidth + 16)
 
   Behavior on width {
     NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
@@ -23,9 +23,10 @@ Item {
   property string iconName: ""
   property int textSize: 12
   property int labelSpacing: 5
-  property string statusGlyph: ""
-  property color statusColor: Colors.success
+  property int iconSize: 24
   property color foreground: Colors.text
+  property color iconForeground: root.foreground
+  property bool smoothIconColor: false
   property string text: "" // body part; "" = icon-only
   property bool active: false
   property color fill: Tokens.primaryContainer
@@ -75,18 +76,24 @@ Item {
 
       R1Icon {
         anchors.verticalCenter: parent.verticalCenter
+        width: 24
+        height: 24
         visible: root.busy || root.glyph !== "" || root.iconName !== ""
         glyph: root.busy ? "" : root.glyph
         iconName: root.busy ? "" : root.iconName
         font.family: "JetBrainsMono Nerd Font Propo"
-        font.pixelSize: 24
-        color: root.busy ? Tokens.primary : (root.active ? root.on_color : root.foreground)
+        font.pixelSize: root.iconSize
+        tintVector: root.smoothIconColor
+        color: root.busy ? Tokens.primary : (root.active ? root.on_color : root.iconForeground)
         opacity: root.dimmed ? 0.4 : 1.0
         rotation: root.busy ? root.spinAngle : 0
         transformOrigin: Item.Center
 
         Behavior on color {
-          ColorAnimation { duration: Tokens.motionFast }
+          ColorAnimation {
+            duration: Tokens.reducedMotion ? 0 : (root.smoothIconColor ? Tokens.motionEmphasized : Tokens.motionFast)
+            easing.type: Easing.InOutCubic
+          }
         }
         Behavior on opacity {
           NumberAnimation { duration: Tokens.motionFast }
@@ -111,13 +118,6 @@ Item {
         }
       }
 
-      R1Icon {
-        anchors.verticalCenter: parent.verticalCenter
-        visible: !root.busy && root.statusGlyph !== ""
-        glyph: root.statusGlyph
-        font.pixelSize: 16
-        color: root.statusColor
-      }
     }
   }
 

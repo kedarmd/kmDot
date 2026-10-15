@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import qs
 import "r1icons.js" as Icons
 
@@ -11,6 +12,9 @@ Item {
   property font font: Qt.font({ family: "JetBrainsMono Nerd Font Propo", pixelSize: 16 })
   property color color: Colors.text
   property color accentColor: Colors.primary
+  // Monochrome icons can animate their tint without decoding a new SVG
+  // for every frame. Keep multicolor marks on the original SVG path.
+  property bool tintVector: false
   property int horizontalAlignment: Text.AlignHCenter
   property int verticalAlignment: Text.AlignVCenter
   readonly property string text: glyph
@@ -47,7 +51,15 @@ Item {
     width: root.font.pixelSize
     height: root.font.pixelSize
     visible: root.vectorIcon
-    source: Icons.source(root.resolvedName, root.color, root.accentColor)
+    source: root.tintVector
+      ? Icons.source(root.resolvedName, "#FFFFFF", "#FFFFFF")
+      : Icons.source(root.resolvedName, root.color, root.accentColor)
     sourceSize: Qt.size(width * Screen.devicePixelRatio, height * Screen.devicePixelRatio)
+    layer.enabled: root.tintVector
+    layer.effect: MultiEffect {
+      colorization: 1
+      colorizationColor: root.color
+      autoPaddingEnabled: false
+    }
   }
 }

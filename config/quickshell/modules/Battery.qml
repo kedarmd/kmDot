@@ -8,6 +8,7 @@ BarModule {
   id: root
   sock: "kmdot-battery"
   labelSpacing: 8
+  smoothIconColor: true
 
   readonly property var battery: UPower.displayDevice
   function batteryPercent(dev) {
@@ -81,8 +82,7 @@ BarModule {
     if (capacity <= 60) return "battery-medium"
     return "battery"
   }
-  // Keep power status visible without tinting the entire module.
-  statusGlyph: root.charging ? "\uf0e7" : ""
-  statusColor: Colors.success
+  // Power status colors the icon; the percentage keeps its level color.
+  iconForeground: root.charging ? Colors.success : root.foreground
   foreground: root.capacity <= 15 ? Colors.error : root.capacity <= 30 ? Colors.warning : Colors.text
 }
