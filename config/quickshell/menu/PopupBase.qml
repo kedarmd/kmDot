@@ -160,10 +160,8 @@ PanelWindow {
       opacity: root.opened ? 1 : 0
       scale: root.opened ? 1 : 0.96
 
-      Behavior on height {
-        NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-      }
-
+      // Resolve geometry immediately: animating height makes newly mapped
+      // panels unroll from the top while their opacity is still fading in.
       Behavior on opacity {
         NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
       }
