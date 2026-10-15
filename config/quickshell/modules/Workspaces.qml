@@ -1,12 +1,11 @@
 import QtQuick
 import Quickshell.Hyprland
 import qs
-import "../components"
 
 Item {
   id: root
   implicitHeight: 32
-  width: 196
+  width: 156
 
   Rectangle {
     anchors.fill: parent
@@ -33,69 +32,67 @@ Item {
   }
 
   Row {
-    id: row
-    anchors.fill: parent
-    anchors.margins: 4
-    spacing: 2
+    anchors.centerIn: parent
 
     Repeater {
       model: 5
 
-      delegate: Component {
+      delegate: Item {
+        id: slot
+        required property int index
+
+        readonly property int wsId: index + 1
+        readonly property bool active: Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id === wsId
+        readonly property bool urgent: {
+          const ws = root.workspace(wsId)
+          return ws ? ws.urgent : false
+        }
+        readonly property bool occupied: {
+          const ws = root.workspace(wsId)
+          return ws ? ws.toplevels.values.length > 0 : false
+        }
+
+        // Stable hit targets keep every workspace easy to click during morphs.
+        width: 28
+        height: 32
+        Accessible.role: Accessible.Button
+        Accessible.name: "Workspace " + wsId + (occupied ? ", occupied" : ", empty")
+                         + (urgent ? ", needs attention" : "")
+        Accessible.checkable: true
+        Accessible.checked: active
+        Accessible.onPressAction: root.activateWorkspace(wsId)
+
         Rectangle {
-          required property int index
-
-          readonly property int wsId: index + 1
-          readonly property bool active: Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id === wsId
-          readonly property bool urgent: {
-            var ws = root.workspace(wsId)
-            return ws ? ws.urgent : false
-          }
-
-          width: 36
-          height: 28
-          anchors.verticalCenter: parent.verticalCenter
+          anchors.centerIn: parent
+          width: slot.active ? 24 : 10
+          height: 10
           radius: height / 2
-          color: active ? Colors.primary_container
-               : urgent ? Tokens.errorContainer
-               : "transparent"
+          // Urgency wins even on the active workspace; shape still shows focus.
+          color: slot.urgent ? Colors.urgent
+               : slot.active ? Colors.primary
+               : mouseArea.containsMouse ? Colors.text_alt
+               : slot.occupied ? Colors.muted
+               : Colors.outline_variant
+          scale: mouseArea.pressed ? 0.9 : 1
+
+          Behavior on width {
+            NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.InOutCubic }
+          }
           Behavior on color {
-            ColorAnimation {
-              duration: 200
-            }
+            ColorAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.InOutCubic }
           }
-
-          Text {
-            id: label
-            anchors.centerIn: parent
-            text: wsId.toString()
-            font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: 14
-            font.weight: Font.DemiBold
-            color: parent.urgent ? Tokens.on_error_container
-                 : parent.active ? Colors.on_primary_container
-                 : mouseArea.containsMouse ? Colors.text
-                 : Colors.text_alt
-
-            Behavior on color {
-              ColorAnimation { duration: Tokens.motionFast }
-            }
+          Behavior on scale {
+            NumberAnimation { duration: Tokens.motionFast; easing.type: Easing.OutCubic }
           }
+        }
 
-          StateLayer {
-            anchors.fill: parent
-            radius: parent.radius
-            hovered: mouseArea.containsMouse
-            pressed: mouseArea.pressed
-          }
-
-          MouseArea {
-            id: mouseArea
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.activateWorkspace(wsId)
-          }
+        MouseArea {
+          id: mouseArea
+          anchors.fill: parent
+          hoverEnabled: true
+          acceptedButtons: Qt.LeftButton
+          cursorShape: Qt.PointingHandCursor
+          onClicked: root.activateWorkspace(slot.wsId)
         }
       }
     }
