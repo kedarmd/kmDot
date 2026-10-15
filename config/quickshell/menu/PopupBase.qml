@@ -26,16 +26,9 @@ PanelWindow {
   anchors { top: true; bottom: true; left: true; right: true }
 
   property bool opened: false
-  property bool presentationVisible: false
-  onOpenedChanged: {
-    if (root.opened) {
-      closePresentationTimer.stop()
-      root.presentationVisible = true
-    } else {
-      closePresentationTimer.restart()
-    }
-    root.openedChange()
-  }
+  readonly property bool presentationVisible: presentation.presented
+  property SurfacePresentation presentation: SurfacePresentation { opened: root.opened }
+  onOpenedChanged: root.openedChange()
   property var scope: null
   // anchorItem seam: the bar module sets this to itself right before toggling
   // so the card centers under that module (see applyAnchor). anchorGX is the
@@ -95,12 +88,6 @@ PanelWindow {
   function toggle() { if (root.opened) root.close(); else root.open() }
   function refreshItems() {}
   function openedChange() {}
-
-  Timer {
-    id: closePresentationTimer
-    interval: Tokens.motionStandard
-    onTriggered: root.presentationVisible = false
-  }
 
   SocketServer {
     active: root.socketEnabled

@@ -27,28 +27,14 @@ PanelWindow {
   }
 
   property bool opened: false
-  property bool presentationVisible: false
+  readonly property bool presentationVisible: presentation.presented
+  property SurfacePresentation presentation: SurfacePresentation { opened: root.opened }
   property var scope: null
   property int maxVisible: 5
   property real popupWidth: 424
   property real popupSpacing: 8
   property real popupTopMargin: 52
   property real popupRightMargin: 12
-
-  onOpenedChanged: {
-    if (root.opened) {
-      closePresentationTimer.stop()
-      root.presentationVisible = true
-    } else {
-      closePresentationTimer.restart()
-    }
-  }
-
-  Timer {
-    id: closePresentationTimer
-    interval: Tokens.motionStandard
-    onTriggered: root.presentationVisible = false
-  }
 
   readonly property string sockPath: {
     const rt = Quickshell.env("XDG_RUNTIME_DIR")
@@ -164,7 +150,7 @@ PanelWindow {
   Item {
     anchors.fill: parent
 
-    Column {
+    ListView {
       id: popupColumn
       anchors {
         top: parent.top
@@ -172,6 +158,8 @@ PanelWindow {
         right: parent.right
         rightMargin: root.popupRightMargin
       }
+      height: contentHeight
+      interactive: false
       spacing: root.popupSpacing
       width: root.popupWidth
       opacity: root.opened ? 1 : 0
@@ -184,170 +172,178 @@ PanelWindow {
         NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
       }
 
-      Repeater {
-        model: popupModel
+      model: popupModel
 
-        Rectangle {
-          id: card
-          required property int index
-          required property var modelData
-          width: popupColumn.width
-          height: Math.max(240, cardBody.implicitHeight + 48)
-          radius: 32
-          color: Colors.surface
-          border.width: 1
-          border.color: modelData.urgency === 2 ? Colors.error : Colors.border
-          opacity: 1
+      add: Transition {
+        ParallelAnimation {
+          NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+          NumberAnimation { property: "scale"; from: 0.96; to: 1; duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+        }
+      }
+      remove: Transition {
+        ParallelAnimation {
+          NumberAnimation { property: "opacity"; to: 0; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+          NumberAnimation { property: "scale"; to: 0.96; duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+        }
+      }
+      displaced: Transition {
+        NumberAnimation { properties: "x,y"; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+      }
 
-          Behavior on opacity {
-            NumberAnimation { duration: 200 }
+      delegate: Rectangle {
+        id: card
+        required property int index
+        required property var modelData
+        width: popupColumn.width
+        height: Math.max(240, cardBody.implicitHeight + 48)
+        radius: 32
+        color: Colors.surface
+        border.width: 1
+        border.color: modelData.urgency === 2 ? Colors.error : Colors.border
+        enabled: root.opened && index >= 0
+
+        Column {
+          id: cardBody
+          anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+            margins: 24
           }
+          spacing: 16
 
-          Component.onCompleted: opacity = 1
-
-          Column {
-            id: cardBody
-            anchors {
-              top: parent.top
-              left: parent.left
-              right: parent.right
-              margins: 24
-            }
+          Row {
+            width: parent.width
+            height: 48
             spacing: 16
 
-            Row {
-              width: parent.width
-              height: 48
-              spacing: 16
-
-              Image {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: {
-                  const ic = modelData.appIcon || ""
-                  return ic !== "" && !ic.startsWith("\\u")
-                }
-                source: {
-                  const ic = modelData.appIcon || ""
-                  if (ic === "") return ""
-                  if (ic.startsWith("/") || ic.startsWith("file://") || ic.startsWith("image://")) return ic
-                  return Quickshell.iconPath(ic)
-                }
-                width: 24
-                height: 24
-                sourceSize: Qt.size(24, 24)
-                smooth: true
+            Image {
+              anchors.verticalCenter: parent.verticalCenter
+              visible: {
+                const ic = modelData.appIcon || ""
+                return ic !== "" && !ic.startsWith("\\u")
               }
-
-              R1Icon {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: {
-                  const ic = modelData.appIcon || ""
-                  return ic === "" || ic.startsWith("\\u")
-                }
-                glyph: "\uf0f3"
-                font.family: "JetBrainsMono Nerd Font Propo"
-                width: 24
-                font.pixelSize: 24
-                color: Colors.text_alt
+              source: {
+                const ic = modelData.appIcon || ""
+                if (ic === "") return ""
+                if (ic.startsWith("/") || ic.startsWith("file://") || ic.startsWith("image://")) return ic
+                return Quickshell.iconPath(ic)
               }
+              width: 24
+              height: 24
+              sourceSize: Qt.size(24, 24)
+              smooth: true
+            }
 
-              Text {
-                anchors.verticalCenter: parent.verticalCenter
-                width: parent.width - 80
-                text: modelData.appName || "Notification"
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 24
-                font.weight: Font.DemiBold
-                color: Colors.text
-                elide: Text.ElideRight
+            R1Icon {
+              anchors.verticalCenter: parent.verticalCenter
+              visible: {
+                const ic = modelData.appIcon || ""
+                return ic === "" || ic.startsWith("\\u")
               }
-
-              Text {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: false
-                text: root.relativeTime(modelData.timestamp)
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 12
-                color: Tokens.mutedText
-              }
-
-              R1Icon {
-                anchors.verticalCenter: parent.verticalCenter
-                glyph: "\uf00d"
-                font.family: "JetBrainsMono Nerd Font Propo"
-                width: 24
-                height: 24
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                font.pixelSize: 16
-                color: Tokens.mutedText
-
-                MouseArea {
-                  anchors.fill: parent
-                  cursorShape: Qt.PointingHandCursor
-                  onClicked: root.dismissIndex(card.index)
-                }
-              }
+              glyph: "\uf0f3"
+              font.family: "JetBrainsMono Nerd Font Propo"
+              width: 24
+              font.pixelSize: 24
+              color: Colors.text_alt
             }
 
             Text {
-              width: parent.width
-              visible: text !== ""
-              text: modelData.summary
+              anchors.verticalCenter: parent.verticalCenter
+              width: parent.width - 80
+              text: modelData.appName || "Notification"
               font.family: "JetBrainsMono Nerd Font"
-              font.pixelSize: 20
-              font.weight: Font.Bold
-              color: modelData.urgency === 2 ? Colors.error : Colors.text
+              font.pixelSize: 24
+              font.weight: Font.DemiBold
+              color: Colors.text
               elide: Text.ElideRight
-              maximumLineCount: 2
-              wrapMode: Text.Wrap
             }
 
             Text {
-              width: parent.width
-              visible: text !== ""
-              text: modelData.body
+              anchors.verticalCenter: parent.verticalCenter
+              visible: false
+              text: root.relativeTime(modelData.timestamp)
               font.family: "JetBrainsMono Nerd Font"
               font.pixelSize: 12
-              color: Colors.text_alt
-              elide: Text.ElideRight
-              maximumLineCount: 3
-              wrapMode: Text.Wrap
-              textFormat: Text.StyledText
+              color: Tokens.mutedText
             }
 
-            Row {
-              visible: modelData.hasActions || (modelData._ref && modelData._ref.hasInlineReply)
-              width: parent.width
-              spacing: 6
+            R1Icon {
+              anchors.verticalCenter: parent.verticalCenter
+              glyph: "\uf00d"
+              font.family: "JetBrainsMono Nerd Font Propo"
+              width: 24
+              height: 24
+              horizontalAlignment: Text.AlignHCenter
+              verticalAlignment: Text.AlignVCenter
+              font.pixelSize: 16
+              color: Tokens.mutedText
 
-              Repeater {
-                model: root.actionCount(card.modelData.actions)
-                  + (card.modelData._ref && card.modelData._ref.hasInlineReply ? 1 : 0)
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.dismissIndex(card.index)
+              }
+            }
+          }
 
-                PillButton {
-                  required property int index
-                  height: 40
-                  readonly property bool replyAction: card.modelData._ref
-                    && card.modelData._ref.hasInlineReply
-                    && index === root.actionCount(card.modelData.actions)
-                  text: replyAction ? "Reply" : (root.actionAt(card.modelData.actions, index).text || "")
-                  textSize: 14
-                  horizontalPadding: 16
-                  filled: true
-                  active: true
-                  onClicked: {
-                    if (replyAction) {
-                      if (root.scope && root.scope.notificationReplyPopup)
-                        root.scope.notificationReplyPopup.present(card.modelData._ref, [{
-                          text: [card.modelData.summary, card.modelData.body].filter(Boolean).join("\n"),
-                          when: "now"
-                        }])
-                    } else {
-                      const action = root.actionAt(card.modelData.actions, index)
-                      if (action.invoke) action.invoke()
-                      root.dismissIndex(card.index)
-                    }
+          Text {
+            width: parent.width
+            visible: text !== ""
+            text: modelData.summary
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 20
+            font.weight: Font.Bold
+            color: modelData.urgency === 2 ? Colors.error : Colors.text
+            elide: Text.ElideRight
+            maximumLineCount: 2
+            wrapMode: Text.Wrap
+          }
+
+          Text {
+            width: parent.width
+            visible: text !== ""
+            text: modelData.body
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 12
+            color: Colors.text_alt
+            elide: Text.ElideRight
+            maximumLineCount: 3
+            wrapMode: Text.Wrap
+            textFormat: Text.StyledText
+          }
+
+          Row {
+            visible: modelData.hasActions || (modelData._ref && modelData._ref.hasInlineReply)
+            width: parent.width
+            spacing: 6
+
+            Repeater {
+              model: root.actionCount(card.modelData.actions)
+                + (card.modelData._ref && card.modelData._ref.hasInlineReply ? 1 : 0)
+
+              PillButton {
+                required property int index
+                height: 40
+                readonly property bool replyAction: card.modelData._ref
+                  && card.modelData._ref.hasInlineReply
+                  && index === root.actionCount(card.modelData.actions)
+                text: replyAction ? "Reply" : (root.actionAt(card.modelData.actions, index).text || "")
+                textSize: 14
+                horizontalPadding: 16
+                filled: true
+                active: true
+                onClicked: {
+                  if (replyAction) {
+                    if (root.scope && root.scope.notificationReplyPopup)
+                      root.scope.notificationReplyPopup.present(card.modelData._ref, [{
+                        text: [card.modelData.summary, card.modelData.body].filter(Boolean).join("\n"),
+                        when: "now"
+                      }])
+                  } else {
+                    const action = root.actionAt(card.modelData.actions, index)
+                    if (action.invoke) action.invoke()
+                    root.dismissIndex(card.index)
                   }
                 }
               }

@@ -72,7 +72,8 @@ Item {
 
   // ---- state ----
   property bool opened: false
-  property bool presentationVisible: false
+  readonly property bool presentationVisible: presentation.presented
+  property SurfacePresentation presentation: SurfacePresentation { opened: root.opened }
   property string query: ""
   property var pool: root.items
   property var results: []
@@ -116,11 +117,7 @@ Item {
   onPoolChanged: root.recompute()
   onOpenedChanged: {
     if (root.opened) {
-      closePresentationTimer.stop()
-      root.presentationVisible = true
       focusTimer.start()
-    } else {
-      closePresentationTimer.restart()
     }
     root.onOpenedChange()
   }
@@ -374,12 +371,6 @@ Item {
 
   Process {
     id: cmdProc
-  }
-
-  Timer {
-    id: closePresentationTimer
-    interval: Tokens.motionStandard
-    onTriggered: root.presentationVisible = false
   }
 
   Timer {
