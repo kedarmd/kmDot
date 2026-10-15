@@ -22,6 +22,9 @@ Item {
   property string glyph: "" // icon part; "" = text-only (Clock)
   property string iconName: ""
   property int textSize: 12
+  property int labelSpacing: 5
+  property string statusGlyph: ""
+  property color statusColor: Colors.success
   property color foreground: Colors.text
   property string text: "" // body part; "" = icon-only
   property bool active: false
@@ -68,9 +71,10 @@ Item {
     Row {
       id: moduleLabel
       anchors.centerIn: parent
-      spacing: root.glyph !== "" && root.text !== "" && !root.busy ? 5 : 0
+      spacing: !root.busy ? root.labelSpacing : 0
 
       R1Icon {
+        anchors.verticalCenter: parent.verticalCenter
         visible: root.busy || root.glyph !== "" || root.iconName !== ""
         glyph: root.busy ? "" : root.glyph
         iconName: root.busy ? "" : root.iconName
@@ -90,6 +94,7 @@ Item {
       }
 
       Text {
+        anchors.verticalCenter: parent.verticalCenter
         visible: !root.busy && root.text !== ""
         text: root.text
         font.family: "JetBrainsMono Nerd Font"
@@ -104,6 +109,14 @@ Item {
         Behavior on opacity {
           NumberAnimation { duration: Tokens.motionFast }
         }
+      }
+
+      R1Icon {
+        anchors.verticalCenter: parent.verticalCenter
+        visible: !root.busy && root.statusGlyph !== ""
+        glyph: root.statusGlyph
+        font.pixelSize: 16
+        color: root.statusColor
       }
     }
   }

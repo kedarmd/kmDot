@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell.Io
 import Quickshell.Services.UPower
 import qs
 import "../components"
@@ -6,6 +7,7 @@ import "../components"
 BarModule {
   id: root
   sock: "kmdot-battery"
+  labelSpacing: 8
 
   readonly property var battery: UPower.displayDevice
   function batteryPercent(dev) {
@@ -16,9 +18,36 @@ BarModule {
   }
 
   readonly property int capacity: battery && battery.isPresent ? batteryPercent(battery) : 0
-  readonly property bool charging: battery && (battery.state === UPowerDeviceState.Charging
-    || battery.state === UPowerDeviceState.PendingCharge
-    || battery.state === UPowerDeviceState.FullyCharged)
+  // Battery state can remain FullyCharged after unplugging, and UPower's
+  // adapter cache can lag. Read the kernel's online flag for the power marker.
+  // -1 means no readable adapter; retain the native service as a fallback.
+  property int adapterOnline: -1
+  readonly property bool charging: battery && battery.isPresent
+    && (root.adapterOnline >= 0 ? root.adapterOnline === 1 : !UPower.onBattery)
+
+  Process {
+    id: adapterPoll
+    command: ["bash", "-c", "found=0; for supply in /sys/class/power_supply/*; do [[ -r \"$supply/online\" && -r \"$supply/type\" ]] || continue; read -r type < \"$supply/type\"; [[ $type == Battery ]] && continue; read -r online < \"$supply/online\"; [[ $online == 0 || $online == 1 ]] || continue; found=1; if [[ $online == 1 ]]; then printf '1\\n'; exit; fi; done; if (( found )); then printf '0\\n'; else printf '%s\\n' -1; fi"]
+    stdout: SplitParser {
+      onRead: data => {
+        var value = Number(data.trim())
+        if (value === -1 || value === 0 || value === 1) root.adapterOnline = value
+      }
+    }
+    onExited: (exitCode, exitStatus) => {
+      if (exitCode !== 0) root.adapterOnline = -1
+    }
+  }
+
+  Timer {
+    interval: 1000
+    running: true
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: {
+      if (!adapterPoll.running) adapterPoll.running = true
+    }
+  }
   readonly property bool discharging: battery && battery.state === UPowerDeviceState.Discharging
   readonly property string statusText: battery
     ? (battery.state === UPowerDeviceState.FullyCharged ? "Full" : UPowerDeviceState.toString(battery.state))
@@ -52,15 +81,8 @@ BarModule {
     if (capacity <= 60) return "battery-medium"
     return "battery"
   }
-  // Keep the charging state visible in the bar, not only inside the popup.
-  // The icon encodes charge level only, so charging is carried by the
-  // success-tonal pill plus bold percentage in this same compact module.
-  active: root.charging
+  // Keep power status visible without tinting the entire module.
+  statusGlyph: root.charging ? "\uf0e7" : ""
+  statusColor: Colors.success
   foreground: root.capacity <= 15 ? Colors.error : root.capacity <= 30 ? Colors.warning : Colors.text
-  fill: root.charging ? Tokens.successContainer
-      : root.capacity <= 15 ? Tokens.errorContainer
-      : Tokens.warningContainer
-  on_color: root.charging ? Tokens.on_success_container
-         : root.capacity <= 15 ? Tokens.on_error_container
-         : Tokens.on_warning_container
 }

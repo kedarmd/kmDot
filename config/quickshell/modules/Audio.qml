@@ -6,6 +6,7 @@ import "../components"
 BarModule {
   id: root
   sock: "kmdot-volume"
+  labelSpacing: 8
 
   PwObjectTracker {
     objects: Pipewire.defaultAudioSink ? [Pipewire.defaultAudioSink] : []
