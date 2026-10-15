@@ -40,19 +40,6 @@ Rectangle {
     color: baseColor
     opacity: 0.68
   }
-
-  // Approved Folded badge KMD mark, matching the canonical R1 vector.
-  Image {
-    x: 48; y: 48
-    width: 48; height: 48
-    // Rasterize the SVG at its displayed physical size, like R1Icon.qml.
-    sourceSize: Qt.size(width * Screen.devicePixelRatio, height * Screen.devicePixelRatio)
-    source: "data:image/svg+xml," + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
-      '<path d="M2 5V19M2 12L7.5 5M7.5 19V5L11 10L14.5 5V19M2 12L7.5 19M14.5 5H17L19 8V16L17 19H14.5" fill="none" stroke="' + textColor + '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '<circle cx="22" cy="18" r="1.5" fill="' + primaryColor + '"/></svg>')
-  }
-
   Column {
     x: 48
     anchors.verticalCenter: parent.verticalCenter
@@ -90,7 +77,7 @@ Rectangle {
   Rectangle {
     id: card
     width: Math.min(424, root.width - 32)
-    height: 392
+    height: 472
     radius: 24
     color: surfaceColor
     border.color: borderColor
@@ -112,7 +99,22 @@ Rectangle {
       anchors.margins: 24
       spacing: 0
 
+      // Approved Folded badge KMD mark, matching the canonical R1 vector.
+      Image {
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: 64; height: 64
+        // Rasterize the SVG at its displayed physical size, like R1Icon.qml.
+        sourceSize: Qt.size(width * Screen.devicePixelRatio, height * Screen.devicePixelRatio)
+        source: "data:image/svg+xml," + encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
+          '<path d="M2 5V19M2 12L7.5 5M7.5 19V5L11 10L14.5 5V19M2 12L7.5 19M14.5 5H17L19 8V16L17 19H14.5" fill="none" stroke="' + textColor + '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '<circle cx="22" cy="18" r="1.5" fill="' + primaryColor + '"/></svg>')
+      }
+
+      Item { width: 1; height: 16 }
       Text {
+        width: parent.width
+        horizontalAlignment: Text.AlignHCenter
         text: "Sign in"
         color: textColor
         font.family: root.fontName

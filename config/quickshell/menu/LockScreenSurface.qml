@@ -32,16 +32,6 @@ WlSessionLockSurface {
     color: Colors.base
     opacity: 0.68
   }
-
-  R1Icon {
-    x: 48; y: 48
-    width: 48; height: 48
-    iconName: "kmdot"
-    font.pixelSize: 48
-    color: Colors.text
-    accentColor: Colors.primary
-  }
-
   Column {
     anchors.top: parent.top
     anchors.right: parent.right
@@ -69,7 +59,7 @@ WlSessionLockSurface {
   Rectangle {
     id: card
     width: Math.min(424, parent.width - 32)
-    height: 364
+    height: 404
     radius: 24
     color: Colors.surface
     border.color: Colors.border
@@ -92,10 +82,11 @@ WlSessionLockSurface {
 
       R1Icon {
         anchors.horizontalCenter: parent.horizontalCenter
-        width: 24; height: 24
-        iconName: "lock"
-        font.pixelSize: 24
+        width: 64; height: 64
+        iconName: "kmdot"
+        font.pixelSize: 64
         color: Colors.text
+        accentColor: Colors.primary
       }
       Item { width: 1; height: 16 }
       Text {
