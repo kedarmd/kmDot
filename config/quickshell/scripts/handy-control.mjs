@@ -113,6 +113,11 @@ function listHistory() {
 }
 
 function selectModel(id) {
+  // The UI may still hold a row deleted in Handy since its last refresh.
+  // Reject it before changing settings or restarting the application.
+  if (!listModels().models.some(model => model.id === String(id))) {
+    throw new Error("Model is no longer installed. Refresh Handy models and try again.");
+  }
   const data = settings();
   if (!data.settings) throw new Error("Invalid Handy settings");
   data.settings.selected_model = String(id);

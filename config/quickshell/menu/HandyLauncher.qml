@@ -10,11 +10,11 @@ LauncherBase {
   sockName: "kmdot-handy-launcher"
   title: "Handy"
   searchPlaceholder: "Search installed models…"
-  headerTitle: root.mode === 0 ? "Handy" : "History"
-  cardHeight: root.mode === 0 ? 576 : root.busyAction === "retry" ? 464 : 608
+  headerTitle: "Handy"
+  cardHeight: 608
   countShown: false
   listToolbar: modeTabs
-  listStatusText: root.mode === 0 ? "Selecting a model restarts Handy." : ""
+  toolbarBeforeSearch: true
   loadingText: "Loading Handy\u2026"
   emptyText: root.mode === 0 ? "No installed models" : "No recordings yet"
   // History view drops the search bar so bare keys (Delete/Backspace) reach

@@ -22,6 +22,7 @@ Item {
   property string listStatusActionGlyph: ""
   property real listStatusActionWidth: 0
   property Component listToolbar: null
+  property bool toolbarBeforeSearch: false
   property real cardHeight: 608
   property real listTopMargin: 16
   property bool themePreview: false
@@ -566,12 +567,12 @@ Item {
         id: searchBar
         visible: root.searchEnabled && !root.detailMode
         anchors {
-          top: parent.top
+          top: root.toolbarBeforeSearch && toolbarLoader.visible ? toolbarLoader.bottom : parent.top
           left: parent.left
           right: parent.right
           leftMargin: root.searchEnabled ? 24 : 0
           rightMargin: root.searchEnabled ? 24 : 0
-          topMargin: root.searchEnabled ? 64 : 0
+          topMargin: root.searchEnabled ? (root.toolbarBeforeSearch && toolbarLoader.visible ? 20 : 64) : 0
         }
         height: root.searchEnabled ? 56 : 0
         radius: 16
@@ -678,12 +679,12 @@ Item {
       Loader {
         id: toolbarLoader
         anchors {
-          top: searchBar.visible ? searchBar.bottom : parent.top
+          top: !root.toolbarBeforeSearch && searchBar.visible ? searchBar.bottom : parent.top
           left: parent.left
           right: parent.right
           leftMargin: 24
           rightMargin: 24
-          topMargin: searchBar.visible ? 20 : 72
+          topMargin: root.toolbarBeforeSearch ? 72 : searchBar.visible ? 20 : 72
         }
         height: root.listToolbar ? 40 : 0
         visible: root.listToolbar !== null
@@ -759,7 +760,7 @@ Item {
       ListView {
         id: resultsList
         anchors {
-          top: toolbarLoader.visible ? toolbarLoader.bottom
+          top: toolbarLoader.visible ? (root.toolbarBeforeSearch && searchBar.visible ? searchBar.bottom : toolbarLoader.bottom)
             : themePreviewCard.visible ? themePreviewCard.bottom
             : (resultsHeading.visible ? resultsHeading.bottom
               : (listHeader.visible ? listHeader.bottom : searchBar.bottom))
@@ -768,7 +769,7 @@ Item {
           bottom: footer.top
           leftMargin: 24
           rightMargin: 24
-          topMargin: toolbarLoader.visible ? 24 : root.themePreview ? 24
+          topMargin: toolbarLoader.visible ? (root.toolbarBeforeSearch && searchBar.visible ? root.listTopMargin : 24) : root.themePreview ? 24
             : (root.searchEnabled
               ? (resultsHeading.visible ? 6 : root.listTopMargin)
               : (listHeader.visible ? 16 : 72))

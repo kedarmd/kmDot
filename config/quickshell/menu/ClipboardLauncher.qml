@@ -10,8 +10,8 @@ LauncherBase {
   sockName: "kmdot-clipboard"
   title: "Clipboard"
   searchPlaceholder: "Search clipboard history…"
-  headerTitle: root.previewMode ? "Image preview" : "Clipboard"
-  cardHeight: root.previewMode ? 624 : root.pool.length === 0 && !root.loading ? 400 : 600
+  headerTitle: root.previewMode ? "Clipboard - Image Preview" : "Clipboard"
+  cardHeight: 600
   closeOnActivate: false
   footerHint: root.previewMode
     ? "\u23ce copy image \u00b7 esc back"

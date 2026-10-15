@@ -11,8 +11,8 @@ import QtMultimedia
 // retry a recording, delete a recording, and save an edited transcription.
 // Busy/error status is owned once here; both views bind it read-only.
 // refresh() coalesces concurrent callers into one in-flight fetch pair and
-// caches models (rarely changing); post-mutation refetches touch history
-// only via refreshHistory(). The handy-control.mjs verbs are unchanged.
+// refreshes models on every open; history mutations refetch history only
+// via refreshHistory().
 // Audio playback is owned once here as well: a single player, a single stop
 // guard, and single playing/progress/error state. Both views bind read-only
 // and call togglePlay/stopPlayback; playback survives switching views and
@@ -52,7 +52,6 @@ Singleton {
 
   property bool _historyBusy: false
   property bool _modelsBusy: false
-  property bool _modelsLoaded: false
   // Set when refresh() is called while a pair is in flight; drained as one
   // follow-up refresh once the pair settles, so no caller is dropped.
   property bool _refreshQueued: false
@@ -62,16 +61,14 @@ Singleton {
   // Coalesced refresh: one in-flight pair shared by all callers. A refresh
   // while either fetch — or a mutation — is running queues a single follow-up
   // instead of spawning doubled runtimes. History refetches every time;
-  // models fetch once per shell lifetime (cached), retrying on failure.
+  // models also refetch so downloads/deletions in Handy are reflected.
   function refresh() {
     if (root.busyAction !== "" || root._historyBusy || root._modelsBusy) {
       root._refreshQueued = true
       return
     }
-    if (!root._modelsLoaded) {
-      root._modelsBusy = true
-      modelsProc.exec(["node", root.script(), "models"])
-    }
+    root._modelsBusy = true
+    modelsProc.exec(["node", root.script(), "models"])
     root._historyBusy = true
     historyProc.exec(["node", root.script(), "history"])
     if (root.errorText !== "") root.errorText = ""
@@ -92,8 +89,7 @@ Singleton {
       const result = JSON.parse(String(text))
       if (result.ok) {
         root.models = result.models || []
-        if (result.selected) root.selectedModel = result.selected
-        root._modelsLoaded = true
+        root.selectedModel = result.selected || ""
       } else {
         root.errorText = result.error || "Could not load Handy models"
       }
@@ -253,10 +249,11 @@ Singleton {
     } catch (e) {
       root.errorText = "Could not parse Handy response"
     }
-    // Select only moves the selection — nothing changed in history. Every
-    // other mutation refetches history only (models stay cached). A refresh
+    // Selection rechecks models, including a deletion since the last open.
+    // Other mutations refetch history only. A refresh
     // queued mid-mutation still runs, but it must not swallow a failure:
     // refresh() clears the error, so re-assert it afterwards.
+    if (cmd === "select") root._refreshQueued = true
     if (ok && cmd !== "select") root.refreshHistory()
     const keptError = root.errorText
     root._drainQueue()
