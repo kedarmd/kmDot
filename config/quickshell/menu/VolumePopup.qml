@@ -9,7 +9,6 @@ PopupBase {
   id: root
   sockName: "kmdot-volume"
   cardWidth: 424
-  cardMinHeight: 792
 
   // anchorItem seam: set by the bar module before toggling (see PopupBase).
   property var sinks: []
@@ -194,7 +193,7 @@ PopupBase {
     onTriggered: { root.rebuildSinks(); root.rebuildSources(); BluetoothStore.refresh(); root.startMeter() }
   }
 
-// Content follows the 424 × 792 Penpot Sound panel. The two device lists keep
+// Content sizes to the active sections. The two device lists keep
 // their own short scroll area, so extra PipeWire devices retain gain and mute.
 Column {
   width: parent.width
@@ -211,22 +210,15 @@ Column {
   Item { width: 1; height: 24 }
 
   Rectangle {
+    visible: nowPlaying.player !== null
     width: parent.width
     height: 160
     radius: 24
     color: Colors.surface_alt
     NowPlaying { id: nowPlaying; anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 } }
-    Column {
-      visible: nowPlaying.player === null
-      anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 24 }
-      spacing: 8
-      R1Icon { glyph: "\uf001"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
-      Text { text: "Nothing playing"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; font.weight: Font.DemiBold }
-      Text { text: "Media controls appear here when a player is active."; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap; width: parent.width }
-    }
   }
 
-  Item { width: 1; height: 24 }
+  Item { width: 1; height: 24; visible: nowPlaying.player !== null }
   Text { width: parent.width; height: 20; text: "OUTPUT DEVICES"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Tokens.mutedText; verticalAlignment: Text.AlignVCenter }
   Item { width: 1; height: 20 }
 
@@ -308,7 +300,7 @@ Column {
     delegate: AudioDeviceControl { isInput: true }
   }
 
-  Item { width: 1; height: 28 }
+  Item { width: 1; height: 28; visible: root.availableBluetoothAudioDevices.length > 0 }
   Column {
     width: parent.width
     spacing: 0
@@ -329,16 +321,5 @@ Column {
     }
   }
 
-  Item { width: 1; height: 20 }
-  Text {
-    width: parent.width
-    height: 52
-    text: "Select a device to make it the default.\nThe microphone meter is active while this panel is open."
-    wrapMode: Text.WordWrap
-    font.family: "JetBrainsMono Nerd Font"
-    font.pixelSize: 12
-    color: Colors.text_alt
-    verticalAlignment: Text.AlignTop
-  }
 }
 }
