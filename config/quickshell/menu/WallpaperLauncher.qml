@@ -11,8 +11,9 @@ import "../components/popuppos.js" as Pos
 // theme's wallpapers. Arrows move selection only; Enter applies via
 // set_wallpaper.sh; Esc closes. No live preview, no revert logic.
 // Standalone (not a LauncherBase subclass): LauncherBase owns a vertical
-// ListView, while this card needs a GridView. Chrome values (card 640x480,
-// radius 32, footer 56, type scale) mirror LauncherBase exactly.
+// ListView, while this card needs a GridView. Geometry follows the Penpot
+// Wallpaper grid boards: 640x480 card,
+// 186x148 tiles, 12px gaps, and an inset footer divider.
 Item {
   id: root
 
@@ -68,7 +69,7 @@ Item {
       label: fields[1],
       path: fields[2],
       dims: dims,
-      meta: fields[1].replace(/^[a-z]+-0*/, "") + (dims !== "" ? " · " + dims : "")
+      meta: fields[1].replace(/^[a-z]+-/, "") + (dims !== "" ? " · " + dims : "")
     }])
   }
 
@@ -92,25 +93,21 @@ Item {
   }
 
   function move(delta) {
-    if (root.pool.length === 0) return
+    if (root.loading || root.pool.length === 0) return
     root.selectedIndex = Math.min(root.pool.length - 1, Math.max(0, root.selectedIndex + delta))
     grid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
   }
 
   function activate() {
-    if (root.selectedIndex < 0 || root.selectedIndex >= root.pool.length) return
+    if (root.loading || root.selectedIndex < 0 || root.selectedIndex >= root.pool.length) return
     const item = root.pool[root.selectedIndex]
     root.closeLauncher()
-    root.runCommand("$HOME/.config/kmdot/hyprland/scripts/set_wallpaper.sh '" + item.path.replace(/'/g, "'\\''") + "'")
+    cmdProc.exec([Quickshell.env("HOME") + "/.config/kmdot/hyprland/scripts/set_wallpaper.sh", item.path])
   }
 
   function activateAt(i) {
     root.selectedIndex = i
     root.activate()
-  }
-
-  function runCommand(cmd) {
-    cmdProc.exec(["sh", "-c", cmd])
   }
 
   onOpenedChanged: {
@@ -246,7 +243,7 @@ Item {
         text: "Wallpapers"
         font.family: "JetBrainsMono Nerd Font"
         font.pixelSize: 20
-        font.weight: Font.DemiBold
+        font.weight: Font.Bold
         color: Colors.text
       }
 
@@ -284,50 +281,51 @@ Item {
           right: parent.right
           bottom: footer.top
           leftMargin: 24
-          rightMargin: 24
+          rightMargin: 22
           topMargin: 96
           bottomMargin: 8
         }
         visible: !root.loading && root.pool.length > 0
         clip: true
         model: root.pool
-        cellWidth: 197
+        cellWidth: Math.floor(width / root.columns)
         cellHeight: 160
         flow: GridView.FlowLeftToRight
 
         delegate: Item {
           required property var modelData
           required property int index
-          width: 197
+          width: grid.cellWidth
           height: 160
 
           Rectangle {
             id: cell
-            width: 186
+            width: grid.cellWidth - 12
             height: 148
             radius: 16
             color: root.selectedIndex === index ? Colors.primary_container : "transparent"
             border.width: root.selectedIndex === index ? 2 : 1
             border.color: root.selectedIndex === index ? Colors.primary : Tokens.outlineVariant
 
-            // Full-bleed cropped preview masked to the cell radius (16): thumb
-            // and cell share one curvature, and cropping (never letterbox)
-            // keeps every tile identical regardless of selection state.
+            // Reserve the widest (selected) outline permanently. Selection must not
+            // resize the image/sourceSize: that triggers an asynchronous reload.
+            // MultiEffect masks must be texture providers (layer.enabled).
             Item {
               id: previewSlot
-              anchors { top: parent.top; left: parent.left; right: parent.right }
-              height: 105
+              anchors { top: parent.top; left: parent.left; right: parent.right; margins: 2 }
+              height: 101
 
               Rectangle {
                 anchors.fill: parent
-                radius: 16
+                radius: cell.radius - 2
                 color: Colors.surface_alt
               }
 
               Image {
                 id: thumbImg
                 anchors.fill: parent
-                source: modelData.path
+                source: "file://" + modelData.path.split("/").map(encodeURIComponent).join("/")
+                sourceSize: Qt.size(Math.ceil(width * 2), Math.ceil(height * 2))
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 visible: false
@@ -335,8 +333,9 @@ Item {
 
               Rectangle {
                 id: previewMask
+                layer.enabled: true
                 anchors.fill: parent
-                radius: 16
+                radius: cell.radius - 2
                 visible: false
               }
 
@@ -374,7 +373,7 @@ Item {
               font.family: "JetBrainsMono Nerd Font"
               font.pixelSize: 12
               font.weight: root.selectedIndex === index ? Font.Bold : Font.Normal
-              color: root.selectedIndex === index ? Colors.text : Colors.text_alt
+              color: root.selectedIndex === index ? Colors.on_primary_container : Colors.text_alt
             }
 
             Text {
@@ -383,7 +382,7 @@ Item {
               elide: Text.ElideRight
               font.family: "JetBrainsMono Nerd Font"
               font.pixelSize: 12
-              color: root.selectedIndex === index ? Colors.text : Colors.muted
+              color: root.selectedIndex === index ? Colors.on_primary_container : Colors.muted
             }
 
             MouseArea {
@@ -417,62 +416,46 @@ Item {
         }
       }
 
-      Rectangle {
+      Text {
+        anchors.centerIn: grid
+        visible: root.loading
+        text: "Loading wallpapers…"
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: 14
+        color: Colors.text_alt
+      }
+
+      Item {
         id: footer
         anchors {
           left: parent.left
           right: parent.right
           bottom: parent.bottom
-          leftMargin: 1
-          rightMargin: 1
-          bottomMargin: 1
+          leftMargin: 24
+          rightMargin: 24
         }
         height: 56
-        radius: 32
-        color: Colors.base
 
         Rectangle {
-          anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-          }
-          height: 28
-          color: Colors.base
-        }
-
-        Rectangle {
-          anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-          }
+          anchors { top: parent.top; left: parent.left; right: parent.right }
           height: 1
-          color: Tokens.divider
+          color: Colors.divider
         }
 
         Text {
-          anchors {
-            left: parent.left
-            verticalCenter: parent.verticalCenter
-            leftMargin: 24
-          }
-          text: "↑ ↓ ← → select · ⏎ apply"
+          anchors { left: parent.left; top: parent.top; leftMargin: 12; topMargin: 18 }
+          text: "Arrows select · Enter apply"
           font.pixelSize: 12
           font.family: "JetBrainsMono Nerd Font"
-          color: Tokens.mutedText
+          color: Colors.muted
         }
 
         Text {
-          anchors {
-            right: parent.right
-            verticalCenter: parent.verticalCenter
-            rightMargin: 24
-          }
+          anchors { right: parent.right; top: parent.top; rightMargin: 30; topMargin: 18 }
           text: "esc Close"
           font.pixelSize: 12
           font.family: "JetBrainsMono Nerd Font"
-          color: Tokens.mutedText
+          color: Colors.muted
         }
       }
     }

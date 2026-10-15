@@ -19,11 +19,12 @@ while IFS= read -r f; do
   id="${base%.*}"
   marker=""
   [ "$f" = "$ACTIVE" ] && marker="ACTIVE"
+  # Read headers only; decoding these multi-megapixel images delays every open.
   dims=""
   if command -v identify >/dev/null 2>&1; then
-    dims="$(identify -format '%wx%h' "$f" 2>/dev/null || true)"
+    dims="$(identify -ping -format '%wx%h' "$f" 2>/dev/null || true)"
   elif command -v magick >/dev/null 2>&1; then
-    dims="$(magick identify -format '%wx%h' "$f" 2>/dev/null || true)"
+    dims="$(magick identify -ping -format '%wx%h' "$f" 2>/dev/null || true)"
   fi
   printf '%s\t%s\t%s\t%s\t%s\n' "$marker" "$id" "$f" "$dims" "$THEME"
 done < <(find "$DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | LC_ALL=C sort -V)
