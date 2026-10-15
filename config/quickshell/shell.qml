@@ -190,8 +190,10 @@ Scope {
   Connections {
     target: shellRoot.notificationCenter
     function onOpenedChanged() {
-      if (shellRoot.notificationCenter.opened)
+      if (shellRoot.notificationCenter.opened) {
         shellRoot.hasNotifications = false
+        shellRoot.notificationPopup.dismissAll()
+      }
     }
   }
 

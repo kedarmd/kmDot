@@ -15,6 +15,11 @@ Singleton {
   readonly property int motionStandard: 180
   readonly property int motionEmphasized: 240
 
+  // Opt-in accessibility setting, shared by the notification surfaces.
+  readonly property bool reducedMotion: Quickshell.env("KMDOT_REDUCED_MOTION") === "1"
+  readonly property int notificationMotion: reducedMotion ? 0 : motionStandard
+  readonly property int notificationDismissMotion: reducedMotion ? 0 : motionFast
+
   // ---- public helpers (used by consumers) ----
   function mix(c1, c2, t) {
     return Qt.rgba(c1.r * (1 - t) + c2.r * t,

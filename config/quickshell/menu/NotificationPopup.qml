@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import qs
 import "../components"
+import "../components/notificationidentity.js" as Identity
 import "../components/popuppos.js" as Pos
 
 PanelWindow {
@@ -26,12 +27,19 @@ PanelWindow {
     right: true
   }
 
+  // Union of actual card rectangles: gaps and the desktop remain click-through.
+  mask: Region {
+    Region { item: { const count = popupModel.count; const height = popupColumn.contentHeight; return count > 0 ? popupColumn.itemAtIndex(0) : null } }
+    Region { item: { const count = popupModel.count; const height = popupColumn.contentHeight; return count > 1 ? popupColumn.itemAtIndex(1) : null } }
+    Region { item: { const count = popupModel.count; const height = popupColumn.contentHeight; return count > 2 ? popupColumn.itemAtIndex(2) : null } }
+  }
+
   property bool opened: false
   readonly property bool presentationVisible: presentation.presented
   property SurfacePresentation presentation: SurfacePresentation { opened: root.opened }
   property var scope: null
-  property int maxVisible: 5
-  property real popupWidth: 424
+  property int maxVisible: 3
+  property real popupWidth: 360
   property real popupSpacing: 8
   property real popupTopMargin: 52
   property real popupRightMargin: 12
@@ -42,19 +50,23 @@ PanelWindow {
   }
 
   function addNotification(notif) {
-    if (DnDState.dndEnabled) return
+    if (DnDState.dndEnabled || (root.scope && root.scope.notificationCenter && root.scope.notificationCenter.opened)) return
+    root.removeNotification(notif.id)
     const isScreenshot = root.isScreenshotApp(notif)
     const duration = notif.urgency === 2 ? 0 : (isScreenshot ? 10000 : 5000)
     popupModel.insert(0, {
       notifId: notif.id,
       appName: notif.appName || "",
-      appIcon: notif.appIcon || "",
+      appIcon: Identity.sourceIcon(notif),
+      desktopEntry: notif.desktopEntry || "",
       summary: notif.summary || "",
       body: notif.body || "",
       urgency: notif.urgency,
       image: notif.image || "",
       timestamp: Date.now(),
+      remaining: duration,
       duration: duration,
+      paused: false,
       hasActions: notif.actions && notif.actions.length > 0,
       actions: notif.actions || [],
       _ref: notif
@@ -73,18 +85,20 @@ PanelWindow {
       || entry.indexOf("flameshot") >= 0
   }
 
+  function removeNotification(id) {
+    for (let i = popupModel.count - 1; i >= 0; i--) {
+      if (popupModel.get(i).notifId === id) root.dismissIndex(i)
+    }
+  }
+
   function dismissIndex(idx) {
-    const entry = popupModel.get(idx)
-    if (entry && entry._ref) entry._ref.dismiss()
+    if (idx < 0 || idx >= popupModel.count) return
+    // Hiding a toast preserves its live actions in notification history.
     popupModel.remove(idx)
     if (popupModel.count === 0) root.opened = false
   }
 
   function dismissAll() {
-    for (let i = popupModel.count - 1; i >= 0; i--) {
-      const entry = popupModel.get(i)
-      if (entry && entry._ref) entry._ref.dismiss()
-    }
     popupModel.clear()
     root.opened = false
   }
@@ -110,15 +124,17 @@ PanelWindow {
   }
 
   Timer {
-    interval: 1000
+    interval: 100
     repeat: true
     running: root.opened
     onTriggered: {
-      const now = Date.now()
       for (let i = popupModel.count - 1; i >= 0; i--) {
         const entry = popupModel.get(i)
-        if (entry.duration > 0 && (now - entry.timestamp) >= entry.duration)
-          popupModel.remove(i)
+        if (!entry.paused && entry.duration > 0) {
+          const remaining = entry.remaining - 100
+          if (remaining <= 0) popupModel.remove(i)
+          else popupModel.setProperty(i, "remaining", remaining)
+        }
       }
       if (popupModel.count === 0) root.opened = false
     }
@@ -163,31 +179,27 @@ PanelWindow {
       spacing: root.popupSpacing
       width: root.popupWidth
       opacity: root.opened ? 1 : 0
-      scale: root.opened ? 1 : 0.96
 
       Behavior on opacity {
-        NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-      }
-      Behavior on scale {
-        NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+        NumberAnimation { duration: Tokens.notificationMotion; easing.type: Easing.OutCubic }
       }
 
       model: popupModel
 
       add: Transition {
         ParallelAnimation {
-          NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-          NumberAnimation { property: "scale"; from: 0.96; to: 1; duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+          NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Tokens.notificationMotion; easing.type: Easing.OutCubic }
+          NumberAnimation { property: "y"; from: Tokens.reducedMotion ? 0 : -8; duration: Tokens.notificationMotion; easing.type: Easing.OutCubic }
         }
       }
       remove: Transition {
         ParallelAnimation {
-          NumberAnimation { property: "opacity"; to: 0; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-          NumberAnimation { property: "scale"; to: 0.96; duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+          NumberAnimation { property: "opacity"; to: 0; duration: Tokens.notificationDismissMotion; easing.type: Easing.OutCubic }
+
         }
       }
       displaced: Transition {
-        NumberAnimation { properties: "x,y"; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+        NumberAnimation { properties: "x,y"; duration: Tokens.notificationMotion; easing.type: Easing.OutCubic }
       }
 
       delegate: Rectangle {
@@ -195,12 +207,21 @@ PanelWindow {
         required property int index
         required property var modelData
         width: popupColumn.width
-        height: Math.max(240, cardBody.implicitHeight + 48)
-        radius: 32
+        height: cardBody.implicitHeight + 32
+        radius: 24
         color: Colors.surface
         border.width: 1
         border.color: modelData.urgency === 2 ? Colors.error : Colors.border
         enabled: root.opened && index >= 0
+
+        HoverHandler {
+          onHoveredChanged: if (card.index >= 0 && card.index < popupModel.count)
+            popupModel.setProperty(card.index, "paused", hovered)
+        }
+        Connections {
+          target: card.modelData._ref
+          function onClosed() { root.removeNotification(card.modelData.notifId) }
+        }
 
         Column {
           id: cardBody
@@ -208,52 +229,29 @@ PanelWindow {
             top: parent.top
             left: parent.left
             right: parent.right
-            margins: 24
+            margins: 16
+            leftMargin: 52
           }
-          spacing: 16
+          spacing: 8
 
-          Row {
+          Item {
             width: parent.width
-            height: 48
-            spacing: 16
+            height: 24
 
-            Image {
+            NotificationIcon {
+              x: -36
               anchors.verticalCenter: parent.verticalCenter
-              visible: {
-                const ic = modelData.appIcon || ""
-                return ic !== "" && !ic.startsWith("\\u")
-              }
-              source: {
-                const ic = modelData.appIcon || ""
-                if (ic === "") return ""
-                if (ic.startsWith("/") || ic.startsWith("file://") || ic.startsWith("image://")) return ic
-                return Quickshell.iconPath(ic)
-              }
-              width: 24
-              height: 24
-              sourceSize: Qt.size(24, 24)
-              smooth: true
-            }
-
-            R1Icon {
-              anchors.verticalCenter: parent.verticalCenter
-              visible: {
-                const ic = modelData.appIcon || ""
-                return ic === "" || ic.startsWith("\\u")
-              }
-              glyph: "\uf0f3"
-              font.family: "JetBrainsMono Nerd Font Propo"
-              width: 24
-              font.pixelSize: 24
-              color: Colors.text_alt
+              desktopEntry: card.modelData.desktopEntry
+              appIcon: card.modelData.appIcon
+              appName: card.modelData.appName
             }
 
             Text {
               anchors.verticalCenter: parent.verticalCenter
-              width: parent.width - 80
-              text: modelData.appName || "Notification"
+              width: parent.width - 32
+              text: (modelData.appName || "Notification") + " · now"
               font.family: "JetBrainsMono Nerd Font"
-              font.pixelSize: 24
+              font.pixelSize: 12
               font.weight: Font.DemiBold
               color: Colors.text
               elide: Text.ElideRight
@@ -269,6 +267,7 @@ PanelWindow {
             }
 
             R1Icon {
+              anchors.right: parent.right
               anchors.verticalCenter: parent.verticalCenter
               glyph: "\uf00d"
               font.family: "JetBrainsMono Nerd Font Propo"
@@ -292,7 +291,7 @@ PanelWindow {
             visible: text !== ""
             text: modelData.summary
             font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: 20
+            font.pixelSize: 14
             font.weight: Font.Bold
             color: modelData.urgency === 2 ? Colors.error : Colors.text
             elide: Text.ElideRight
@@ -301,6 +300,7 @@ PanelWindow {
           }
 
           Text {
+            id: bodyText
             width: parent.width
             visible: text !== ""
             text: modelData.body
@@ -310,10 +310,18 @@ PanelWindow {
             elide: Text.ElideRight
             maximumLineCount: 3
             wrapMode: Text.Wrap
-            textFormat: Text.StyledText
+            textFormat: Text.PlainText
           }
 
-          Row {
+          PillButton {
+            visible: bodyText.truncated
+            text: "View details"
+            onClicked: {
+              if (root.scope && root.scope.notificationCenter) root.scope.notificationCenter.revealNotification(card.modelData.notifId)
+            }
+          }
+
+          Flow {
             visible: modelData.hasActions || (modelData._ref && modelData._ref.hasInlineReply)
             width: parent.width
             spacing: 6

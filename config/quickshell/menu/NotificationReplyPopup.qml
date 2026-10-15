@@ -6,6 +6,7 @@ import "../components"
 PopupBase {
   id: root
   sockName: "kmdot-notification-reply"
+  animatePresentation: !Tokens.reducedMotion
   title: "Messages"
   cardWidth: 424
   cardMinHeight: 488

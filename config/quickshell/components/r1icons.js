@@ -1,6 +1,8 @@
 // Approved Night R1 icons exported from Penpot Redesign, Foundations R1.
 // Component IDs identify the canonical source. Color follows the active theme.
+// Mouse geometry: approved Notifications V2 revision 3, icon identity board.
 const sources = {
+  "mouse": "2ea58b0c-eb3f-80a0-8008-cb5c4df12468",
   "kmdot": "354ba062-72fc-8008-8008-c87ee54dd13e",
   "bell-off": "354ba062-72fc-8008-8008-c87b2b9fbb23",
   "terminal": "cfe1987a-fff1-803d-8008-c75957e8f3a0",
@@ -42,6 +44,7 @@ const sources = {
   "wifi": "cfe1987a-fff1-803d-8008-c7595611b9de"
 };
 const icons = {
+  "mouse": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><g fill=\"none\" stroke=\"#c0caf5\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"6\" y=\"2\" width=\"12\" height=\"20\" rx=\"6\"/><path d=\"M12 2V9\"/></g></svg>",
   "kmdot": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M2 5V19M2 12L7.5 5M7.5 19V5L11 10L14.5 5V19M2 12L7.5 19M14.5 5H17L19 8V16L17 19H14.5\" fill=\"none\" stroke=\"#c0caf5\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"22\" cy=\"18\" r=\"1.5\" fill=\"#7aa2f7\"/></svg>",
   "bell-off": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><g fill=\"none\" stroke=\"#c0caf5\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path transform=\"translate(-1584 -1644)\" d=\"M1589,1660L1589,1653C1589,1649.134033203125,1592.134033203125,1646,1596,1646C1599.865966796875,1646,1603,1649.134033203125,1603,1653L1603,1660L1605,1662L1587,1662L1589,1660M1594,1665L1598,1665\"/><path d=\"M3 3L21 21\"/></g></svg>",
   "terminal": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"2088 1552 24 24\"><g fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect rx=\"3\" ry=\"3\" x=\"2090\" y=\"1555\" transform=\"matrix(1.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000)\" width=\"20\" height=\"18\" style=\"fill:none;fill-opacity:none;stroke-width:1.8;stroke:#c0caf5;stroke-opacity:1\"/><path d=\"M2094,1560L2098,1564L2094,1568M2101,1568L2106,1568\" style=\"fill:none;fill-opacity:none;stroke-width:1.8;stroke:#c0caf5;stroke-opacity:1;stroke-linecap:round\"/></g></svg>",

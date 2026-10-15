@@ -25,6 +25,7 @@ PanelWindow {
 
   anchors { top: true; bottom: true; left: true; right: true }
 
+  property bool animatePresentation: true
   property bool opened: false
   readonly property bool presentationVisible: presentation.presented
   property SurfacePresentation presentation: SurfacePresentation { opened: root.opened }
@@ -158,15 +159,15 @@ PanelWindow {
       border.width: 1
       border.color: Colors.border
       opacity: root.opened ? 1 : 0
-      scale: root.opened ? 1 : 0.96
+      scale: !root.animatePresentation || root.opened ? 1 : 0.96
 
       // Resolve geometry immediately: animating height makes newly mapped
       // panels unroll from the top while their opacity is still fading in.
       Behavior on opacity {
-        NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: root.animatePresentation ? Tokens.motionStandard : 0; easing.type: Easing.OutCubic }
       }
       Behavior on scale {
-        NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+        NumberAnimation { duration: root.animatePresentation ? Tokens.motionEmphasized : 0; easing.type: Easing.OutBack }
       }
       y: root.centerCard ? (parent.height - card.height) / 2 : 64
       x: root.centerCard
