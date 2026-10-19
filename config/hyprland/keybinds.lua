@@ -68,20 +68,23 @@ hl.bind(mod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true }) -- Drag w
 -- Mouse: resize window when holding Super + Right Click
 hl.bind(mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true }) -- Resize window with mouse
 
--- Brightness controls (no modifiers, just Fn keys -> XF86 keys)
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set +5% >/dev/null 2>&1")) -- Increase brightness
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%- >/dev/null 2>&1")) -- Decrease brightness
+-- Brightness controls (laptop media keys -> XF86 keys)
+hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set +5% >/dev/null 2>&1; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-brightness"), { repeating = true }) -- Increase brightness
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%- >/dev/null 2>&1; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-brightness"), { repeating = true }) -- Decrease brightness
 
 -- Volume controls with 100% cap and wob support
 hl.bind(
 	"XF86AudioRaiseVolume",
 	hl.dsp.exec_cmd(
-		"pactl set-sink-volume @DEFAULT_SINK@ +5%; [ $(pactl get-sink-volume @DEFAULT_SINK@ | grep -Po '\\d+(?=%)' | head -n 1) -gt 100 ] && pactl set-sink-volume @DEFAULT_SINK@ 100%"
+		"pactl set-sink-volume @DEFAULT_SINK@ +5%; [ $(pactl get-sink-volume @DEFAULT_SINK@ | grep -Po '\\d+(?=%)' | head -n 1) -gt 100 ] && pactl set-sink-volume @DEFAULT_SINK@ 100%; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-volume"
 	),
 	{ repeating = true }
 ) -- Raise volume
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("pactl set-sink-volume @DEFAULT_SINK@ -5%"), { repeating = true }) -- Lower volume
-hl.bind("XF86AudioMute", hl.dsp.exec_cmd("pactl set-sink-mute @DEFAULT_SINK@ toggle")) -- Mute volume
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("pactl set-sink-volume @DEFAULT_SINK@ -5%; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-volume"), { repeating = true }) -- Lower volume
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd("pactl set-sink-mute @DEFAULT_SINK@ toggle; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-volume")) -- Mute volume
+local micMuteAction = hl.dsp.exec_cmd("pactl set-source-mute @DEFAULT_SOURCE@ toggle; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-mic")
+hl.bind("XF86AudioMicMute", micMuteAction) -- Toggle microphone mute
+hl.bind("F4", micMuteAction, { repeating = false }) -- Laptop mic key can report F4, including its Fn layer
 
 -- Media controls
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause")) -- Play/pause media

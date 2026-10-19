@@ -42,6 +42,9 @@ Scope {
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
   property NotificationPopup notificationPopup: NotificationPopup { scope: shellRoot }
   property NotificationReplyPopup notificationReplyPopup: NotificationReplyPopup { scope: shellRoot }
+  property OSDBase volumeOsd: OSDBase { sockName: "kmdot-osd-volume"; kind: "volume" }
+  property OSDBase brightnessOsd: OSDBase { sockName: "kmdot-osd-brightness"; kind: "brightness" }
+  property OSDBase microphoneOsd: OSDBase { sockName: "kmdot-osd-mic"; kind: "microphone" }
 
   // Keep all radio views in one registry. The stores deliberately do not know
   // about overlays; this is the shell-owned close-all boundary for the two
