@@ -292,6 +292,16 @@ Item {
         cellHeight: 160
         flow: GridView.FlowLeftToRight
 
+        populate: Transition {
+          NumberAnimation { property: "opacity"; from: 0; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+        }
+        add: Transition {
+          NumberAnimation { property: "opacity"; from: 0; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
+        }
+        remove: Transition {
+          NumberAnimation { property: "opacity"; to: 0; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
+        }
+
         delegate: Item {
           required property var modelData
           required property int index

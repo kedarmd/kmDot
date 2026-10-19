@@ -158,6 +158,17 @@ LauncherBase {
     }
   }
 
+  function setMode(index) {
+    if (root.mode === index) return
+    root.animateResultsPage(index > root.mode ? 1 : -1)
+    root.mode = index
+    root.confirmId = -1
+    root.resetQuery()
+    root.selectedIndex = 0
+    root.rebuildPool()
+    root.recompute()
+  }
+
   // History searches the full transcription text; Models keep label/engine.
   function matchScore(item, q) {
     let best = -1
@@ -240,12 +251,7 @@ LauncherBase {
   }
 
   onFooterActionClicked: {
-    root.mode = root.mode === 0 ? 1 : 0
-    root.confirmId = -1
-    root.resetQuery()
-    root.selectedIndex = 0
-    root.rebuildPool()
-    root.recompute()
+    root.setMode(root.mode === 0 ? 1 : 0)
   }
 
   Timer {
@@ -310,13 +316,7 @@ LauncherBase {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: {
-              if (root.mode === index) return
-              root.mode = index
-              root.confirmId = -1
-              root.resetQuery()
-              root.selectedIndex = 0
-              root.rebuildPool()
-              root.recompute()
+              root.setMode(index)
             }
           }
         }

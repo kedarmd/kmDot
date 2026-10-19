@@ -6,6 +6,6 @@ BarModule {
   id: root
   sock: "kmdot-opencode-usage"
 
-  glyph: ""
-  tooltipText: "OpenCode usage"
+  glyph: "\uf121"
+  tooltipText: "AI agent usage"
 }

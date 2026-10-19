@@ -48,12 +48,14 @@ PanelWindow {
   property real cardMaxHeight: 0
   property alias bottomContent: footerSlot.data
   property bool escapeCloses: true
+  property bool tabNavigation: false
   // Focus seam: the item that should hold keyboard focus while open.
   // Subclasses with their own focus owner override it (Calendar's nav Column,
   // WifiAdd's ssidInput); the focus timer below yields to it. Defaults to the
   // base content Item (Escape/backdrop handling).
   property Item focusItem: content
   default property alias content: body.data
+  function navigateTab(direction) {}
 
   readonly property string sockPath: {
     const rt = Quickshell.env("XDG_RUNTIME_DIR")
@@ -142,6 +144,16 @@ PanelWindow {
     anchors.fill: parent
     focus: true
     Keys.onEscapePressed: if (root.escapeCloses) root.close()
+    Keys.onTabPressed: function(event) {
+      if (!root.tabNavigation) return
+      root.navigateTab(1)
+      event.accepted = true
+    }
+    Keys.onBacktabPressed: function(event) {
+      if (!root.tabNavigation) return
+      root.navigateTab(-1)
+      event.accepted = true
+    }
 
     MouseArea {
       anchors.fill: parent

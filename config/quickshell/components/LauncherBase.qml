@@ -79,6 +79,8 @@ Item {
   property var pool: root.items
   property var results: []
   property int selectedIndex: 0
+  property bool resultPageTransitionActive: false
+  property real resultPageOffset: 0
   readonly property int resultCount: root.results.length
   readonly property var selectedItem: root.results.length > 0
     && root.selectedIndex >= 0 && root.selectedIndex < root.results.length
@@ -121,6 +123,15 @@ Item {
       focusTimer.start()
     }
     root.onOpenedChange()
+  }
+  NumberAnimation {
+    id: resultsChromeSlide
+    target: root
+    property: "resultPageOffset"
+    to: 0
+    duration: Tokens.motionEmphasized
+    easing.type: Easing.OutCubic
+    onFinished: root.resultPageTransitionActive = false
   }
   // Mode flips (e.g. Models ↔ History) swap the focus target.
   onSearchEnabledChanged: if (root.opened) focusTimer.restart()
@@ -297,6 +308,15 @@ Item {
     if (filtered.length > 0) resultsList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
   }
 
+  function animateResultsPage(direction) {
+    if (resultsList.width <= 0) return
+    if (Tokens.reducedMotion) { root.resultPageOffset = 0; return }
+    root.resultPageTransitionActive = true
+    resultsChromeSlide.stop()
+    root.resultPageOffset = resultsList.width * (direction >= 0 ? 1 : -1)
+    resultsChromeSlide.restart()
+  }
+
   function openLauncher() {
     root.query = ""
     searchInput.text = ""
@@ -440,6 +460,7 @@ Item {
       anchors.centerIn: parent
       radius: 32
       color: Colors.surface
+      clip: true
       border.width: 1
       border.color: Colors.border
       opacity: root.opened ? 1 : 0
@@ -519,6 +540,7 @@ Item {
       // Title row for searchless views: occupies the search bar's exact slot.
       Item {
         id: listHeader
+        transform: Translate { x: root.resultPageOffset }
         visible: !root.searchEnabled && !root.detailMode && root.headerText !== ""
         anchors {
           top: parent.top
@@ -565,6 +587,7 @@ Item {
 
       Rectangle {
         id: searchBar
+        transform: Translate { x: root.resultPageOffset }
         visible: root.searchEnabled && !root.detailMode
         anchors {
           top: root.toolbarBeforeSearch && toolbarLoader.visible ? toolbarLoader.bottom : parent.top
@@ -748,6 +771,7 @@ Item {
 
       Text {
         id: resultsHeading
+        transform: Translate { x: root.resultPageOffset }
         visible: root.resultsLabel !== "" && !root.themePreview
         anchors { top: searchBar.bottom; left: parent.left; topMargin: 16; leftMargin: 36 }
         text: root.resultsLabel
@@ -759,6 +783,7 @@ Item {
 
       ListView {
         id: resultsList
+        transform: Translate { x: root.resultPageOffset }
         anchors {
           top: toolbarLoader.visible ? (root.toolbarBeforeSearch && searchBar.visible ? searchBar.bottom : toolbarLoader.bottom)
             : themePreviewCard.visible ? themePreviewCard.bottom
@@ -781,6 +806,29 @@ Item {
         focus: false
         interactive: true
         flickDeceleration: 2500
+
+        populate: Transition {
+          enabled: !root.resultPageTransitionActive
+          ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 0; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "y"; from: 8; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+          }
+        }
+        add: Transition {
+          enabled: !root.resultPageTransitionActive
+          ParallelAnimation {
+            NumberAnimation { property: "opacity"; from: 0; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "y"; from: 6; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
+          }
+        }
+        remove: Transition {
+          enabled: !root.resultPageTransitionActive
+          NumberAnimation { property: "opacity"; to: 0; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
+        }
+        displaced: Transition {
+          enabled: !root.resultPageTransitionActive
+          NumberAnimation { property: "y"; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
+        }
 
         delegate: Rectangle {
           required property var modelData

@@ -13,6 +13,14 @@ PopupBase {
   cardMaxHeight: root.tab === 0 ? Math.max(536, root.modelListHeight + 272) : 624
 
   property int tab: 0
+  property int tabDirection: 1
+  onTabChanged: {
+    root.tabDirection = root.tab > 0 ? 1 : -1
+    if (root.tab === 1) {
+      root.selectedHistoryId = root.history.length > 0 ? root.history[0].id : -1
+      Qt.callLater(function() { historyList.positionViewAtBeginning() })
+    }
+  }
   // Reads, mutations, AND playback served by the HandyStore singleton
   // (issues #52/#54/#55): the popup binds its models/history/selection/
   // busy/error AND its playing/progress/position state here instead of
@@ -177,14 +185,22 @@ PopupBase {
         }
         Text { visible: root.effectiveError !== ""; width: parent.width; height: visible ? implicitHeight : 0; text: root.effectiveError; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
 
-        ListView {
+        Item {
+          id: handyPages
+          width: parent.width
+    height: Math.max(root.modelListHeight, root.historyListHeight + 16)
+          clip: true
+
+          ListView {
           id: modelList
-          visible: root.tab === 0
+          visible: true
           width: parent.width
           height: root.modelListHeight
+          x: root.tab === 0 ? 0 : -width * root.tabDirection
           spacing: 8
           clip: true
           interactive: contentHeight > height
+          Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutCubic } }
           model: root.models
           delegate: Rectangle {
             required property var modelData
@@ -200,10 +216,13 @@ PopupBase {
           }
         }
 
-        Item {
-          visible: root.tab === 1
+          Item {
+          visible: true
           width: parent.width
           height: root.historyListHeight + 16
+          x: root.tab === 1 ? 0 : width * root.tabDirection
+          clip: true
+          Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutCubic } }
           ListView {
           id: historyList
           onVisibleChanged: {
@@ -225,6 +244,8 @@ PopupBase {
             readonly property bool selected: root.selectedHistoryId === modelData.id
             width: historyList.width; height: selected ? 320 : 72; radius: selected ? 24 : 16
             color: Tokens.surfaceContainer
+            Behavior on height { NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic } }
+            Behavior on radius { NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic } }
             Text {
               visible: historyRow.selected
               anchors.left: parent.left; anchors.leftMargin: 16; anchors.top: parent.top; anchors.topMargin: 20
@@ -366,6 +387,7 @@ PopupBase {
             }
             R1Icon { visible: !historyRow.selected; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf054"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 13 }
             MouseArea { anchors.fill: parent; enabled: !historyRow.selected; onClicked: root.selectedHistoryId = modelData.id }
+          }
           }
         }
         }

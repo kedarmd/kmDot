@@ -10,15 +10,16 @@ import qs
 // No per-theme files are touched: containers/state-layers are blended from
 // the existing palette, keeping the exact same color schemes.
 Singleton {
-  // Shared motion timings for the keyboard-driven shell.
-  readonly property int motionFast: 120
-  readonly property int motionStandard: 180
-  readonly property int motionEmphasized: 240
-
-  // Opt-in accessibility setting, shared by the notification surfaces.
+  // Opt-in accessibility setting applied to shell, panel, and launcher motion.
   readonly property bool reducedMotion: Quickshell.env("KMDOT_REDUCED_MOTION") === "1"
-  readonly property int notificationMotion: reducedMotion ? 0 : motionStandard
-  readonly property int notificationDismissMotion: reducedMotion ? 0 : motionFast
+
+  // Shared motion timings for the keyboard-driven shell.
+  readonly property int motionFast: reducedMotion ? 0 : 120
+  readonly property int motionStandard: reducedMotion ? 0 : 180
+  readonly property int motionEmphasized: reducedMotion ? 0 : 240
+
+  readonly property int notificationMotion: motionStandard
+  readonly property int notificationDismissMotion: motionFast
 
   // ---- public helpers (used by consumers) ----
   function mix(c1, c2, t) {
