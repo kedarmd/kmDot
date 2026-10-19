@@ -69,8 +69,10 @@ hl.bind(mod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true }) -- Drag w
 hl.bind(mod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true }) -- Resize window with mouse
 
 -- Brightness controls (laptop media keys -> XF86 keys)
-hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set +5% >/dev/null 2>&1; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-brightness"), { repeating = true }) -- Increase brightness
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%- >/dev/null 2>&1; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-brightness"), { repeating = true }) -- Decrease brightness
+local brightnessUp = hl.dsp.exec_cmd("brightnessctl set +5% >/dev/null 2>&1; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-brightness")
+local brightnessDown = hl.dsp.exec_cmd("brightnessctl set 5%- >/dev/null 2>&1; ~/.config/quickshell/scripts/toggle.sh kmdot-osd-brightness")
+hl.bind("XF86MonBrightnessUp", brightnessUp, { repeating = true }) -- Increase brightness (media keys)
+hl.bind("XF86MonBrightnessDown", brightnessDown, { repeating = true }) -- Decrease brightness (media keys)
 
 -- Volume controls with 100% cap and wob support
 hl.bind(
