@@ -21,6 +21,8 @@ Item {
   // -- display props (subclass supplies) --
   property string glyph: "" // icon part; "" = text-only (Clock)
   property string iconName: ""
+  property string trailingGlyph: "" // optional status glyph, hidden when empty
+  property color trailingColor: Colors.warning
   property int textSize: 12
   property int labelSpacing: 5
   property int iconSize: 24
@@ -116,6 +118,23 @@ Item {
         Behavior on opacity {
           NumberAnimation { duration: Tokens.motionFast }
         }
+      }
+
+      Item {
+        visible: !root.busy && root.trailingGlyph !== ""
+        width: visible ? 5 : 0
+        height: 1
+      }
+
+      R1Icon {
+        anchors.verticalCenter: parent.verticalCenter
+        visible: !root.busy && root.trailingGlyph !== ""
+        width: visible ? 18 : 0
+        height: 18
+        glyph: root.trailingGlyph
+        font.family: "JetBrainsMono Nerd Font Propo"
+        font.pixelSize: 15
+        color: root.trailingColor
       }
 
     }
