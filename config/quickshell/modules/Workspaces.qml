@@ -67,12 +67,14 @@ Item {
           width: slot.active ? 24 : 10
           height: 10
           radius: height / 2
+          border.width: !slot.active && !slot.occupied && !slot.urgent ? 1.5 : 0
+          border.color: Colors.muted
           // Urgency wins even on the active workspace; shape still shows focus.
           color: slot.urgent ? Colors.urgent
                : slot.active ? Colors.primary
                : mouseArea.containsMouse ? Colors.text_alt
                : slot.occupied ? Colors.muted
-               : Colors.outline_variant
+               : "transparent"
           scale: mouseArea.pressed ? 0.9 : 1
 
           Behavior on width {
