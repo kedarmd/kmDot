@@ -4,7 +4,7 @@ Date: 2026-10-14. User review: in progress; final full-scope acceptance not reco
 
 ## Current status — latest user preferences
 
-The alternate-theme review is recorded separately in [quickshell-theme-visual-validation.md](quickshell-theme-visual-validation.md). That review supersedes the TokyoNight-only token statement below for palette coverage: Catppuccin, Everforest, Nord, and One Dark were rendered independently, with contrast and lock/login limitations recorded there.
+The alternate-theme review is recorded separately in [quickshell-theme-visual-validation.md](quickshell-theme-visual-validation.md). That review supersedes the TokyoNight-only token statement below for palette coverage: Catppuccin, Everforest, and Nord were rendered independently, with contrast and lock/login limitations recorded there.
 
 The top bar now has Kmdot and Workspaces on the left, with no window-title module. The clock is centered alone. The right group is hidden tray → Display → Audio → Wi-Fi → Bluetooth → Battery → notification bell. The tray expands inline by sliding the chevron left and contains Attention eye, Server mode, OpenCode usage and Handy. The user is trialing this original eye/bell placement for a couple of days. No below-bar tray, Appearance tray icon, or tooltips remain. Super+T still opens Appearance. These explicit preferences supersede older screenshots and the historical follow-ups below.
 

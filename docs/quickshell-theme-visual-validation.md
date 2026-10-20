@@ -27,7 +27,6 @@ The review treated TokyoNight as the existing baseline and validated the four al
 - Catppuccin Mocha
 - Everforest dark hard
 - Nord
-- One Dark
 
 An isolated headless Hyprland output was used so the running desktop was not modified. Each alternate theme was rendered through the real Quickshell QML with theme-specific `Colors.qml` generation. Sixty-one states were captured per theme, covering the bar, tray, application and command launchers, nested Wi-Fi/Bluetooth/System states, Clipboard, Handy, controls, Display, Sound, Battery, Calendar, Server, usage, notification/reply states, and lock/lock-error states.
 
@@ -35,7 +34,7 @@ The screenshots are stored under `/tmp/kmdot-theme-validation/screenshots/`, wit
 
 Hardware actions, real Bluetooth pairing, secured Wi-Fi authentication, service changes, clipboard writes, destructive Handy actions, and real credential submission were not triggered merely to obtain screenshots. Fixture states validate layout, state presentation, and theme propagation. The lock captures use the native lock surface with a mocked authentication response. The SDDM source and generated palette roles were reviewed, but a live greeter/authentication session was not replaced on the workstation for this pass.
 
-Palette comparisons used the upstream [Catppuccin palette](https://github.com/catppuccin/palette/blob/main/palette.json), [Everforest palette](https://github.com/sainnhe/everforest/blob/master/palette.md), [Nord palette](https://www.nordtheme.com/docs/colors-and-palettes/), [One Dark syntax colors](https://raw.githubusercontent.com/atom/one-dark-syntax/master/styles/colors.less), and the [TokyoNight night palette](https://github.com/folke/tokyonight.nvim/blob/main/lua/tokyonight/colors/night.lua).
+Palette comparisons used the upstream [Catppuccin palette](https://github.com/catppuccin/palette/blob/main/palette.json), [Everforest palette](https://github.com/sainnhe/everforest/blob/master/palette.md), [Nord palette](https://www.nordtheme.com/docs/colors-and-palettes/), and the [TokyoNight night palette](https://github.com/folke/tokyonight.nvim/blob/main/lua/tokyonight/colors/night.lua).
 
 ## Historical findings — resolved by the remediation above
 
@@ -58,23 +57,8 @@ The credential card, password field, error state, time, branding, wallpaper, and
 | Catppuccin | 1.80:1 | 1.80:1 |
 | Everforest | 1.54:1 | 1.31:1 |
 | Nord | 1.45:1 | 1.69:1 |
-| One Dark | 1.79:1 | 1.44:1 |
 
 The resting buttons are generally legible; the failure appears when the pointer or keyboard activates them.
-
-### High priority: One Dark selected-row details are too dim
-
-[LauncherBase.qml:764](../config/quickshell/components/LauncherBase.qml#L764) uses `primary_container` for the selected row, while subtitle, body, and metadata remain `text_alt` at lines 831, 843, and 872. One Dark renders those selected secondary lines at only 2.60:1 against the selected surface.
-
-The issue is visible in Sound helper text, Battery history labels, Usage captions, Handy model subtitles, reply placeholders, and selected launcher descriptions.
-
-### High priority: One Dark Handy tabs have no visible selected state
-
-Both tabs are configured as emphasized filled buttons at [HandyPopup.qml:175](../config/quickshell/menu/HandyPopup.qml#L175) and [HandyPopup.qml:176](../config/quickshell/menu/HandyPopup.qml#L176). In One Dark, active and inactive fills both resolve to `#3E4452`, and both foregrounds resolve to `#ABB2BF`. Models and History are visually identical in the captured states.
-
-### Medium priority: One Dark ordinary hover contradicts its documented caveat
-
-The repository explicitly requires One Dark elevated and selected surfaces to use `#3E4452`, because the brighter `#4B5263` has insufficient contrast with `#ABB2BF`. The generic hover path uses `Colors.border` (`#4B5263`) with `Colors.text` (`#ABB2BF`), measuring 3.67:1.
 
 ### Medium priority: Nord error states are weak
 
@@ -89,7 +73,7 @@ The raw colors are canonical, but the semantic assignments do not follow the the
 | Everforest | `#374145` (`bg2`) | `#4C3743` (`bg_visual`) |
 | Nord | `#4C566A` (`nord3`) | `#434C5E` (`nord2`) |
 
-Catppuccin and TokyoNight use convincing selection mappings. One Dark is intentionally compressed as documented, but still suffers from interaction contrast and indistinguishable tab states.
+Catppuccin and TokyoNight use convincing selection mappings.
 
 ### Medium priority: muted text is below readable contrast in most themes
 
@@ -100,9 +84,8 @@ Muted labels and search placeholders are weak on raised surfaces:
 | Catppuccin | 2.57:1 |
 | Everforest | 3.09:1 |
 | Nord | 1.36:1 |
-| One Dark | 1.61:1 |
 
-Nord and One Dark are most affected. This appears in captions, helper text, timestamps, and low-priority labels.
+Nord is most affected. This appears in captions, helper text, timestamps, and low-priority labels.
 
 ## Theme-by-theme result
 
@@ -111,8 +94,6 @@ Nord and One Dark are most affected. This appears in captions, helper text, time
 **Everforest:** The green palette propagates cleanly and the panel bounds remain stable. Selection uses `bg2` instead of the official `bg_visual`, selected secondary text is only 4.30:1, and pressed controls are the weakest of the four alternate palettes.
 
 **Nord:** The blue-gray palette is consistent and geometry is clean. Error red and muted labels are weak, and `nord3` is being used where Nord's selection surface is `nord2`.
-
-**One Dark:** This is the highest-risk alternate theme. Its compressed palette makes secondary text, hover states, selected-row details, and Handy tab selection difficult to distinguish. The panels remain structurally intact, but the visual hierarchy is not reliable.
 
 ## Coverage limits
 

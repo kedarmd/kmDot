@@ -22,7 +22,6 @@ LauncherBase {
     if (name === "tokyonight") return "TokyoNight · Night"
     if (name === "catppuccin") return "Catppuccin · Mocha"
     if (name === "everforest") return "Everforest · Dark"
-    if (name === "onedark") return "One Dark"
     return name.charAt(0).toUpperCase() + name.slice(1)
   }
 
@@ -31,7 +30,6 @@ LauncherBase {
     if (name === "catppuccin") return "\uf00a" // grid
     if (name === "everforest") return "\uf0ac" // globe
     if (name === "nord") return "\uf011" // power
-    if (name === "onedark") return "\uf120" // terminal
     return "\uf1fc" // paint brush for an unrecognized future theme
   }
 

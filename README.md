@@ -61,7 +61,7 @@ Or via the quickshell theme launcher (Super+T, after sync):
 ~/.config/kmdot/quickshell/scripts/toggle.sh kmdot-theme
 ```
 
-Themes: catppuccin, everforest, nord, onedark, tokyonight
+Themes: catppuccin, everforest, nord, tokyonight
 
 ## Tmux
 

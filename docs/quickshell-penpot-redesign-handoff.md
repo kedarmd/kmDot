@@ -59,7 +59,7 @@ The user subsequently said “Good” after the deployed DND change. The 20px ru
 
 ### Alternate-theme visual validation — 2026-10-14
 
-The four alternate themes were rendered independently through the current Quickshell implementation: Catppuccin Mocha, Everforest dark hard, Nord, and One Dark. Each theme has 61 captured states covering the bar, launchers, nested menus, panels, controls, notification/reply states, and lock/lock-error states. The evidence inventory and screenshots are temporary under `/tmp/kmdot-theme-validation/`; the durable findings are recorded in [quickshell-theme-visual-validation.md](quickshell-theme-visual-validation.md).
+The three alternate themes were rendered independently through the current Quickshell implementation: Catppuccin Mocha, Everforest dark hard, and Nord. Each theme has 61 captured states covering the bar, launchers, nested menus, panels, controls, notification/reply states, and lock/lock-error states. The evidence inventory and screenshots are temporary under `/tmp/kmdot-theme-validation/`; the durable findings are recorded in [quickshell-theme-visual-validation.md](quickshell-theme-visual-validation.md).
 
 The palette plumbing works across all four themes, with no observed TokyoNight color leakage or panel clipping. The contrast, selected-row, tab, error, muted-text, selection-role and lock power-control findings from that review were fixed and recorded in the remediation follow-up. Notification-center captures still need to be repeated after reopening the fixture. The SDDM palette roles were source-reviewed, but live per-theme greeter screenshots and real authentication flows remain unverified.
 

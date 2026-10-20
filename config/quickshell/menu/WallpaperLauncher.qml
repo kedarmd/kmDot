@@ -40,7 +40,6 @@ Item {
     if (name === "tokyonight") return "TokyoNight · Night"
     if (name === "catppuccin") return "Catppuccin · Mocha"
     if (name === "everforest") return "Everforest · Dark Hard"
-    if (name === "onedark") return "One Dark"
     if (name === "nord") return "Nord"
     return name
   }

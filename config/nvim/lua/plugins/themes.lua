@@ -7,9 +7,6 @@ return {
 		"arcticicestudio/nord-vim",
 	},
 	{
-		"navarasu/onedark.nvim",
-	},
-	{
 		"folke/tokyonight.nvim",
 	},
 	{

@@ -2,7 +2,7 @@
 
 Date: 2026-10-21
 
-Status: TokyoNight, Catppuccin, and Everforest have been reviewed and approved. Nord is now under individual review. One Dark remains draft research and is not approved or declared complete. Continue one theme at a time after user review.
+Status: TokyoNight, Catppuccin, and Everforest have been reviewed and approved. Nord remains under individual review. Continue one theme at a time after user review.
 
 ## Contract
 
@@ -42,17 +42,11 @@ The Hard palette maps `bg_dim` to the deepest shell background and `bg0` to the 
 
 Main background is nord0; popup cards and inputs use nord1. Inner cards and hover surfaces use nord2 to remain distinct from their parent surface; list selection also uses nord2 with nord4 text, matching the official port's inactive selection rows. A separate nord8 outline identifies focused controls; it does not recolor the selected monitor tile. Badges, actions and progress use nord8 with nord0 foreground, following the port's badges and primary buttons. Body text uses nord4; secondary copy uses the port's 90% nord4 description foreground, and helper text follows its 60% nord4 placeholder treatment. Nord3 supplies visible popup frames and separators, following the port's peek-view border and Nord's subtle guide role. Error text retains the explicit diagnostic red instead of being silently replaced with white.
 
-### Original One Dark UI
-
-Atom [UI variables](https://github.com/atom/one-dark-ui/blob/master/styles/ui-variables.less), [derived UI roles](https://github.com/atom/one-dark-ui/blob/master/styles/ui-variables-custom.less), [original syntax input](https://github.com/atom/one-dark-syntax/blob/master/styles/colors.less).
-
-The UI formulas were evaluated with the original syntax background HSL(220,13%,18%). Main/background/popup/input roles are #282c34/#21252b/#252830/#1b1d23. Body text is UI #9da5b4; list selection #3a3f4b with white selected text. Controls use #568af2; accent copy uses #759ef2; buttons/badges use #4d78cc with white text. Syntax blue #61afef is not substituted for the UI accent. Diagnostic foregrounds and semantic button backgrounds retain their separate upstream values. Hover emphasizes the existing focus border rather than computing a new color.
-
 ## Cross-application variants
 
 There is no single accent shared by every official port. Ghostty has terminal roles; editors have syntax and application UI roles. This change aligns corresponding roles and records the chosen upstream precedent.
 
-The current Neovim configuration uses Everforest's default contrast rather than Hard, and `navarasu/onedark.nvim` with `style = "darker"` rather than original Atom One Dark. Those variants can legitimately differ from these palettes. This audit preserves those app configurations; changing them would be a separate variant-alignment decision. Catppuccin uses Mocha and TokyoNight explicitly uses Night.
+The current Neovim configuration uses Everforest's default contrast rather than Hard. That variant can legitimately differ from the Quickshell palette. Catppuccin uses Mocha and TokyoNight explicitly uses Night.
 
 ## Validation
 
@@ -102,4 +96,4 @@ Follow-up review exposed missing monochrome SVG icons when `text_alt` carried No
 
 The Nord control off track/thumb use Nord1/Nord3 respectively, making the off state distinct while using canonical surface and UI-guide swatches. Other themes' `control_off`/`on_control_off` map to the former surface_alt/muted pair so their previous rendering is retained.
 
-User asked whether these direct QML edits alter previously approved themes. Added an explicit `device_inactive` palette role: TokyoNight, Catppuccin, and Everforest map it to the same swatch their Bluetooth rows used before (`surface_alt`); Nord maps it to transparent. Captured the Bluetooth panel under all four themes at `/tmp/kmdot-theme-audit/nord-review/bluetooth-theme-scope.png` and confirmed the three approved themes retain their filled inactive rows. The shared SVG fix only handles alpha colors; all three approved palettes have opaque `text_alt`, so the rendered icon output is unchanged there.
+User asked whether these direct QML edits alter previously approved themes. Added an explicit `device_inactive` palette role: TokyoNight, Catppuccin, and Everforest map it to the same swatch their Bluetooth rows used before (`surface_alt`); Nord maps it to transparent. Captured the Bluetooth panel under the reviewed themes at `/tmp/kmdot-theme-audit/nord-review/bluetooth-theme-scope.png` and confirmed the approved themes retain their filled inactive rows. The shared SVG fix only handles alpha colors; the approved palettes have opaque `text_alt`, so the rendered icon output is unchanged there.
