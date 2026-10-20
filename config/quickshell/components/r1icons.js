@@ -112,5 +112,17 @@ function source(name, color, accent) {
     // Qt serializes translucent colors as #AARRGGBB; SVG paint colors use RGB.
     return /^#[0-9a-fA-F]{8}$/.test(hex) ? "#" + hex.slice(3) : hex;
   }
-  return svg ? "data:image/svg+xml," + encodeURIComponent(svg.replace(/#c0caf5/g, svgColor(color)).replace(/#7aa2f7/g, svgColor(accent || color))) : "";
+  if (!svg) return "";
+
+  // Replace source swatches with placeholders first. Directly replacing the
+  // stroke with a color that equals the source accent swatch makes the next
+  // replacement recolor that stroke too (e.g. TokyoNight primary blue).
+  const strokeToken = "__KMDOT_ICON_STROKE__";
+  const accentToken = "__KMDOT_ICON_ACCENT__";
+  const themedSvg = svg
+    .replace(/#c0caf5/g, strokeToken)
+    .replace(/#7aa2f7/g, accentToken)
+    .split(strokeToken).join(svgColor(color))
+    .split(accentToken).join(svgColor(accent || color));
+  return "data:image/svg+xml," + encodeURIComponent(themedSvg);
 }

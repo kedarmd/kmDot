@@ -14,7 +14,7 @@ Item {
     width: 40
     height: 32
     active: true
-    fill: Tokens.primaryContainer
+    fill: Colors.base
     hovered: mouse.containsMouse
     pressed: mouse.pressed
 
@@ -24,7 +24,8 @@ Item {
       iconName: "kmdot"
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 24
-      color: Tokens.on_primary_container
+      color: Colors.primary
+      accentColor: Colors.primary_alt
     }
   }
 
