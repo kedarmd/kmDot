@@ -107,5 +107,10 @@ Object.assign(icons, {
 
 function source(name, color, accent) {
   const svg = icons[name];
-  return svg ? "data:image/svg+xml," + encodeURIComponent(svg.replace(/#c0caf5/g, String(color)).replace(/#7aa2f7/g, String(accent || color))) : "";
+  function svgColor(value) {
+    const hex = String(value);
+    // Qt serializes translucent colors as #AARRGGBB; SVG paint colors use RGB.
+    return /^#[0-9a-fA-F]{8}$/.test(hex) ? "#" + hex.slice(3) : hex;
+  }
+  return svg ? "data:image/svg+xml," + encodeURIComponent(svg.replace(/#c0caf5/g, svgColor(color)).replace(/#7aa2f7/g, svgColor(accent || color))) : "";
 }

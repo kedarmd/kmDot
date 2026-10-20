@@ -3,6 +3,8 @@ surface
 surface_alt
 surface_high
 surface_highest
+device_inactive
+device_inactive_outline
 text
 text_alt
 muted
@@ -40,3 +42,6 @@ cursor
 scrim
 control
 on_control
+control_off
+on_control_off
+control_off_outline

@@ -77,12 +77,14 @@ PopupBase {
       readonly property bool busy: root.busyPath === modelData.path
       width: parent.width; height: 72; radius: 16
       opacity: root.radioEnabled ? 1 : 0.55
-      color: modelData.connected || busy ? Tokens.primaryContainer : Colors.surface_alt
+      color: modelData.connected || busy ? Tokens.primaryContainer : Colors.device_inactive
+      border.width: modelData.connected || busy ? 0 : 1
+      border.color: Colors.device_inactive_outline
       Row { anchors.fill: parent; anchors.margins: 16; spacing: 16
-        R1Icon { glyph: modelData.icon; color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter }
+        R1Icon { glyph: modelData.icon; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter }
         Column { width: parent.width - 72; anchors.verticalCenter: parent.verticalCenter
-          Text { width: parent.width; text: modelData.name; color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
-          Text { width: parent.width; text: root.deviceSubtitle(modelData); color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text_alt; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+          Text { width: parent.width; text: modelData.name; color: busy ? Tokens.on_primary_container : Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
+          Text { width: parent.width; text: root.deviceSubtitle(modelData); color: busy ? Tokens.on_primary_container : modelData.connected ? Colors.success : Colors.text_alt; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
         }
         R1Icon { id: rowSpinner; visible: root.busyPath === modelData.path; glyph: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: !Tokens.reducedMotion && rowSpinner.visible } }
       }
@@ -93,7 +95,7 @@ PopupBase {
         anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
         glyph: modelData.connected ? "\uf00c" : "\uf105"
-        color: modelData.connected ? Tokens.on_primary_container : Colors.text_alt
+        color: modelData.connected ? Colors.success : Colors.text_alt
         font.family: "JetBrainsMono Nerd Font Propo"
         font.pixelSize: 13
       }
@@ -120,9 +122,11 @@ PopupBase {
       Rectangle {
         width: 52; height: 32; radius: 16
         anchors.verticalCenter: parent.verticalCenter
-        color: root.radioEnabled ? Colors.control : Colors.surface_alt
+        color: root.radioEnabled ? Colors.control : Colors.control_off
+        border.width: root.radioEnabled ? 0 : 1
+        border.color: Colors.control_off_outline
         opacity: root.adapter ? 1 : 0.5
-        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_control : Colors.muted; Behavior on x { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
+        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_control : Colors.on_control_off; Behavior on x { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
         MouseArea { anchors.fill: parent; enabled: !!root.adapter; cursorShape: Qt.PointingHandCursor; onClicked: BluetoothStore.setEnabled(!root.radioEnabled) }
       }
     }

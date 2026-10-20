@@ -337,12 +337,14 @@ PopupBase {
       Rectangle {
         anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
         width: 52; height: 30; radius: 15
-        color: DnDState.dndEnabled ? Colors.control : Colors.surface_alt
+        color: DnDState.dndEnabled ? Colors.control : Colors.control_off
+        border.width: DnDState.dndEnabled ? 0 : 1
+        border.color: Colors.control_off_outline
         Rectangle {
           anchors.verticalCenter: parent.verticalCenter
           x: DnDState.dndEnabled ? parent.width - width - 4 : 4
           width: 22; height: 22; radius: 11
-          color: DnDState.dndEnabled ? Colors.on_control : Colors.muted
+          color: DnDState.dndEnabled ? Colors.on_control : Colors.on_control_off
           Behavior on x { NumberAnimation { duration: Tokens.notificationMotion; easing.type: Tokens.motionEasing } }
         }
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: DnDState.dndEnabled = !DnDState.dndEnabled }

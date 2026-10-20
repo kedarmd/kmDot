@@ -51,6 +51,7 @@ Item {
     width: root.font.pixelSize
     height: root.font.pixelSize
     visible: root.vectorIcon
+    opacity: root.color.a
     source: root.tintVector
       ? Icons.source(root.resolvedName, "#FFFFFF", "#FFFFFF")
       : Icons.source(root.resolvedName, root.color, root.accentColor)
