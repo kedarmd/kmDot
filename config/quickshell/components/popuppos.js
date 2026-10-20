@@ -1,17 +1,30 @@
 // Shared geometry helpers for top-bar dropdown cards. Popup windows are
 // fullscreen PanelWindows pinned to one screen; the card inside is centered
-// under the global center X of the bar module that opened it (the anchorItem
-// seam) and clamped to the screen edges.
+// under the anchor module in that window's local coordinates and clamped to
+// the screen edges.
+
+function anchorForItem(item, screens, owningWindow) {
+  if (!item) return null
+  try {
+    const win = owningWindow
+    if (win && win.screen) {
+      const local = item.mapToItem(win.contentItem, item.width / 2, 0)
+      return { screen: win.screen, centerX: local.x }
+    }
+  } catch (e) {
+    // Fall through to the coordinate-based fallback for unusual item types.
+  }
+  const x = globalCenterX(item)
+  if (x === null || !isFinite(x)) return null
+  return { screen: screenFor(screens, x), centerX: x, global: true }
+}
 
 function globalCenterX(item) {
-  if (!item) return -1
+  if (!item) return null
   try {
     return item.mapToGlobal(item.width / 2, 0).x
   } catch (e) {
-    const win = item.Window && item.Window.window ? item.Window.window : null
-    if (!win) return -1
-    const pos = item.mapToItem(win.contentItem, item.width / 2, 0)
-    return (win.x || 0) + pos.x
+    return null
   }
 }
 
@@ -29,10 +42,10 @@ function primaryScreen(screens) {
   return screens.length > 0 ? screens[0] : null
 }
 
-function cardXFor(centerGX, cardWidth, screen) {
-  const sX = screen ? screen.x : 0
+function cardXFor(centerX, cardWidth, screen, global = false) {
+  const sX = global && screen ? screen.x : 0
   const sW = screen ? screen.width : 0
-  const cx = centerGX - sX - cardWidth / 2
+  const cx = centerX - sX - cardWidth / 2
   if (sW < cardWidth + 32) return Math.max(16, cx)
   return Math.max(16, Math.min(sW - cardWidth - 16, cx))
 }

@@ -47,7 +47,8 @@ Rectangle {
 
   Behavior on color {
     ColorAnimation {
-      duration: 150
+      duration: Tokens.motionFast
+      easing.type: Tokens.motionEasing
     }
   }
 

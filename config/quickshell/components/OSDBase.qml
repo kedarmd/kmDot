@@ -67,9 +67,8 @@ PanelWindow {
     border.color: Colors.border
     border.width: 1
     opacity: root.opened ? 1 : 0
-    scale: root.opened ? 1 : 0.96
-    Behavior on opacity { NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
-    Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+
+    Behavior on opacity { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
 
     Text {
       id: glyph
@@ -108,7 +107,7 @@ PanelWindow {
         height: parent.height
         radius: parent.radius
         color: Colors.primary
-        Behavior on width { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
       }
     }
   }

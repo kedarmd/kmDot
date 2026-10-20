@@ -15,7 +15,7 @@ else
     -- External display on the right (offset by 1920 pixels)
     hl.monitor({
         output   = "HDMI-A-1",
-        mode     = "1920x1080@60",
+        mode     = "1920x1080@120",
         position = "1920x0",
         scale    = 1,
     })

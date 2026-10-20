@@ -16,7 +16,10 @@ Singleton {
   // Shared motion timings for the keyboard-driven shell.
   readonly property int motionFast: reducedMotion ? 0 : 120
   readonly property int motionStandard: reducedMotion ? 0 : 180
-  readonly property int motionEmphasized: reducedMotion ? 0 : 240
+  readonly property int motionEmphasized: reducedMotion ? 0 : 220
+  readonly property int motionEasing: Easing.OutCubic
+  readonly property int meterMotion: reducedMotion ? 0 : 80
+  readonly property int busyRotation: 1000
 
   readonly property int notificationMotion: motionStandard
   readonly property int notificationDismissMotion: motionFast

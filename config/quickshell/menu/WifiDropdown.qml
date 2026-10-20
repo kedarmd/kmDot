@@ -53,7 +53,7 @@ PopupBase {
         root.scope.wifiAddPopup.editingExisting = false
         root.scope.wifiAddPopup.failed = false
         root.scope.wifiAddPopup.resultText = ""
-        root.scope.wifiAddPopup.anchorGX = root.anchorGX
+        root.inheritAnchor(root.scope.wifiAddPopup)
         root.scope.wifiAddPopup.returnPopup = root
         root.scope.wifiAddPopup.open()
       }
@@ -84,7 +84,7 @@ PopupBase {
         root.scope.wifiAddPopup.editingExisting = !!pending.saved
         root.scope.wifiAddPopup.failed = true
         root.scope.wifiAddPopup.resultText = Wifi.errorText || "Connection failed"
-        root.scope.wifiAddPopup.anchorGX = root.anchorGX
+        root.inheritAnchor(root.scope.wifiAddPopup)
         root.scope.wifiAddPopup.returnPopup = root
         root.scope.wifiAddPopup.open()
       }
@@ -106,7 +106,7 @@ PopupBase {
           Text { width: parent.width; text: modelData.ssid; color: Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
           Text { text: root.busySsid === modelData.ssid ? (root.busyAction === "disconnect" ? "Disconnecting..." : "Connecting...") : (modelData.active ? "Connected · Secured" : (modelData.open ? "Open · " : "Saved · ") + root.signalLabel(modelData.signal)); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
         }
-        R1Icon { id: rowSpinner; visible: root.busySsid === modelData.ssid; glyph: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: 900; loops: Animation.Infinite; running: rowSpinner.visible } }
+        R1Icon { id: rowSpinner; visible: root.busySsid === modelData.ssid; glyph: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: !Tokens.reducedMotion && rowSpinner.visible } }
       }
       MouseArea { anchors.fill: parent; enabled: root.radioEnabled && !root.busySsid; cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor; onClicked: root.activate(modelData) }
       R1Icon { anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; visible: modelData.active; glyph: "\uf00c"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16 }
@@ -139,7 +139,7 @@ PopupBase {
         width: 52; height: 32; radius: 16
         anchors.verticalCenter: parent.verticalCenter
         color: root.radioEnabled ? Colors.primary : Colors.surface_alt
-        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_primary : Colors.muted; Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } } }
+        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_primary : Colors.muted; Behavior on x { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Wifi.toggleRadio() }
       }
     }
@@ -212,7 +212,7 @@ PopupBase {
         textSize: 14
         enabled: root.radioEnabled
         opacity: root.radioEnabled ? 1 : 0.5
-        onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.ssid = ""; root.scope.wifiAddPopup.password = ""; root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.scope.wifiAddPopup.anchorGX = root.anchorGX; root.scope.wifiAddPopup.returnPopup = root; root.scope.wifiAddPopup.open() }
+        onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.ssid = ""; root.scope.wifiAddPopup.password = ""; root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.inheritAnchor(root.scope.wifiAddPopup); root.scope.wifiAddPopup.returnPopup = root; root.scope.wifiAddPopup.open() }
     }
   }
 

@@ -63,7 +63,10 @@ LauncherBase {
   }
 
   onActivated: function(item) {
-    root.runCommand("setsid nohup $HOME/.config/kmdot/theme-switcher/main.sh " + item.theme + " >/dev/null 2>&1 < /dev/null &")
+    // Keep the switch detached: the quickshell hook restarts its parent. Preserve
+    // failures in a log and notify after the switcher exits so a hook error is
+    // visible instead of looking like the selection did nothing.
+    root.runCommand("setsid nohup sh -c '\"$HOME/.config/kmdot/theme-switcher/main.sh\" \"$1\" > \"$HOME/.cache/kmdot-theme-switcher.log\" 2>&1; status=$?; if [ $status -ne 0 ]; then notify-send \"Theme switch failed\" \"$(tail -n 3 \"$HOME/.cache/kmdot-theme-switcher.log\")\"; fi' sh " + item.theme + " </dev/null >/dev/null 2>&1 &")
   }
 
   Process {

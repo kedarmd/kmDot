@@ -32,10 +32,11 @@ PanelWindow {
   onOpenedChanged: root.openedChange()
   property var scope: null
   // anchorItem seam: the bar module sets this to itself right before toggling
-  // so the card centers under that module (see applyAnchor). anchorGX is the
-  // consumed global center X; sub-popups inherit it by copying it before open().
+  // so the card opens on that module's screen (see applyAnchor). anchorX is
+  // local to that screen; sub-popups may inherit it before opening.
   property var anchorItem: null
-  property real anchorGX: -1
+  property real anchorX: -1
+  property bool anchorGlobal: false
   property string sockName: "kmdot-connection"
   property bool socketEnabled: true
   property string title: "Connections"
@@ -66,23 +67,24 @@ PanelWindow {
 
   function applyAnchor() {
     if (root.anchorItem) {
-      const gx = Pos.globalCenterX(root.anchorItem)
+      root.anchorX = -1
+      root.anchorGlobal = false
+      const anchor = Pos.anchorForItem(root.anchorItem, Quickshell.screens,
+        root.anchorItem.QsWindow.window)
       root.anchorItem = null
-      if (gx >= 0) root.anchorGX = gx
+      if (anchor) {
+        if (anchor.screen) root.screen = anchor.screen
+        root.anchorX = anchor.centerX
+        root.anchorGlobal = !!anchor.global
+      }
     }
-    if (root.anchorGX >= 0) {
-      const s = Pos.screenFor(Quickshell.screens, root.anchorGX)
-      if (s) root.screen = s
-      else root.pickScreen()
-    } else {
-      root.pickScreen()
-    }
+    if (root.anchorX < 0 || !root.screen) root.pickScreen()
   }
 
   function open() {
     if (root.scope && root.scope.closeAllExcept) root.scope.closeAllExcept(root)
-    root.opened = true
     root.applyAnchor()
+    root.opened = true
     focusTimer.start()
     root.refreshItems()
   }
@@ -91,6 +93,13 @@ PanelWindow {
   function toggle() { if (root.opened) root.close(); else root.open() }
   function refreshItems() {}
   function openedChange() {}
+
+  function inheritAnchor(popup) {
+    if (!popup) return
+    popup.screen = root.screen
+    popup.anchorX = root.anchorX
+    popup.anchorGlobal = root.anchorGlobal
+  }
 
   SocketServer {
     active: root.socketEnabled
@@ -171,21 +180,17 @@ PanelWindow {
       border.width: 1
       border.color: Colors.border
       opacity: root.opened ? 1 : 0
-      scale: !root.animatePresentation || root.opened ? 1 : 0.96
 
       // Resolve geometry immediately: animating height makes newly mapped
       // panels unroll from the top while their opacity is still fading in.
       Behavior on opacity {
-        NumberAnimation { duration: root.animatePresentation ? Tokens.motionStandard : 0; easing.type: Easing.OutCubic }
-      }
-      Behavior on scale {
-        NumberAnimation { duration: root.animatePresentation ? Tokens.motionEmphasized : 0; easing.type: Easing.OutBack }
+        NumberAnimation { duration: root.animatePresentation ? Tokens.motionStandard : 0; easing.type: Tokens.motionEasing }
       }
       y: root.centerCard ? (parent.height - card.height) / 2 : 64
       x: root.centerCard
         ? (parent.width - card.width) / 2
-        : root.anchorGX >= 0
-        ? Pos.cardXFor(root.anchorGX, card.width, root.screen)
+        : root.anchorX >= 0
+        ? Pos.cardXFor(root.anchorX, card.width, root.screen, root.anchorGlobal)
         : parent.width - card.width - 16
 
       MouseArea { anchors.fill: parent }

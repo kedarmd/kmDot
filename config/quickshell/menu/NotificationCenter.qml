@@ -343,7 +343,7 @@ PopupBase {
           x: DnDState.dndEnabled ? parent.width - width - 4 : 4
           width: 22; height: 22; radius: 11
           color: DnDState.dndEnabled ? Colors.base : Colors.text_alt
-          Behavior on x { NumberAnimation { duration: Tokens.notificationMotion } }
+          Behavior on x { NumberAnimation { duration: Tokens.notificationMotion; easing.type: Tokens.motionEasing } }
         }
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: DnDState.dndEnabled = !DnDState.dndEnabled }
       }
@@ -390,7 +390,6 @@ PopupBase {
           radius: 24
           color: Colors.surface_high
           clip: true
-          Behavior on height { enabled: root.animateGroups; NumberAnimation { duration: Tokens.notificationMotion; easing.type: Easing.OutCubic } }
 
           Item {
             id: groupHeader
@@ -406,7 +405,7 @@ PopupBase {
               anchors.right: dismissGroupButton.left; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter
               glyph: "\uf107"; font.pixelSize: 16; color: Colors.text_alt
               rotation: groupCard.groupData.expanded ? 180 : 0
-              Behavior on rotation { NumberAnimation { duration: Tokens.notificationMotion; easing.type: Easing.OutCubic } }
+              Behavior on rotation { NumberAnimation { duration: Tokens.notificationMotion; easing.type: Tokens.motionEasing } }
             }
             R1Icon {
               id: dismissGroupButton

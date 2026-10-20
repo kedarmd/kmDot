@@ -324,7 +324,7 @@ PopupBase {
               }
               MouseArea {
                 anchors.fill: parent; hoverEnabled: true
-                onEntered: { if (shortTitle.implicitWidth > titleClip.width) { titleClip.marquee = true; marquee.restart() } }
+                onEntered: { if (!Tokens.reducedMotion && shortTitle.implicitWidth > titleClip.width) { titleClip.marquee = true; marquee.restart() } }
                 onExited: { marquee.stop(); titleClip.marquee = false }
               }
               NumberAnimation {

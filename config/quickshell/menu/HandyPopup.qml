@@ -200,7 +200,7 @@ PopupBase {
           spacing: 8
           clip: true
           interactive: contentHeight > height
-          Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutCubic } }
+          Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing } }
           model: root.models
           delegate: Rectangle {
             required property var modelData
@@ -222,7 +222,7 @@ PopupBase {
           height: root.historyListHeight + 16
           x: root.tab === 1 ? 0 : width * root.tabDirection
           clip: true
-          Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutCubic } }
+          Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing } }
           ListView {
           id: historyList
           onVisibleChanged: {
@@ -244,8 +244,6 @@ PopupBase {
             readonly property bool selected: root.selectedHistoryId === modelData.id
             width: historyList.width; height: selected ? 320 : 72; radius: selected ? 24 : 16
             color: Tokens.surfaceContainer
-            Behavior on height { NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic } }
-            Behavior on radius { NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic } }
             Text {
               visible: historyRow.selected
               anchors.left: parent.left; anchors.leftMargin: 16; anchors.top: parent.top; anchors.topMargin: 20
@@ -270,7 +268,7 @@ PopupBase {
                   anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
                   width: parent.width * (historyRow.isPlaying ? root.progress : 0)
                   color: Colors.primary
-                  Behavior on width { NumberAnimation { duration: 120 } }
+                  Behavior on width { NumberAnimation { duration: Tokens.meterMotion; easing.type: Easing.Linear } }
                 }
               }
               Item {

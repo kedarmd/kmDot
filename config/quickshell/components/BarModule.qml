@@ -15,7 +15,7 @@ Item {
   width: Math.max(40, moduleLabel.implicitWidth + 16)
 
   Behavior on width {
-    NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+    NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
   }
 
   // -- display props (subclass supplies) --
@@ -49,8 +49,8 @@ Item {
   NumberAnimation on spinAngle {
     from: 0
     to: 360
-    duration: 1200
-    running: root.busy
+    duration: Tokens.busyRotation; easing.type: Easing.Linear
+    running: root.busy && !Tokens.reducedMotion
     loops: Animation.Infinite
   }
 
@@ -94,11 +94,11 @@ Item {
         Behavior on color {
           ColorAnimation {
             duration: Tokens.reducedMotion ? 0 : (root.smoothIconColor ? Tokens.motionEmphasized : Tokens.motionFast)
-            easing.type: Easing.InOutCubic
+            easing.type: Tokens.motionEasing
           }
         }
         Behavior on opacity {
-          NumberAnimation { duration: Tokens.motionFast }
+          NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing }
         }
       }
 
@@ -113,10 +113,10 @@ Item {
         opacity: root.dimmed ? 0.4 : 1.0
 
         Behavior on color {
-          ColorAnimation { duration: Tokens.motionFast }
+          ColorAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing }
         }
         Behavior on opacity {
-          NumberAnimation { duration: Tokens.motionFast }
+          NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing }
         }
       }
 

@@ -66,13 +66,10 @@ WlSessionLockSurface {
     border.width: 1
     anchors.centerIn: parent
     opacity: root.transitionOut ? 0 : 1
-    scale: root.transitionOut ? 0.98 : 1
+
 
     Behavior on opacity {
-      NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-    }
-    Behavior on scale {
-      NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.InCubic }
+      NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
     }
 
     Column {
@@ -208,7 +205,7 @@ WlSessionLockSurface {
     opacity: root.transitionOut ? 0 : 1
 
     Behavior on opacity {
-      NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+      NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
     }
 
     Repeater {

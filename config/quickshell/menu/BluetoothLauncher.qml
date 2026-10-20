@@ -121,7 +121,7 @@ LauncherBase {
         || !root.scope || !root.scope.confirmPopup) return
     root.forgetPath = item.path
     root.closeLauncher()
-    root.scope.confirmPopup.anchorGX = -1
+    root.scope.confirmPopup.anchorX = -1
     root.scope.confirmPopup.ask("Forget Bluetooth device", "Remove '" + item.label + "'? You will need to pair it again to use it.")
   }
 

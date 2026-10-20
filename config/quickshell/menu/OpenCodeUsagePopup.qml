@@ -125,14 +125,14 @@ PopupBase {
       color: Colors.surface_alt
       R1Icon { anchors.left: parent.left; anchors.leftMargin: 14; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf121"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14 }
       Text { anchors.left: parent.left; anchors.leftMargin: 38; anchors.verticalCenter: parent.verticalCenter; text: root.agentName(root.selectedAgent); color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14 }
-      R1Icon { anchors.right: parent.right; anchors.rightMargin: 14; anchors.verticalCenter: parent.verticalCenter; glyph: root.agentMenuOpen ? "\uf078" : "\uf078"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14; rotation: root.agentMenuOpen ? 180 : 0; Behavior on rotation { NumberAnimation { duration: Tokens.motionFast } } }
+      R1Icon { anchors.right: parent.right; anchors.rightMargin: 14; anchors.verticalCenter: parent.verticalCenter; glyph: root.agentMenuOpen ? "\uf078" : "\uf078"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14; rotation: root.agentMenuOpen ? 180 : 0; Behavior on rotation { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
       MouseArea { anchors.fill: parent; onClicked: root.agentMenuOpen = !root.agentMenuOpen }
     }
     Rectangle {
       id: agentMenu
-      visible: root.agentMenuOpen || height > 0
+      visible: root.agentMenuOpen || opacity > 0
       width: parent.width
-      height: root.agentMenuOpen ? menuContent.implicitHeight + 12 : 0
+      height: menuContent.implicitHeight + 12
       y: 46
       radius: 16
       color: Colors.surface_high
@@ -140,8 +140,7 @@ PopupBase {
       border.color: Colors.border
       clip: true
       opacity: root.agentMenuOpen ? 1 : 0
-      Behavior on height { NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic } }
-      Behavior on opacity { NumberAnimation { duration: Tokens.motionFast; easing.type: Easing.OutCubic } }
+      Behavior on opacity { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
       Column {
         id: menuContent
         anchors.fill: parent
@@ -150,6 +149,7 @@ PopupBase {
           model: root.agents
           delegate: Item {
             required property var modelData
+            required property int index
             width: menuContent.width
             height: 38
             Rectangle {
@@ -186,7 +186,7 @@ PopupBase {
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 20
       anchors.verticalCenter: parent.verticalCenter
-      RotationAnimation on rotation { from: 0; to: 360; duration: 900; loops: Animation.Infinite }
+      RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: !Tokens.reducedMotion }
     }
     Text { text: "Loading " + root.agentName(root.selectedAgent) + " usage…"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
   }
@@ -204,7 +204,7 @@ PopupBase {
       height: implicitHeight
       width: parent.width
       spacing: 8
-      Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutCubic } }
+      Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing } }
     Text { width: parent.width; text: root.report ? (root.report.total.costAvailable === false ? root.formatTokens(root.report.total.tokens) + " tokens" : root.formatCost(root.report.total.cost)) : "—"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 40; font.weight: Font.DemiBold }
     Text { width: parent.width; text: root.report ? (root.report.total.costAvailable === false ? "in the last 7 days · cost unavailable" : root.formatTokens(root.report.total.tokens) + " tokens in the last 7 days") : ""; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
     Text { width: parent.width; text: root.report && root.report.weeklyLimit ? "Weekly plan usage · " + root.report.weeklyLimit.usedPercent + "%" : "Daily activity · tokens"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
@@ -285,7 +285,7 @@ PopupBase {
       width: parent.width
       height: Math.min(300, modelList.contentHeight)
       clip: true
-      Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutCubic } }
+      Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing } }
       ListView {
         id: modelList
         anchors.fill: parent

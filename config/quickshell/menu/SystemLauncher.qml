@@ -27,7 +27,7 @@ LauncherBase {
       // If the shared popup is unavailable, fail closed instead of running it.
       if (!root.scope || !root.scope.confirmPopup) return
       root.pendingCommand = item.command
-      root.scope.confirmPopup.anchorGX = -1
+      root.scope.confirmPopup.anchorX = -1
       root.scope.confirmPopup.ask("Shut down?", "Your laptop will power off.", {
         confirmText: "Shut down",
         supportingText: "Save any open work before continuing.",

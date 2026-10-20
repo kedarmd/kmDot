@@ -26,5 +26,10 @@ if [ "${#SERVERS[@]}" -eq 0 ]; then
 fi
 
 for SERVER_ADDRESS in "${SERVERS[@]}"; do
-  nvim --server "$SERVER_ADDRESS" --remote-send "$COMMAND"
+  # Socket files can outlive their Neovim server (for example after a crash).
+  # A failed live update must not abort the main theme switcher; the colorscheme
+  # file was already written and new Neovim instances will use it normally.
+  if ! nvim --server "$SERVER_ADDRESS" --remote-send "$COMMAND" 2>/dev/null; then
+    echo "Skipping unavailable nvim server: $SERVER_ADDRESS" >&2
+  fi
 done

@@ -27,7 +27,7 @@ Item {
   width: root.open ? chevronWidth + modulesWidth + 8 : chevronWidth
 
   Behavior on width {
-    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+    NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
   }
 
   Rectangle {
@@ -38,7 +38,7 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     color: root.open ? Tokens.primaryContainer : "transparent"
     Behavior on color {
-      ColorAnimation { duration: 180 }
+      ColorAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
     }
 
     R1Icon {
@@ -70,7 +70,7 @@ Item {
     opacity: root.open ? 1 : 0
     enabled: root.open
     Behavior on opacity {
-      NumberAnimation { duration: 150 }
+      NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing }
     }
   }
 

@@ -181,25 +181,24 @@ PanelWindow {
       opacity: root.opened ? 1 : 0
 
       Behavior on opacity {
-        NumberAnimation { duration: Tokens.notificationMotion; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: Tokens.notificationMotion; easing.type: Tokens.motionEasing }
       }
 
       model: popupModel
 
       add: Transition {
         ParallelAnimation {
-          NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Tokens.notificationMotion; easing.type: Easing.OutCubic }
-          NumberAnimation { property: "y"; from: Tokens.reducedMotion ? 0 : -8; duration: Tokens.notificationMotion; easing.type: Easing.OutCubic }
+          NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Tokens.notificationMotion; easing.type: Tokens.motionEasing }
         }
       }
       remove: Transition {
         ParallelAnimation {
-          NumberAnimation { property: "opacity"; to: 0; duration: Tokens.notificationDismissMotion; easing.type: Easing.OutCubic }
+          NumberAnimation { property: "opacity"; to: 0; duration: Tokens.notificationDismissMotion; easing.type: Tokens.motionEasing }
 
         }
       }
       displaced: Transition {
-        NumberAnimation { properties: "x,y"; duration: Tokens.notificationMotion; easing.type: Easing.OutCubic }
+        NumberAnimation { properties: "x,y"; duration: Tokens.notificationMotion; easing.type: Tokens.motionEasing }
       }
 
       delegate: Rectangle {

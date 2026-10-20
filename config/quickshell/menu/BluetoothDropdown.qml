@@ -55,7 +55,7 @@ PopupBase {
     root.forgetPath = item.path
     if (root.scope && root.scope.confirmPopup) {
       root.close()
-      root.scope.confirmPopup.anchorGX = root.anchorGX
+      root.inheritAnchor(root.scope.confirmPopup)
       root.scope.confirmPopup.ask("Forget Bluetooth device", "Remove '" + item.name + "'" + (item.connected ? " and disconnect it" : "") + "? You will need to pair it again to use it.")
     }
   }
@@ -84,7 +84,7 @@ PopupBase {
           Text { width: parent.width; text: modelData.name; color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
           Text { width: parent.width; text: root.deviceSubtitle(modelData); color: modelData.connected || busy ? Tokens.on_primary_container : Colors.text_alt; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
         }
-        R1Icon { id: rowSpinner; visible: root.busyPath === modelData.path; glyph: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: 900; loops: Animation.Infinite; running: rowSpinner.visible } }
+        R1Icon { id: rowSpinner; visible: root.busyPath === modelData.path; glyph: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: !Tokens.reducedMotion && rowSpinner.visible } }
       }
       MouseArea { anchors.fill: parent; enabled: root.radioEnabled && !root.busyPath; onClicked: root.activate(modelData) }
       R1Icon {
@@ -122,7 +122,7 @@ PopupBase {
         anchors.verticalCenter: parent.verticalCenter
         color: root.radioEnabled ? Colors.primary : Colors.surface_alt
         opacity: root.adapter ? 1 : 0.5
-        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_primary : Colors.muted; Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } } }
+        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_primary : Colors.muted; Behavior on x { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
         MouseArea { anchors.fill: parent; enabled: !!root.adapter; cursorShape: Qt.PointingHandCursor; onClicked: BluetoothStore.setEnabled(!root.radioEnabled) }
       }
     }
@@ -174,7 +174,7 @@ PopupBase {
     text: "Pair new device"
     enabled: root.radioEnabled
     opacity: root.radioEnabled ? 1 : 0.5
-    onClicked: { if (root.scope && root.scope.bluetoothAddPopup) { root.close(); root.scope.bluetoothAddPopup.anchorGX = root.anchorGX; root.scope.bluetoothAddPopup.returnPopup = root; root.scope.bluetoothAddPopup.open() } }
+    onClicked: { if (root.scope && root.scope.bluetoothAddPopup) { root.close(); root.inheritAnchor(root.scope.bluetoothAddPopup); root.scope.bluetoothAddPopup.returnPopup = root; root.scope.bluetoothAddPopup.open() } }
   }
 
   Connections {

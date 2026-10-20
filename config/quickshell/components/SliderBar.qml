@@ -63,10 +63,10 @@ Item {
     color: root.thumbColor
 
     Behavior on width {
-      NumberAnimation { duration: 120 }
+      NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing }
     }
     Behavior on height {
-      NumberAnimation { duration: 120 }
+      NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing }
     }
 
     // Grow on hover/press, snap back when released.

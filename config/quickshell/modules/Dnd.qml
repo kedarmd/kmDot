@@ -43,7 +43,7 @@ Item {
       color: Colors.primary
 
       Behavior on opacity {
-        NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
       }
     }
   }

@@ -274,7 +274,7 @@ Column {
   Text { width: parent.width - 164; text: "INPUT DEVICES"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Tokens.mutedText; verticalAlignment: Text.AlignVCenter }
     Rectangle {
       width: 152; height: 4; radius: 2; anchors.verticalCenter: parent.verticalCenter; color: Tokens.outlineVariant
-      Rectangle { width: parent.width * root.micLevel; height: parent.height; radius: parent.radius; color: Colors.success; Behavior on width { NumberAnimation { duration: 80 } } }
+      Rectangle { width: parent.width * root.micLevel; height: parent.height; radius: parent.radius; color: Colors.success; Behavior on width { NumberAnimation { duration: Tokens.meterMotion; easing.type: Easing.Linear } } }
     }
   }
 

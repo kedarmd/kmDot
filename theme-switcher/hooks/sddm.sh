@@ -2,10 +2,10 @@
 set -euo pipefail
 
 THEME="$1"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SDDM_HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE="$HOME/.config/kmdot/themes/$THEME/quickshell.conf"
 if [ ! -f "$SOURCE" ]; then
-  SOURCE="$(cd "$SCRIPT_DIR/../.." && pwd)/themes/$THEME/quickshell.conf"
+  SOURCE="$(cd "$SDDM_HOOK_DIR/../.." && pwd)/themes/$THEME/quickshell.conf"
 fi
 TARGET="/var/tmp/kmdot-sddm-theme.conf"
 TEMP="${TARGET}.tmp.$$"

@@ -193,7 +193,7 @@ Item {
       anchors.fill: parent
       color: Qt.rgba(0, 0, 0, root.opened ? 0.4 : 0)
       Behavior on color {
-        ColorAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+        ColorAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
       }
     }
 
@@ -212,13 +212,9 @@ Item {
       border.width: 1
       border.color: Colors.border
       opacity: root.opened ? 1 : 0
-      scale: root.opened ? 1 : 0.96
 
       Behavior on opacity {
-        NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-      }
-      Behavior on scale {
-        NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+        NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
       }
 
       MouseArea {
@@ -291,16 +287,6 @@ Item {
         cellWidth: Math.floor(width / root.columns)
         cellHeight: 160
         flow: GridView.FlowLeftToRight
-
-        populate: Transition {
-          NumberAnimation { property: "opacity"; from: 0; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-        }
-        add: Transition {
-          NumberAnimation { property: "opacity"; from: 0; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
-        }
-        remove: Transition {
-          NumberAnimation { property: "opacity"; to: 0; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
-        }
 
         delegate: Item {
           required property var modelData

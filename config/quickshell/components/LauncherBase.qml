@@ -130,7 +130,7 @@ Item {
     property: "resultPageOffset"
     to: 0
     duration: Tokens.motionEmphasized
-    easing.type: Easing.OutCubic
+    easing.type: Tokens.motionEasing
     onFinished: root.resultPageTransitionActive = false
   }
   // Mode flips (e.g. Models ↔ History) swap the focus target.
@@ -313,7 +313,7 @@ Item {
     if (Tokens.reducedMotion) { root.resultPageOffset = 0; return }
     root.resultPageTransitionActive = true
     resultsChromeSlide.stop()
-    root.resultPageOffset = resultsList.width * (direction >= 0 ? 1 : -1)
+    root.resultPageOffset = 12 * (direction >= 0 ? 1 : -1)
     resultsChromeSlide.restart()
   }
 
@@ -443,7 +443,7 @@ Item {
       anchors.fill: parent
       color: Qt.rgba(0, 0, 0, root.opened ? 0.4 : 0)
       Behavior on color {
-        ColorAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
+        ColorAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
       }
     }
 
@@ -464,13 +464,9 @@ Item {
       border.width: 1
       border.color: Colors.border
       opacity: root.opened ? 1 : 0
-      scale: root.opened ? 1 : 0.96
 
       Behavior on opacity {
-        NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-      }
-      Behavior on scale {
-        NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.OutBack }
+        NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
       }
 
       MouseArea {
@@ -807,29 +803,7 @@ Item {
         interactive: true
         flickDeceleration: 2500
 
-        populate: Transition {
-          enabled: !root.resultPageTransitionActive
-          ParallelAnimation {
-            NumberAnimation { property: "opacity"; from: 0; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-            NumberAnimation { property: "y"; from: 8; duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-          }
-        }
-        add: Transition {
-          enabled: !root.resultPageTransitionActive
-          ParallelAnimation {
-            NumberAnimation { property: "opacity"; from: 0; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
-            NumberAnimation { property: "y"; from: 6; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
-          }
-        }
-        remove: Transition {
-          enabled: !root.resultPageTransitionActive
-          NumberAnimation { property: "opacity"; to: 0; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
-        }
-        displaced: Transition {
-          enabled: !root.resultPageTransitionActive
-          NumberAnimation { property: "y"; duration: Tokens.motionFast; easing.type: Easing.OutCubic }
-        }
-
+        // List geometry is resolved immediately; the whole surface fades in.
         delegate: Rectangle {
           required property var modelData
           required property int index
@@ -838,12 +812,8 @@ Item {
           radius: 16
           color: root.selectedIndex === index ? Colors.primary_container : "transparent"
 
-          Behavior on height {
-            NumberAnimation { duration: Tokens.motionStandard; easing.type: Easing.OutCubic }
-          }
-
           Behavior on color {
-            ColorAnimation { duration: Tokens.motionFast; easing.type: Easing.OutCubic }
+            ColorAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing }
           }
 
           Row {
@@ -1094,9 +1064,9 @@ Item {
           RotationAnimation on rotation {
             from: 0
             to: 360
-            duration: 900
+            duration: Tokens.busyRotation; easing.type: Easing.Linear
             loops: Animation.Infinite
-            running: root.loading
+            running: !Tokens.reducedMotion && root.loading
           }
         }
 

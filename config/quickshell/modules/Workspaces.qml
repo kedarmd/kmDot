@@ -76,13 +76,13 @@ Item {
           scale: mouseArea.pressed ? 0.9 : 1
 
           Behavior on width {
-            NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.InOutCubic }
+            NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing }
           }
           Behavior on color {
-            ColorAnimation { duration: Tokens.motionEmphasized; easing.type: Easing.InOutCubic }
+            ColorAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing }
           }
           Behavior on scale {
-            NumberAnimation { duration: Tokens.motionFast; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing }
           }
         }
 

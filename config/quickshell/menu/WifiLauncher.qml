@@ -110,7 +110,7 @@ LauncherBase {
     if (action.key !== Qt.Key_Delete || !item || !item.saved || !root.scope || !root.scope.confirmPopup) return
     root.forgetSsid = item.ssid
     root.closeLauncher()
-    root.scope.confirmPopup.anchorGX = -1
+    root.scope.confirmPopup.anchorX = -1
     root.scope.confirmPopup.ask("Forget Wi-Fi network", "Forget '" + item.ssid + "'? You will need to re-enter the password to connect again.")
   }
 
