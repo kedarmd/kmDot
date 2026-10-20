@@ -13,12 +13,28 @@ PopupBase {
   cardMaxHeight: root.tab === 0 ? Math.max(536, root.modelListHeight + 272) : 624
 
   property int tab: 0
-  property int tabDirection: 1
   onTabChanged: {
-    root.tabDirection = root.tab > 0 ? 1 : -1
     if (root.tab === 1) {
       root.selectedHistoryId = root.history.length > 0 ? root.history[0].id : -1
       Qt.callLater(function() { historyList.positionViewAtBeginning() })
+    }
+  }
+
+  // Match the Coding Agent panel's page choreography: place the incoming
+  // page just offscreen before changing tabs, then animate both pages across.
+  function switchTab(index) {
+    if (root.tab === index) return
+    const direction = index > root.tab ? 1 : -1
+    if (index === 1) {
+      historyPage.x = historyPage.width * direction
+      root.tab = index
+      modelList.x = -modelList.width * direction
+      historyPage.x = 0
+    } else {
+      modelList.x = modelList.width * direction
+      root.tab = index
+      historyPage.x = -historyPage.width * direction
+      modelList.x = 0
     }
   }
   // Reads, mutations, AND playback served by the HandyStore singleton
@@ -180,15 +196,16 @@ PopupBase {
         Item { width: parent.width; height: 4 }
         Row {
           width: parent.width; spacing: 8
-          PillButton { width: (parent.width - 8) / 2; text: "Models"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.tab = 0 }
-          PillButton { width: (parent.width - 8) / 2; text: "History"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.tab = 1 }
+          PillButton { width: (parent.width - 8) / 2; text: "Models"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.switchTab(0) }
+          PillButton { width: (parent.width - 8) / 2; text: "History"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.switchTab(1) }
         }
         Text { visible: root.effectiveError !== ""; width: parent.width; height: visible ? implicitHeight : 0; text: root.effectiveError; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
 
         Item {
           id: handyPages
+          property bool pagesReady: false
           width: parent.width
-    height: Math.max(root.modelListHeight, root.historyListHeight + 16)
+          height: Math.max(root.modelListHeight, root.historyListHeight + 16)
           clip: true
 
           ListView {
@@ -196,11 +213,13 @@ PopupBase {
           visible: true
           width: parent.width
           height: root.modelListHeight
-          x: root.tab === 0 ? 0 : -width * root.tabDirection
           spacing: 8
           clip: true
           interactive: contentHeight > height
-          Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing } }
+          Behavior on x {
+            enabled: handyPages.pagesReady
+            NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing }
+          }
           model: root.models
           delegate: Rectangle {
             required property var modelData
@@ -217,12 +236,15 @@ PopupBase {
         }
 
           Item {
+          id: historyPage
           visible: true
           width: parent.width
           height: root.historyListHeight + 16
-          x: root.tab === 1 ? 0 : width * root.tabDirection
           clip: true
-          Behavior on x { NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing } }
+          Behavior on x {
+            enabled: handyPages.pagesReady
+            NumberAnimation { duration: Tokens.motionEmphasized; easing.type: Tokens.motionEasing }
+          }
           ListView {
           id: historyList
           onVisibleChanged: {
@@ -321,48 +343,15 @@ PopupBase {
                 onClicked: root.retry(modelData)
               }
             }
-            Shape {
+            Item {
               visible: historyRow.selected
               anchors.right: parent.right; anchors.rightMargin: 16; anchors.top: parent.top; anchors.topMargin: 20
               width: 24; height: 24
-              ShapePath {
-                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
-                strokeWidth: 1.8; fillColor: "transparent"
-                capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
-                startX: 3; startY: 6
-                PathLine { x: 21; y: 6 }
-              }
-              ShapePath {
-                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
-                strokeWidth: 1.8; fillColor: "transparent"
-                capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
-                startX: 9; startY: 6
-                PathLine { x: 9; y: 3 }
-                PathLine { x: 15; y: 3 }
-                PathLine { x: 15; y: 6 }
-              }
-              ShapePath {
-                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
-                strokeWidth: 1.8; fillColor: "transparent"
-                capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
-                startX: 6; startY: 6
-                PathLine { x: 7; y: 21 }
-                PathLine { x: 17; y: 21 }
-                PathLine { x: 18; y: 6 }
-              }
-              ShapePath {
-                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
-                strokeWidth: 1.8; fillColor: "transparent"
-                capStyle: ShapePath.RoundCap
-                startX: 10; startY: 10
-                PathLine { x: 10; y: 17 }
-              }
-              ShapePath {
-                strokeColor: root.confirmId === modelData.id ? Colors.warning : Colors.text
-                strokeWidth: 1.8; fillColor: "transparent"
-                capStyle: ShapePath.RoundCap
-                startX: 14; startY: 10
-                PathLine { x: 14; y: 17 }
+              R1Icon {
+                anchors.centerIn: parent
+                iconName: "trash"
+                font.pixelSize: 18
+                color: root.confirmId === modelData.id ? Colors.warning : Colors.text_alt
               }
               MouseArea { anchors.fill: parent; anchors.margins: -8; enabled: !root.busy; onClicked: root.requestDelete(modelData) }
             }
@@ -388,6 +377,12 @@ PopupBase {
           }
           }
         }
+        }
+
+        Component.onCompleted: {
+          modelList.x = root.tab === 0 ? 0 : -modelList.width
+          historyPage.x = root.tab === 0 ? historyPage.width : 0
+          handyPages.pagesReady = true
         }
 
   bottomContent: Item {
