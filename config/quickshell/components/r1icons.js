@@ -45,6 +45,7 @@ const sources = {
   "wifi": "cfe1987a-fff1-803d-8008-c7595611b9de"
 };
 const icons = {
+  "camera": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><g fill=\"none\" stroke=\"#c0caf5\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 7H8L9.5 5H14.5L16 7H20V19H4Z\"/><circle cx=\"12\" cy=\"13\" r=\"3.5\"/></g></svg>",
   "mouse": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><g fill=\"none\" stroke=\"#c0caf5\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"6\" y=\"2\" width=\"12\" height=\"20\" rx=\"6\"/><path d=\"M12 2V9\"/></g></svg>",
   "kmdot": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M2 5V19M2 12L7.5 5M7.5 19V5L11 10L14.5 5V19M2 12L7.5 19M14.5 5H17L19 8V16L17 19H14.5\" fill=\"none\" stroke=\"#c0caf5\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"22\" cy=\"18\" r=\"1.5\" fill=\"#7aa2f7\"/></svg>",
   "bell-off": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><g fill=\"none\" stroke=\"#c0caf5\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path transform=\"translate(-1584 -1644)\" d=\"M1589,1660L1589,1653C1589,1649.134033203125,1592.134033203125,1646,1596,1646C1599.865966796875,1646,1603,1649.134033203125,1603,1653L1603,1660L1605,1662L1587,1662L1589,1660M1594,1665L1598,1665\"/><path d=\"M3 3L21 21\"/></g></svg>",

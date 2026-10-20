@@ -27,8 +27,10 @@ Item {
     if (/hyprshot|grim|screenshot|flameshot/.test(name)) return "camera-photo"
     return "bell"
   }
-  // Typed device notifications must not be replaced by the manager app's logo.
-  readonly property var candidates: deviceIcon ? [] : [entry ? entry.icon : "", appIcon]
+  // Keep typed notifications in the shell's monochrome icon style instead of
+  // substituting an application's multicolor logo (notably Hyprshot).
+  readonly property var candidates: deviceIcon || category === "camera-photo"
+    ? [] : [entry ? entry.icon : "", appIcon]
   property int candidate: 0
   onCandidatesChanged: candidate = 0
   readonly property var resolved: {
@@ -53,8 +55,7 @@ Item {
   R1Icon {
     anchors.centerIn: parent
     visible: image.status !== Image.Ready
-    iconName: root.deviceIcon || (root.category === "camera-photo" ? "" : root.category)
-    glyph: root.category === "camera-photo" ? "\uf030" : ""
+    iconName: root.deviceIcon || (root.category === "camera-photo" ? "camera" : root.category)
     font.pixelSize: 24
     color: Colors.text_alt
   }
