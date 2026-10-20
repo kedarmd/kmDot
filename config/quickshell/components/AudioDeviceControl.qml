@@ -143,10 +143,6 @@ Item {
       width: parent.width - 48
       height: 40
       barRadius: 20
-      thumbWidth: 8
-      thumbHeight: 32
-      thumbRadius: 4
-      thumbColor: Colors.base
       trackColor: Tokens.outlineVariant
       value: root.shownLevel
       opacity: root.nodeReady ? 1 : 0.65

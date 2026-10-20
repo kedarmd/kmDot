@@ -350,7 +350,6 @@ PopupBase {
         opacity: enabled ? 1 : 0.38
         value: DisplayState.curFor(DisplayState.selectedDevice) / DisplayState.maxFor(DisplayState.selectedDevice)
         trackColor: Colors.surface_alt; barRadius: 20
-        thumbWidth: 8; thumbHeight: 32; thumbRadius: 4; thumbColor: Colors.surface
         onChanged: value => DisplayState.applyBrightness(DisplayState.selectedDevice,
           Math.round(value * DisplayState.maxFor(DisplayState.selectedDevice)))
       }
