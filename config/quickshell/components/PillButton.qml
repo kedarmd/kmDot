@@ -1,9 +1,7 @@
 import QtQuick
 import qs
 
-// Material 3 chip: active = primaryContainer fill + bold on_primary_container
-// text (filled tonal chip); inactive = transparent + outline text with a hover
-// state layer; disabled = dimmed. Full-pill radius.
+// Button shape is independent of its semantic role: actions use button colors.
 Rectangle {
   id: root
 
@@ -17,9 +15,9 @@ Rectangle {
   property string glyph: ""
   property real glyphSize: 12
   property real textSize: 14
-  property color fillColor: Tokens.primaryContainer
+  property color fillColor: Colors.button
   property color inactiveFillColor: Colors.surface_alt
-  property color activeTextColor: Tokens.on_primary_container
+  property color activeTextColor: Colors.on_button
 
   signal clicked
 
@@ -34,16 +32,14 @@ Rectangle {
   implicitWidth: row.implicitWidth + horizontalPadding * 2
   radius: height / 2
   opacity: root.enabled ? 1 : 0.38
-  // Interaction states darken the fill instead of switching to a brighter
-  // border swatch. This keeps the active foreground readable in every theme,
-  // including One Dark where border is intentionally not a text surface.
+  // Hover/keyboard emphasis uses the theme focus outline, without inventing a tint.
   color: !root.enabled ? (root.outlined ? "transparent" : root.inactiveFillColor)
-    : root.outlined ? (root.pressed ? Tokens.mix(Colors.surface_alt, Colors.base, 0.12) : root.hovering ? Colors.surface_alt : "transparent")
-    : root.active ? Tokens.mix(root.fillColor, Colors.base, root.pressed ? 0.12 : root.hovering ? 0.08 : 0)
-    : root.filled ? Tokens.mix(root.inactiveFillColor, Colors.base, root.pressed ? 0.12 : root.hovering ? 0.08 : 0)
+    : root.outlined ? (root.hovering ? Colors.surface_alt : "transparent")
+    : root.active ? root.fillColor
+    : root.filled ? root.inactiveFillColor
     : root.hovering ? Colors.surface_alt : "transparent"
-  border.width: root.keyboardSelected || root.activeFocus ? 2 : root.outlined ? 1 : 0
-  border.color: root.keyboardSelected || root.activeFocus ? Colors.primary : Colors.outline_variant
+  border.width: root.keyboardSelected || root.activeFocus || root.hovering ? 2 : root.outlined ? 1 : 0
+  border.color: root.keyboardSelected || root.activeFocus || root.hovering ? Colors.focus : Colors.outline_variant
 
   Behavior on color {
     ColorAnimation {
@@ -56,7 +52,7 @@ Rectangle {
   readonly property bool pressed: mouse.pressed
   readonly property color fg: !root.enabled
     ? Colors.text
-    : root.pressed || root.active
+    : root.active
       ? root.activeTextColor
     : (root.outlined || root.hovering || root.filled ? Colors.text : Tokens.on_surface_variant)
 

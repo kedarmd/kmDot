@@ -260,19 +260,19 @@ PopupBase {
           width: nav.width / 7; height: 40
           Rectangle {
             anchors.centerIn: parent; width: 40; height: 40; radius: 20
-            color: modelData.isToday ? Colors.primary : modelData.isSelected ? Colors.primary_container : "transparent"
+            color: modelData.isToday ? Colors.control : modelData.isSelected ? Colors.primary_container : "transparent"
           }
           Text {
             anchors.centerIn: parent; text: modelData.date.getDate()
             font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14
-            color: modelData.isToday ? Colors.surface : modelData.inMonth ? Colors.text : Colors.text_alt
+            color: modelData.isToday ? Colors.on_control : modelData.isSelected ? Colors.on_primary_container : modelData.inMonth ? Colors.text : Colors.text_alt
             opacity: modelData.inMonth ? 1 : 0.6
             font.weight: modelData.isToday || modelData.isSelected ? Font.DemiBold : Font.Normal
           }
           Rectangle {
             anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 4 }
             width: 3; height: 3; radius: 1.5; visible: modelData.hasEvents
-            color: modelData.isToday ? Colors.surface : Colors.primary
+            color: modelData.isToday ? Colors.on_control : Colors.primary
           }
           MouseArea {
             anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -286,7 +286,7 @@ PopupBase {
         }
       }
     }
-    Rectangle { y: 432; width: parent.width; height: 1; color: Colors.border }
+    Rectangle { y: 432; width: parent.width; height: 1; color: Colors.divider }
     Text {
       y: 456; width: parent.width; text: root.selectedTitle().toUpperCase()
       font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt
@@ -340,7 +340,7 @@ PopupBase {
         }
       }
       Rectangle {
-        anchors.right: parent.right; width: 3; radius: 2; color: Colors.border
+        anchors.right: parent.right; width: 3; radius: 2; color: Colors.outline_variant
         visible: agenda.contentHeight > agenda.height
         height: agenda.height * agenda.height / agenda.contentHeight
         y: agenda.contentY / agenda.contentHeight * agenda.height

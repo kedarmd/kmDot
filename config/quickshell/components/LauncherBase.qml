@@ -157,21 +157,13 @@ Item {
   function itemBody(item) { return item.body || "" }
 
   function themePreviewColor(role) {
+    if (!root.themePreview) return Colors[role]
     const palette = root.themePreviewPalette
-    return palette && palette[role] ? palette[role] : Colors[role]
+    return palette ? palette[role] : "transparent"
   }
 
-  function themePreviewCardColor() {
-    const surface = String(root.themePreviewColor("surface"))
-    return surface.toLowerCase() === String(root.themePreviewColor("base")).toLowerCase()
-      ? root.themePreviewColor("surface_high") : surface
-  }
-
-  function themePreviewBarColor() {
-    const surface = String(root.themePreviewColor("surface"))
-    return surface.toLowerCase() === String(root.themePreviewColor("base")).toLowerCase()
-      ? root.themePreviewColor("surface_alt") : surface
-  }
+  function themePreviewCardColor() { return root.themePreviewColor("surface_high") }
+  function themePreviewBarColor() { return root.themePreviewColor("surface") }
 
   function tryItemAction(event) {
     if (root.promptMode) return false
@@ -441,9 +433,10 @@ Item {
 
     Rectangle {
       anchors.fill: parent
-      color: Qt.rgba(0, 0, 0, root.opened ? 0.4 : 0)
-      Behavior on color {
-        ColorAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
+      color: Colors.scrim
+      opacity: root.opened ? 1 : 0
+      Behavior on opacity {
+        NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
       }
     }
 
@@ -459,9 +452,9 @@ Item {
       height: Math.min(root.cardHeight, parent.height - 32)
       anchors.centerIn: parent
       radius: 32
-      color: Colors.surface
+      color: Colors.surface_high
       clip: true
-      border.width: 1
+      border.width: 0
       border.color: Colors.border
       opacity: root.opened ? 1 : 0
 
@@ -597,7 +590,7 @@ Item {
         radius: 16
         color: root.themePreviewColor("surface_alt")
         border.width: searchInput.activeFocus ? 1.5 : 0
-        border.color: Tokens.primary
+        border.color: Colors.focus
 
         Row {
           anchors {
@@ -620,7 +613,10 @@ Item {
           }
 
           TextInput {
-            id: searchInput
+            selectionColor: Colors.text_selection
+            selectedTextColor: Colors.on_text_selection
+            cursorDelegate: Rectangle { width: 2; height: searchInput.cursorRectangle.height; color: Colors.cursor }
+              id: searchInput
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - 104
             height: parent.height
@@ -1206,7 +1202,7 @@ Item {
           height: 28
           width: footerActionRow.implicitWidth + 20
           radius: 14
-          color: root.footerActionActive ? Tokens.primaryContainer : "transparent"
+          color: root.footerActionActive ? Tokens.pill : "transparent"
           border.width: 1
           border.color: root.footerActionActive ? "transparent" : Tokens.outlineVariant
 
@@ -1221,7 +1217,7 @@ Item {
               text: root.footerActionGlyph
               font.pixelSize: 12
               font.family: "JetBrainsMono Nerd Font"
-              color: root.footerActionActive ? Tokens.on_primary_container : Tokens.mutedText
+              color: root.footerActionActive ? Tokens.on_pill : Tokens.mutedText
             }
 
             Text {
@@ -1230,16 +1226,10 @@ Item {
               font.pixelSize: 12
               font.family: "JetBrainsMono Nerd Font"
               font.weight: root.footerActionActive ? Font.Bold : Font.Normal
-              color: root.footerActionActive ? Tokens.on_primary_container : Tokens.mutedText
+              color: root.footerActionActive ? Tokens.on_pill : Tokens.mutedText
             }
           }
 
-          StateLayer {
-            anchors.fill: parent
-            radius: parent.radius
-            hovered: pillHover.containsMouse
-            pressed: pillHover.pressed
-          }
 
           MouseArea {
             id: pillHover
@@ -1248,6 +1238,17 @@ Item {
             onClicked: root.footerActionClicked()
           }
         }
+      }
+
+      // Draw the frame above the footer and all card contents so the footer's
+      // background cannot soften or cover the rounded bottom border.
+      Rectangle {
+        anchors.fill: parent
+        radius: parent.radius
+        color: "transparent"
+        border.width: Tokens.surfaceBorderWidth
+        border.color: Colors.border
+        z: 10
       }
     }
   }

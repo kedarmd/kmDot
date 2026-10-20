@@ -16,7 +16,8 @@ Rectangle {
   property bool pressed: false
 
   radius: height / 2
-  color: root.disabled || !root.active ? "transparent" : root.fill
+  color: root.disabled ? "transparent" : root.active ? root.fill
+    : root.hovered || root.pressed ? Colors.surface_alt : "transparent"
 
   Behavior on color {
     ColorAnimation {
@@ -32,11 +33,4 @@ Rectangle {
     anchors.fill: parent
   }
 
-  StateLayer {
-    anchors.fill: parent
-    radius: parent.radius
-    hovered: root.hovered
-    pressed: root.pressed
-    enabled: !root.disabled
-  }
 }

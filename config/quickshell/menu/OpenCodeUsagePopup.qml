@@ -136,7 +136,7 @@ PopupBase {
       y: 46
       radius: 16
       color: Colors.surface_high
-      border.width: 1
+      border.width: Tokens.surfaceBorderWidth
       border.color: Colors.border
       clip: true
       opacity: root.agentMenuOpen ? 1 : 0
@@ -264,7 +264,7 @@ PopupBase {
         height: 34
         radius: 10
         color: Colors.surface_high
-        border.width: 1
+        border.width: Tokens.surfaceBorderWidth
         border.color: Colors.border
         Text {
           id: tooltipValue

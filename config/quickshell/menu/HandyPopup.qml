@@ -272,6 +272,9 @@ PopupBase {
               text: root.historyTitle(modelData.timestamp); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; font.weight: Font.DemiBold
             }
             TextEdit {
+            selectionColor: Colors.text_selection
+            selectedTextColor: Colors.on_text_selection
+              cursorDelegate: Rectangle { width: 2; height: editor.cursorRectangle.height; color: Colors.cursor }
               id: editor
               visible: historyRow.selected
               anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
@@ -285,7 +288,7 @@ PopupBase {
               height: 58
               Rectangle {
                 anchors { left: parent.left; right: parent.right; top: parent.top }
-                height: 4; color: Colors.border
+                height: 4; color: Colors.slider_track
                 Rectangle {
                   anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
                   width: parent.width * (historyRow.isPlaying ? root.progress : 0)
@@ -359,7 +362,7 @@ PopupBase {
               visible: historyRow.selected
               anchors.left: parent.left; anchors.right: parent.right; anchors.leftMargin: 16; anchors.rightMargin: 16; anchors.bottom: parent.bottom; anchors.bottomMargin: 16; spacing: 8
               PillButton { width: 164; height: 40; text: "Copy"; textSize: 14; emphasized: true; outlined: true; enabled: !root.busy; onClicked: root.copy(editor.text) }
-              PillButton { width: parent.width - 172; height: 40; text: "Save changes"; textSize: 14; emphasized: true; filled: true; active: true; fillColor: Colors.primary; inactiveFillColor: Colors.primary; activeTextColor: Colors.surface; enabled: !root.busy; onClicked: root.save(modelData, editor.text) }
+              PillButton { width: parent.width - 172; height: 40; text: "Save changes"; textSize: 14; emphasized: true; filled: true; active: true; fillColor: Colors.button; inactiveFillColor: Colors.button; activeTextColor: Colors.on_button; enabled: !root.busy; onClicked: root.save(modelData, editor.text) }
             }
             R1Icon {
               visible: !historyRow.selected

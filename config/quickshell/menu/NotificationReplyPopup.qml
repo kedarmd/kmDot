@@ -64,7 +64,10 @@ PopupBase {
     Rectangle {
       y: 272; width: parent.width; height: 80; radius: 16; color: Colors.surface_alt
       TextEdit {
-        id: replyInput
+            selectionColor: Colors.text_selection
+            selectedTextColor: Colors.on_text_selection
+        cursorDelegate: Rectangle { width: 2; height: replyInput.cursorRectangle.height; color: Colors.cursor }
+              id: replyInput
         anchors { fill: parent; margins: 16 }
         font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; color: Colors.text
         clip: true; wrapMode: TextEdit.Wrap; selectByMouse: true
@@ -90,7 +93,7 @@ PopupBase {
     }
     PillButton {
       width: (parent.width - 8) / 2; height: 40; text: "Send reply"; textSize: 14
-      active: true; fillColor: Colors.primary; activeTextColor: Colors.surface
+      active: true; fillColor: Colors.button; activeTextColor: Colors.on_button
       enabled: replyInput.text.trim().length > 0 && !!root.notification && root.notification.hasInlineReply
       onClicked: root.sendReply()
     }

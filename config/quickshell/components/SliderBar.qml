@@ -8,8 +8,8 @@ Item {
 
   property real value: 0
   property real wheelStep: 0.05
-  property color trackColor: Tokens.surfaceContainerHighest
-  property color fillColor: Tokens.primary
+  property color trackColor: Colors.slider_track
+  property color fillColor: Colors.control
   property int barRadius: 5
   property real trackHeight: Math.max(4, root.height - 7)
   property real dragValue: root.value

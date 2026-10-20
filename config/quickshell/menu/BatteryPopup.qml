@@ -244,7 +244,7 @@ PopupBase {
                 const w = width - L - R, h = height - T - B
                 const Y = p => T + (100 - p) / 100 * h
                 ctx.lineWidth = 1
-                ctx.strokeStyle = Colors.border
+                ctx.strokeStyle = Colors.outline_variant
                 for (const val of [0, 50, 100]) {
                   ctx.beginPath(); ctx.moveTo(L, Y(val)); ctx.lineTo(L + w, Y(val)); ctx.stroke()
                 }

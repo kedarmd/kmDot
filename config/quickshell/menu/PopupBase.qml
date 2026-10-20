@@ -176,8 +176,8 @@ PanelWindow {
         ? Math.min(Math.max(body.implicitHeight + footerSlot.height + (footerSlot.children.length > 0 ? 16 : 0) + root.cardChrome, root.cardMinHeight), root.cardMaxHeight)
         : Math.max(body.implicitHeight + footerSlot.height + (footerSlot.children.length > 0 ? 16 : 0) + root.cardChrome, root.cardMinHeight))
       radius: 32
-      color: Colors.surface
-      border.width: 1
+      color: Colors.surface_high
+      border.width: Tokens.surfaceBorderWidth
       border.color: Colors.border
       opacity: root.opened ? 1 : 0
 

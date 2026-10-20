@@ -178,7 +178,7 @@ Item {
           radius: 16
           color: "transparent"
           border.width: 1
-          border.color: Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.24)
+          border.color: Colors.outline_variant
         }
 
   }

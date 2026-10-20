@@ -18,8 +18,8 @@ BarModule {
 
   glyph: ""
   active: root.mode === "on"
-  fill: Tokens.successContainer
-  on_color: Tokens.on_success_container
+  fill: Tokens.primaryContainer
+  on_color: Colors.success
   dimmed: !root.busy && root.mode !== "on"
   tooltipText: "Server mode: " + (root.mode === "on" ? "On" : "Off")
 

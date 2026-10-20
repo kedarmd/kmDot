@@ -180,7 +180,7 @@ PopupBase {
               radius: 12
               color: selected ? Colors.primary_container : Colors.surface
               border.width: dragging ? 2 : selected ? 2 : 0
-              border.color: dragging || selected ? Colors.primary : Colors.border
+              border.color: dragging || selected ? Colors.focus : Colors.outline_variant
               opacity: modelData.disabled ? 0.5 : 1
               z: dragging ? 5 : index === DisplayState.selectedIdx ? 2 : 1
 
@@ -276,7 +276,7 @@ PopupBase {
         width: parent.width; spacing: 6
         Rectangle {
           width: parent.width; height: 40; radius: 20; color: Colors.surface_alt
-          border.width: root.resolutionOpen ? 1 : 0; border.color: Colors.primary
+          border.width: root.resolutionOpen ? 1 : 0; border.color: Colors.focus
           Text {
             anchors.left: parent.left; anchors.leftMargin: 14; anchors.verticalCenter: parent.verticalCenter
             text: root.selectedDisplay ? root.selectedDisplay.width + " × " + root.selectedDisplay.height : "No display selected"
@@ -297,7 +297,7 @@ PopupBase {
         }
         Rectangle {
           width: parent.width; height: root.resolutionOpen ? Math.min(resolutionList.contentHeight + 12, 180) : 0
-          visible: root.resolutionOpen; radius: 16; color: Colors.surface_high; border.width: 1; border.color: Colors.border; clip: true
+          visible: root.resolutionOpen; radius: 16; color: Colors.surface_high; border.width: Tokens.surfaceBorderWidth; border.color: Colors.border; clip: true
           ListView {
             id: resolutionList
             anchors.fill: parent; anchors.margins: 6; clip: true
@@ -350,7 +350,7 @@ PopupBase {
         enabled: root.selectedDisplay && DisplayState.selectedHasBacklight
         opacity: enabled ? 1 : 0.38
         value: DisplayState.curFor(DisplayState.selectedDevice) / DisplayState.maxFor(DisplayState.selectedDevice)
-        trackColor: Colors.surface_alt; barRadius: 20
+        trackColor: Colors.slider_track; barRadius: 20
         onChanged: value => DisplayState.applyBrightness(DisplayState.selectedDevice,
           Math.round(value * DisplayState.maxFor(DisplayState.selectedDevice)))
       }

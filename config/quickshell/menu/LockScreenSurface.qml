@@ -31,8 +31,7 @@ WlSessionLockSurface {
   }
   Rectangle {
     anchors.fill: parent
-    color: Colors.base
-    opacity: 0.68
+    color: Colors.scrim
   }
   Column {
     anchors.top: parent.top
@@ -63,9 +62,9 @@ WlSessionLockSurface {
     width: Math.min(424, parent.width - 32)
     height: 404
     radius: 24
-    color: Colors.surface
+    color: Colors.surface_high
     border.color: Colors.border
-    border.width: 1
+    border.width: Tokens.surfaceBorderWidth
     anchors.centerIn: parent
     opacity: root.transitionOut ? 0 : 1
 
@@ -114,7 +113,7 @@ WlSessionLockSurface {
         height: 56
         radius: 16
         color: Colors.surface_alt
-        border.color: root.shell.lockError ? Colors.error : Colors.primary
+        border.color: root.shell.lockError ? Colors.error : Colors.focus
         border.width: 2
         clip: true
 
@@ -131,15 +130,17 @@ WlSessionLockSurface {
             color: root.shell.lockError ? Colors.error : Colors.text
           }
           TextInput {
-            id: password
+            selectionColor: Colors.text_selection
+            selectedTextColor: Colors.on_text_selection
+            cursorDelegate: Rectangle { width: 2; height: password.cursorRectangle.height; color: Colors.cursor }
+              id: password
             width: parent.width - 56
             height: parent.height
             anchors.verticalCenter: parent.verticalCenter
             focus: root.lock.secure
             enabled: root.lock.secure && !root.shell.lockAuthenticating
             color: Colors.text
-            selectionColor: Colors.primary
-            selectedTextColor: Colors.on_primary
+
             font.family: root.fontName
             font.pixelSize: 16
             // QML's default password bullet has very little side bearing;
@@ -170,12 +171,12 @@ WlSessionLockSurface {
       Rectangle {
         width: 160; height: 40; radius: 20
         anchors.horizontalCenter: parent.horizontalCenter
-        color: Colors.primary
+        color: Colors.button
         opacity: root.shell.lockAuthenticating ? 0.55 : 1
         Text {
           anchors.centerIn: parent
           text: root.shell.lockAuthenticating ? "Unlocking…" : "Unlock"
-          color: Colors.on_primary
+          color: Colors.on_button
           font.family: root.fontName
           font.pixelSize: 14
           font.weight: Font.DemiBold

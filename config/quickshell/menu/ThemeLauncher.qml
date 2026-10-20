@@ -36,15 +36,10 @@ LauncherBase {
   }
 
   function readThemeRow(line) {
-    const fields = String(line).replace(/[\r\n]+$/, "").split("\t")
-    if (fields.length < 19) return
-    const roleNames = ["base", "surface", "surface_alt", "surface_high", "surface_highest",
-      "primary_container", "on_primary_container", "text", "text_alt", "muted", "border",
-      "primary", "primary_alt", "accent", "success", "warning", "error"]
-    const palette = {}
-    for (let i = 0; i < roleNames.length; i++) palette[roleNames[i]] = fields[i + 2]
-    const active = fields[0] === "ACTIVE"
-    const theme = fields[1]
+    const row = JSON.parse(String(line))
+    const palette = row.palette
+    const active = row.active
+    const theme = row.theme
     root._themeRows.push({
       label: root.themeLabel(theme),
       theme: theme,

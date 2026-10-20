@@ -1,12 +1,13 @@
 import QtQuick
 import QtQuick.Shapes
+import qs
 
 Item {
   id: root
 
   property bool isInput: false
   property bool muted: false
-  property color color: "#C0CAF5"
+  property color color: Colors.text
 
   readonly property string glyphPath: root.isInput
     ? ("M12 2 C13.657 2 15 3.343 15 5 V12 C15 13.657 13.657 15 12 15 C10.343 15 9 13.657 9 12 V5 C9 3.343 10.343 2 12 2 Z "

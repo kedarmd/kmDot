@@ -37,7 +37,7 @@ LauncherBase {
         messageSize: 20,
         messageWeight: Font.DemiBold,
         buttonTextSize: 14,
-        confirmFill: Colors.error,
+        confirmFill: Colors.error_container,
         confirmTextColor: Colors.base,
         topGap: 14,
         actionGap: 56

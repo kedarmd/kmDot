@@ -301,7 +301,7 @@ LauncherBase {
           width: (parent.width - parent.spacing) / 2
           height: 40
           radius: 20
-          color: root.mode === index ? Tokens.primaryContainer : Colors.surface_alt
+          color: root.mode === index ? Tokens.pill : Colors.surface_alt
 
           Text {
             anchors.centerIn: parent
@@ -309,7 +309,7 @@ LauncherBase {
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: 14
             font.weight: root.mode === index ? Font.DemiBold : Font.Medium
-            color: root.mode === index ? Tokens.on_primary_container : Colors.text_alt
+            color: root.mode === index ? Tokens.on_pill : Colors.text_alt
           }
 
           MouseArea {

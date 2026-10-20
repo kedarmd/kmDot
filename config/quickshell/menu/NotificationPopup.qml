@@ -208,8 +208,8 @@ PanelWindow {
         width: popupColumn.width
         height: cardBody.implicitHeight + 32
         radius: 24
-        color: Colors.surface
-        border.width: 1
+        color: Colors.surface_high
+        border.width: Tokens.surfaceBorderWidth
         border.color: modelData.urgency === 2 ? Colors.error : Colors.border
         enabled: root.opened && index >= 0
 

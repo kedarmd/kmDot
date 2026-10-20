@@ -114,7 +114,7 @@ PopupBase {
     }
     Rectangle {
       y: 68; anchors.right: parent.right; width: 48; height: 28; radius: 14
-      color: root.on ? Colors.primary : Colors.border
+      color: root.on ? Colors.control : Colors.surface_alt
       opacity: root.busy ? 0.38 : 1
       Rectangle { x: root.on ? 24 : 4; y: 4; width: 20; height: 20; radius: 10; color: root.on ? Colors.surface : Colors.text_alt }
       MouseArea { anchors.fill: parent; enabled: !root.busy; cursorShape: Qt.PointingHandCursor; onClicked: root.toggleServerMode(true) }

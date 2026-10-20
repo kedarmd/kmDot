@@ -71,9 +71,9 @@ PanelWindow {
     width: 300
     height: 76
     radius: 24
-    color: Colors.surface
+    color: Colors.surface_high
     border.color: Colors.border
-    border.width: 1
+    border.width: Tokens.surfaceBorderWidth
     opacity: root.opened ? 1 : 0
 
     Behavior on opacity { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
@@ -106,12 +106,12 @@ PanelWindow {
       anchors { left: glyph.right; leftMargin: 16; right: parent.right; rightMargin: 22; bottom: parent.bottom; bottomMargin: 16 }
       height: 8
       radius: 4
-      color: Colors.surface_alt
+      color: Colors.slider_track
       Rectangle {
         width: parent.width * (root.isMuted ? 0 : root.amount)
         height: parent.height
         radius: parent.radius
-        color: Colors.primary
+        color: Colors.control
         Behavior on width { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
       }
     }

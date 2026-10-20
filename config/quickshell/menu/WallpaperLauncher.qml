@@ -191,9 +191,10 @@ Item {
 
     Rectangle {
       anchors.fill: parent
-      color: Qt.rgba(0, 0, 0, root.opened ? 0.4 : 0)
-      Behavior on color {
-        ColorAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
+      color: Colors.scrim
+      opacity: root.opened ? 1 : 0
+      Behavior on opacity {
+        NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
       }
     }
 
@@ -208,8 +209,8 @@ Item {
       height: Math.min(480, parent.height - 32)
       anchors.centerIn: parent
       radius: 32
-      color: Colors.surface
-      border.width: 1
+      color: Colors.surface_high
+      border.width: Tokens.surfaceBorderWidth
       border.color: Colors.border
       opacity: root.opened ? 1 : 0
 
@@ -301,7 +302,7 @@ Item {
             radius: 16
             color: root.selectedIndex === index ? Colors.primary_container : "transparent"
             border.width: root.selectedIndex === index ? 2 : 1
-            border.color: root.selectedIndex === index ? Colors.primary : Tokens.outlineVariant
+            border.color: root.selectedIndex === index ? Colors.focus : Tokens.outlineVariant
 
             // Reserve the widest (selected) outline permanently. Selection must not
             // resize the image/sourceSize: that triggers an asynchronous reload.

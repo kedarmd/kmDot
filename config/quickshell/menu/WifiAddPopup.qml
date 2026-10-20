@@ -90,11 +90,13 @@ PopupBase {
     Text { visible: !root.enteringSsid; width: parent.width; text: root.failed ? "The connection failed. Check your password and retry." : "Enter the password for this secured network."; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
     Text { visible: root.enteringSsid; text: "Network name (SSID)"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
     Rectangle { visible: root.enteringSsid; width: parent.width; height: 34; radius: 8; color: Tokens.surfaceContainerHighest
-      TextInput { id: ssidInput; anchors.fill: parent; anchors.margins: 9; text: root.ssid; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; onTextChanged: root.ssid = text }
+      TextInput { selectionColor: Colors.text_selection; selectedTextColor: Colors.on_text_selection; cursorDelegate: Rectangle { width: 2; height: ssidInput.cursorRectangle.height; color: Colors.cursor }
+              id: ssidInput; anchors.fill: parent; anchors.margins: 9; text: root.ssid; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; onTextChanged: root.ssid = text }
     }
     Text { text: !root.enteringSsid ? "PASSWORD" : "Password"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; font.weight: Font.DemiBold; topPadding: !root.enteringSsid ? 24 : 0 }
     Rectangle { width: parent.width; height: !root.enteringSsid ? 56 : 34; radius: !root.enteringSsid ? 16 : 8; color: Colors.surface_alt; border.width: root.failed ? 2 : 0; border.color: Colors.error
-      TextInput { id: passwordInput; anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: 16; anchors.rightMargin: !root.enteringSsid ? 48 : 16; height: parent.height - 12; echoMode: TextInput.Password; text: root.password; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; onTextChanged: root.password = text; onAccepted: root.connect() }
+      TextInput { selectionColor: Colors.text_selection; selectedTextColor: Colors.on_text_selection; cursorDelegate: Rectangle { width: 2; height: passwordInput.cursorRectangle.height; color: Colors.cursor }
+              id: passwordInput; anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; anchors.leftMargin: 16; anchors.rightMargin: !root.enteringSsid ? 48 : 16; height: parent.height - 12; echoMode: TextInput.Password; text: root.password; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; onTextChanged: root.password = text; onAccepted: root.connect() }
       R1Icon { visible: !root.enteringSsid; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf023"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16 }
     }
     Text { visible: !root.enteringSsid; text: "Your password is stored by NetworkManager."; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
@@ -103,6 +105,6 @@ PopupBase {
   bottomContent: Row {
     width: parent.width; height: 40; spacing: 8
     PillButton { width: (parent.width - 8) / 2; filled: true; text: "Cancel"; textSize: 14; enabled: !root.busy; onClicked: root.goBack() }
-    PillButton { width: (parent.width - 8) / 2; active: true; fillColor: Colors.primary; activeTextColor: Colors.surface; textSize: 14; text: root.busy ? "Connecting…" : root.failed ? "Try again" : "Connect"; enabled: root.radioAllowed && !root.busy && root.ssid.trim() !== "" && (root.editingExisting || root.password !== ""); onClicked: root.connect() }
+    PillButton { width: (parent.width - 8) / 2; active: true; fillColor: Colors.button; activeTextColor: Colors.on_button; textSize: 14; text: root.busy ? "Connecting…" : root.failed ? "Try again" : "Connect"; enabled: root.radioAllowed && !root.busy && root.ssid.trim() !== "" && (root.editingExisting || root.password !== ""); onClicked: root.connect() }
   }
 }

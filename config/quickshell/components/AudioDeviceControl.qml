@@ -105,14 +105,14 @@ Item {
       width: !root.nodeReady ? 76 : ((root.active || root.switching) ? (root.switching && !root.active ? 76 : 64) : 0)
       height: 20
       radius: 10
-      color: root.nodeReady ? Colors.primary_container : Colors.surface_highest
+      color: root.nodeReady ? Colors.pill : Colors.surface_highest
       visible: !root.nodeReady || root.active || root.switching
       anchors.verticalCenter: parent.verticalCenter
 
       Text {
         anchors.fill: parent
         text: !root.nodeReady ? "Updating…" : (root.switching && !root.active ? "Switching…" : "Default")
-        color: root.nodeReady ? Colors.on_primary_container : Colors.text_alt
+        color: root.nodeReady ? Colors.on_pill : Colors.text_alt
         font.family: "JetBrainsMono Nerd Font"
         font.pixelSize: 12
         font.weight: Font.DemiBold
@@ -143,7 +143,7 @@ Item {
       width: parent.width - 48
       height: 40
       barRadius: 20
-      trackColor: Tokens.outlineVariant
+      trackColor: Colors.slider_track
       value: root.shownLevel
       opacity: root.nodeReady ? 1 : 0.65
       onChanged: if (root.nodeReady) root.audio.volume = v

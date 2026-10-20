@@ -13,20 +13,13 @@ if [ ! -f "$COLORSCHEME_FILE" ]; then
   exit 1
 fi
 
-{
-  echo "pragma Singleton"
-  echo "import QtQuick"
-  echo "import Quickshell"
-  echo ""
-  echo "Singleton {"
-  while IFS='=' read -r key value; do
-    case "$key" in
-      ""|\#*) continue ;;
-    esac
-    echo "  readonly property color $key: \"$value\""
-  done < "$COLORSCHEME_FILE"
-  echo "}"
-} > "$CONFIG_FILE"
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PALETTE_TEMP="$(mktemp "${CONFIG_FILE}.XXXXXX")"
+if ! "$HOOK_DIR/../render-quickshell.sh" "$COLORSCHEME_FILE" > "$PALETTE_TEMP"; then
+  rm -f "$PALETTE_TEMP"
+  exit 1
+fi
+mv -f "$PALETTE_TEMP" "$CONFIG_FILE"
 
 # Restart quickshell so the bar AND the launchers pick up the new colors together and the
 # launcher socket servers re-bind cleanly. (Live-reload re-themes the bar but breaks the

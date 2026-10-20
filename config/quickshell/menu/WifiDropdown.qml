@@ -138,8 +138,8 @@ PopupBase {
       Rectangle {
         width: 52; height: 32; radius: 16
         anchors.verticalCenter: parent.verticalCenter
-        color: root.radioEnabled ? Colors.primary : Colors.surface_alt
-        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_primary : Colors.muted; Behavior on x { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
+        color: root.radioEnabled ? Colors.control : Colors.surface_alt
+        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_control : Colors.muted; Behavior on x { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Wifi.toggleRadio() }
       }
     }
@@ -156,8 +156,8 @@ PopupBase {
         model: 2
         Rectangle {
           width: parent.width; height: 64; radius: 16; color: Colors.surface_alt
-          Rectangle { x: 64; y: 16; width: parent.width - 152; height: 8; color: Colors.border }
-          Rectangle { x: 64; y: 36; width: parent.width - 224; height: 8; color: Colors.border }
+          Rectangle { x: 64; y: 16; width: parent.width - 152; height: 8; color: Colors.outline_variant }
+          Rectangle { x: 64; y: 36; width: parent.width - 224; height: 8; color: Colors.outline_variant }
         }
       }
       Text { text: "Scanning nearby networks…"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }

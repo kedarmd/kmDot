@@ -120,9 +120,9 @@ PopupBase {
       Rectangle {
         width: 52; height: 32; radius: 16
         anchors.verticalCenter: parent.verticalCenter
-        color: root.radioEnabled ? Colors.primary : Colors.surface_alt
+        color: root.radioEnabled ? Colors.control : Colors.surface_alt
         opacity: root.adapter ? 1 : 0.5
-        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_primary : Colors.muted; Behavior on x { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
+        Rectangle { width: 24; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter; x: root.radioEnabled ? parent.width - width - 4 : 4; color: root.radioEnabled ? Colors.on_control : Colors.muted; Behavior on x { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
         MouseArea { anchors.fill: parent; enabled: !!root.adapter; cursorShape: Qt.PointingHandCursor; onClicked: BluetoothStore.setEnabled(!root.radioEnabled) }
       }
     }

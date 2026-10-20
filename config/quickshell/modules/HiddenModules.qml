@@ -51,12 +51,6 @@ Item {
       color: root.open ? Tokens.on_primary_container : Colors.text
     }
 
-    StateLayer {
-      anchors.fill: parent
-      radius: parent.radius
-      hovered: hoverArea.containsMouse
-      pressed: hoverArea.pressed
-    }
   }
 
   Row {
