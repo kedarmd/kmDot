@@ -171,15 +171,16 @@ PopupBase {
               property real dragOriginY: 0
               readonly property real normalX: root.mapX(modelData)
               readonly property real normalY: root.mapY(modelData)
+              readonly property bool selected: index === DisplayState.selectedIdx
 
               x: dragging ? previewX : normalX
               y: dragging ? previewY : normalY
               width: root.tileWidth(modelData)
               height: root.tileHeight(modelData)
               radius: 12
-              color: index === DisplayState.selectedIdx ? Colors.primary_container : Colors.surface
-              border.width: dragging ? 2 : index === DisplayState.selectedIdx ? 1 : 0
-              border.color: dragging ? Colors.primary : Colors.border
+              color: selected ? Colors.primary_container : Colors.surface
+              border.width: dragging ? 2 : selected ? 2 : 0
+              border.color: dragging || selected ? Colors.primary : Colors.border
               opacity: modelData.disabled ? 0.5 : 1
               z: dragging ? 5 : index === DisplayState.selectedIdx ? 2 : 1
 
@@ -190,20 +191,20 @@ PopupBase {
                 Text {
                   width: parent.width; horizontalAlignment: Text.AlignHCenter
                   text: String(index + 1); font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 22
-                  color: index === DisplayState.selectedIdx ? Colors.on_primary_container : Colors.text
+                  color: screenTile.selected ? Colors.on_primary_container : Colors.text
                 }
                 Text {
                   width: parent.width; horizontalAlignment: Text.AlignHCenter
                   text: modelData.name; elide: Text.ElideRight
                   font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 10
-                  color: index === DisplayState.selectedIdx ? Colors.on_primary_container : Colors.text_alt
+                  color: screenTile.selected ? Colors.on_primary_container : Colors.text_alt
                 }
                 Text {
                   visible: screenTile.height > 56
                   width: parent.width; horizontalAlignment: Text.AlignHCenter
                   text: modelData.width + " × " + modelData.height
                   font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 9
-                  color: index === DisplayState.selectedIdx ? Colors.on_primary_container : Tokens.mutedText
+                  color: screenTile.selected ? Colors.on_primary_container : Tokens.mutedText
                 }
               }
 
@@ -257,7 +258,7 @@ PopupBase {
         Text {
           id: displayStatus
           width: 70; horizontalAlignment: Text.AlignRight
-          text: root.selectedDisplay ? (root.selectedDisplay.disabled ? "Disabled" : root.selectedDisplay.focused ? "Focused" : "") : ""
+          text: root.selectedDisplay ? (root.selectedDisplay.disabled ? "Disabled" : root.selectedDisplay.focused ? "This display" : "") : ""
           font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 11
           color: root.selectedDisplay && root.selectedDisplay.disabled ? Tokens.mutedText : Colors.primary
         }
