@@ -29,7 +29,7 @@ BarModule {
   tooltipText: "Volume: " + Math.round(volume * 100) + "%" + (micMuted ? " · Microphone muted" : "")
 
   glyph: ""
-  trailingGlyph: micMuted ? "\uf131" : ""
+  trailingIconName: micMuted ? "mic-off" : ""
   trailingColor: Colors.warning
   text: muted ? "Mute" : Math.round(volume * 100) + "%"
   iconName: {

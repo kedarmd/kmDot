@@ -18,6 +18,14 @@ PanelWindow {
     ? Math.max(0, Math.min(1, (root.audioNode?.audio?.volume ?? 0)))
     : Math.max(0, Math.min(1, brightnessAmount))
   readonly property bool isMuted: (kind === "volume" || kind === "microphone") && (root.audioNode?.audio?.muted ?? false)
+  readonly property string iconName: {
+    if (kind === "brightness") return "sun"
+    if (kind === "microphone") return isMuted ? "mic-off" : "mic"
+    if (isMuted || amount <= 0.01) return "audio-off"
+    if (amount <= 0.333) return "audio-low"
+    if (amount <= 0.666) return "audio-medium"
+    return "audio"
+  }
 
   visible: opened
   color: "transparent"
@@ -70,17 +78,14 @@ PanelWindow {
 
     Behavior on opacity { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
 
-    Text {
+    R1Icon {
       id: glyph
       anchors { left: parent.left; leftMargin: 22; verticalCenter: parent.verticalCenter; verticalCenterOffset: -12 }
-      text: root.kind === "microphone"
-        ? (root.isMuted ? "\uf131" : "\uf130")
-        : root.kind === "volume"
-          ? (root.isMuted || root.amount <= 0 ? "\uf026" : root.amount < 0.5 ? "\uf027" : "\uf028")
-          : "\uf185"
-      color: root.isMuted ? Colors.muted : Colors.primary
-      font.family: "JetBrainsMono Nerd Font"
+      width: 24
+      height: 24
+      iconName: root.iconName
       font.pixelSize: 24
+      color: root.isMuted ? Colors.warning : Colors.primary
     }
 
     Text {
