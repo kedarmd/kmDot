@@ -149,6 +149,12 @@ Scope {
     function isLocked(): bool { return sessionLock.locked }
   }
 
+  IpcHandler {
+    target: "displayBrightness"
+    function increase(): void { DisplayState.nudgeBar(1) }
+    function decrease(): void { DisplayState.nudgeBar(-1) }
+  }
+
   // Shared credential state is surfaced into each per-screen surface through
   // this shell-owned object, while password input itself stays in the surface.
   QtObject {
