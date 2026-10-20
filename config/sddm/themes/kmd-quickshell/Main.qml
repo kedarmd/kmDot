@@ -427,7 +427,6 @@ Rectangle {
   function login() {
     if (authenticating || !selectedUser || !password.text) return
     authenticating = true
-    signingOut = true
     showError = false
     sddm.login(selectedUser, password.text, rememberedSession)
   }
@@ -448,7 +447,10 @@ Rectangle {
 
   Connections {
     target: sddm
-    function onLoginSucceeded() { root.authenticating = false }
+    function onLoginSucceeded() {
+      root.authenticating = false
+      root.signingOut = true
+    }
     function onLoginFailed() {
       root.authenticating = false
       root.signingOut = false

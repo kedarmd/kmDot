@@ -12,7 +12,9 @@ WlSessionLockSurface {
 
   readonly property string fontName: "JetBrainsMono Nerd Font Propo"
   property date now: new Date()
-  readonly property bool transitionOut: root.shell.lockAuthenticating || root.shell.lockUnlocking
+  // Keep the secure surface fully present while PAM is checking credentials.
+  // Only a confirmed success starts the desktop handoff animation.
+  readonly property bool transitionOut: root.shell.lockUnlocking
 
   Timer {
     interval: 1000
