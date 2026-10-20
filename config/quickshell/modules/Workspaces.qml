@@ -71,7 +71,7 @@ Item {
           border.color: Colors.muted
           // Urgency wins even on the active workspace; shape still shows focus.
           color: slot.urgent ? Colors.urgent
-               : slot.active ? Colors.pill
+               : slot.active ? Colors.workspace_active
                : mouseArea.containsMouse ? Colors.text_alt
                : slot.occupied ? Colors.muted
                : "transparent"

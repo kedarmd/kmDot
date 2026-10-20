@@ -2,7 +2,7 @@
 
 Date: 2026-10-21
 
-Status: TokyoNight is the current review scope. Other theme mappings below are draft research from the interrupted broad audit; they are not approved or declared complete. Continue one theme at a time after user review.
+Status: TokyoNight was reviewed first. Catppuccin is now the current review scope; other theme mappings below remain draft research and are not approved or declared complete. Continue one theme at a time after user review.
 
 ## Contract
 
@@ -19,6 +19,10 @@ Upstream guides take precedence where they specify a role. For unspecified deskt
 [Style guide](https://github.com/catppuccin/catppuccin/blob/main/docs/style-guide.md), plus official VS Code [UI roles](https://github.com/catppuccin/vscode/blob/befc9e6fc41980f4241408f7049755d47c06ff45/packages/catppuccin-vsc/src/theme/uiColors.ts) and [default accent](https://github.com/catppuccin/vscode/blob/befc9e6fc41980f4241408f7049755d47c06ff45/packages/catppuccin-vsc/src/theme/index.ts).
 
 Base supplies panels, Surface 0 inputs/hover surfaces, and Surface 1 slider tracks. Text/Subtext 1/Subtext 0 supply body/secondary/helper copy. The guide supplies Lavender focus borders, Overlay 0 inactive borders, Blue tags, Base text on accents, Rosewater cursors, and Overlay 2 at 25% opacity for selections. Mauve actions/progress follow the official UI port's default accent. Lavender is not advertised as a universal primary color. Borders on desktop controls extend the guide's terminal border convention.
+
+For Quickshell's popup hierarchy, secondary-pane cards use Mantle, while the shell bar remains Base; raised media/thumbnail surfaces use Surface 1. Dividers use Surface 2, matching the official port's menu separators and panel borders. This corrects the previous duplicate Base card and Surface 0 divider assignments.
+
+The workspace active marker has its own `workspace_active` role instead of sharing `pill`: its rounded shape is incidental, while its function is the selected workspace indicator. For Catppuccin it uses Mauve, the official UI port's default accent used for active panel markers. Blue remains reserved for the guide's links and tags/pills. The other theme files currently alias their existing workspace color unchanged; their palettes remain pending individual review.
 
 ### TokyoNight Night
 
@@ -67,3 +71,11 @@ TokyoNight is synced and active for user review. Other themes remain pending; th
 ### TokyoNight notification and tray correction
 
 User review exposed states missed by the first handoff: notification group backgrounds matched the outer popup, and tray states were treated as bright badges. Group cards now use bg_highlight against bg_float; bar active fills use the PmenuSel container and its foreground. The server module uses a green status glyph on that neutral container. Removed the introduced hover-outline layer; bar hover uses bg_highlight. DND now shares the other toggles' off-track and thumb roles. Captured and inspected `notifications-corrected.png` and `tray-corrected.png` in the artifact directory; the shell loaded without QML binding errors. These supersede the earlier notification/tray screenshots.
+
+### Catppuccin initial review — 2026-10-21
+
+Corrected the Catppuccin popup card role from Base to Mantle (secondary-pane background), the raised surface role from Surface 0 to Surface 1, and dividers from Surface 0 to Surface 2. The shell bar remains Base, inputs/hover and list selection remain Surface 0, and slider tracks remain Surface 1. This removes role collisions while following the style guide and the official VS Code UI port's Mantle widgets, Surface 2 separators/panel borders, and Surface 0 inputs/selections.
+
+Synced Catppuccin to Quickshell and restarted it without applying the theme to other apps or changing the saved theme selection. Captured the launcher, Display, Sound, Calendar, Battery, Wi-Fi, Bluetooth, notifications, Appearance, volume OSD, and lock preview. Review sheets: `/tmp/kmdot-theme-audit/catppuccin-review/contact.png` and `/tmp/kmdot-theme-audit/catppuccin-review/services.png`; original captures: `/tmp/kmdot-theme-audit/screenshots/catppuccin-*.png`. Quickshell loaded the lock fixture without errors; the runtime log contains expected socket rebind and unavailable system-icon warnings, but no QML binding, type, or reference errors. Authentication was not exercised. This is submitted for user review; Catppuccin is not marked approved yet.
+
+User review identified the active workspace marker as the remaining visible mismatch. Split it from the generic `pill` role and mapped Catppuccin's marker to Mauve; Blue remains the semantic color for tags/pills. Re-synced and restarted Quickshell, then captured `/tmp/kmdot-theme-audit/catppuccin-review/workspaces-corrected.png`. The empty workspace outlines continue to use the same muted color as occupied inactive workspaces, with their empty interiors preserving the distinction.
