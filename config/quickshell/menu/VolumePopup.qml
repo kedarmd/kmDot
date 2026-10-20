@@ -212,7 +212,7 @@ Column {
   Rectangle {
     visible: nowPlaying.player !== null
     width: parent.width
-    height: 160
+    height: 176
     radius: 24
     color: Colors.surface_alt
     NowPlaying { id: nowPlaying; anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 } }

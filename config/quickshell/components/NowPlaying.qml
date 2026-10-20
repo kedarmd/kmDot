@@ -8,7 +8,7 @@ Item {
   id: root
 
   width: parent.width
-  implicitHeight: 128
+  implicitHeight: 144
   visible: root.player !== null
 
   property var player: null
@@ -49,7 +49,20 @@ Item {
   readonly property real artHeight: 72
   property real positionSeconds: 0
   readonly property real trackLength: root.player && root.player.lengthSupported ? root.player.length : 0
-  readonly property real progress: root.trackLength > 0 ? Math.max(0, Math.min(1, root.positionSeconds / root.trackLength)) : 0
+  readonly property bool timelineAvailable: root.player && root.player.positionSupported
+    && root.player.canSeek && root.trackLength > 0
+  readonly property real progress: root.timelineAvailable
+    ? Math.max(0, Math.min(1, root.positionSeconds / root.trackLength)) : 0
+  property real hoverSeconds: 0
+  property real seekPendingUntil: 0
+
+  function formatTime(value) {
+    const seconds = Math.max(0, Math.floor(Number(value) || 0))
+    const minutes = Math.floor(seconds / 60)
+    const remainder = String(seconds % 60).padStart(2, "0")
+    if (minutes >= 60) return Math.floor(minutes / 60) + ":" + String(minutes % 60).padStart(2, "0") + ":" + remainder
+    return minutes + ":" + remainder
+  }
 
   function seekTo(x) {
     if (!root.player || !root.player.canSeek || root.trackLength <= 0) return
@@ -57,11 +70,19 @@ Item {
     if (root.player.positionSupported) root.player.position = target
     else root.player.seek(target - root.positionSeconds)
     root.positionSeconds = target
+    root.seekPendingUntil = Date.now() + 1500
   }
 
   function livePlayer(p) {
     return p && p.trackTitle &&
       (p.isPlaying || p.playbackState === MprisPlaybackState.Paused)
+  }
+
+  function timelineScore(p) {
+    if (!p) return 0
+    return (p.lengthSupported && p.length > 0 ? 4 : 0)
+      + (p.positionSupported ? 2 : 0)
+      + (p.canSeek ? 1 : 0)
   }
 
   function pickPlayer() {
@@ -72,19 +93,31 @@ Item {
       if (root.livePlayer(p)) candidates.push(p)
     }
     const playing = candidates.filter(p => p.isPlaying)
-    if (playing.length > 0) {
-      if (root.player && playing.indexOf(root.player) >= 0) return root.player
-      return playing[0]
+    const pool = playing.length > 0 ? playing : candidates
+    if (pool.length === 0) return null
+    let best = pool[0]
+    for (let i = 1; i < pool.length; i++) {
+      if (root.timelineScore(pool[i]) > root.timelineScore(best)) best = pool[i]
     }
-    if (root.player && candidates.indexOf(root.player) >= 0) return root.player
-    return candidates.length > 0 ? candidates[0] : null
+    if (root.player && pool.indexOf(root.player) >= 0 && root.timelineScore(root.player) >= root.timelineScore(best))
+      return root.player
+    return best
   }
 
   Timer {
     interval: 1000
     repeat: true
     running: true
-    onTriggered: root.player = root.pickPlayer()
+    onTriggered: {
+      const selected = root.pickPlayer()
+      if (selected !== root.player) root.player = selected
+      if (!root.player) return
+      // MprisPlayer deliberately suppresses automatic positionChanged signals
+      // to avoid needless updates. Request one while playing so consumers see
+      // the current position, then poll it for the compact progress display.
+      if (root.player.isPlaying && root.player.positionSupported) root.player.positionChanged()
+      if (Date.now() >= root.seekPendingUntil) root.positionSeconds = root.player.position
+    }
   }
   Component.onCompleted: {
     root.player = root.pickPlayer()
@@ -182,7 +215,7 @@ Item {
 
   Row {
     x: 88
-    y: 78
+    y: 64
     width: 144
     height: 24
     spacing: 36
@@ -223,7 +256,7 @@ Item {
   Rectangle {
     id: progressTrack
     x: 0
-    y: 122
+    y: 112
     width: root.width
     height: 4
     radius: 2
@@ -234,15 +267,64 @@ Item {
       radius: parent.radius
       color: Colors.primary
     }
+    Rectangle {
+      visible: progressArea.containsMouse && root.timelineAvailable
+      z: 2
+      x: Math.max(0, Math.min(progressTrack.width - width, root.hoverSeconds / root.trackLength * progressTrack.width - width / 2))
+      y: -25
+      width: hoverTime.implicitWidth + 16
+      height: 20
+      radius: 8
+      color: Colors.surface_highest
+      border.width: 1
+      border.color: Colors.border
+      Text {
+        id: hoverTime
+        anchors.centerIn: parent
+        text: root.formatTime(root.hoverSeconds)
+        color: Colors.text
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: 11
+      }
+    }
     MouseArea {
+      id: progressArea
       x: 0
       y: -8
       width: parent.width
       height: parent.height + 16
-      enabled: root.player && root.player.canSeek && root.trackLength > 0
+      hoverEnabled: true
+      enabled: root.timelineAvailable
       cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+      onPositionChanged: {
+        root.hoverSeconds = root.trackLength * Math.max(0, Math.min(1, mouse.x / width))
+        if (pressed) root.seekTo(mouse.x)
+      }
       onPressed: root.seekTo(mouse.x)
-      onPositionChanged: if (pressed) root.seekTo(mouse.x)
+      onEntered: root.hoverSeconds = root.trackLength * Math.max(0, Math.min(1, mouseX / width))
+    }
+  }
+
+  Item {
+    x: 0
+    y: 122
+    width: root.width
+    height: 16
+    Text {
+      text: root.timelineAvailable ? root.formatTime(root.positionSeconds) : "--:--"
+      color: Colors.text_alt
+      font.family: "JetBrainsMono Nerd Font"
+      font.pixelSize: 11
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+    }
+    Text {
+      text: root.trackLength > 0 ? root.formatTime(root.trackLength) : "--:--"
+      color: Colors.text_alt
+      font.family: "JetBrainsMono Nerd Font"
+      font.pixelSize: 11
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
     }
   }
 }
