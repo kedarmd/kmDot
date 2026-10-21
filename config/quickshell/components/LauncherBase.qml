@@ -33,6 +33,11 @@ Item {
   property string headerText: ""
   property string headerGlyph: ""
   property var items: []
+  // Optional list sections: when a role name is set, results exposing that role
+  // render a small group label above their first row (e.g. AppLauncher's
+  // FREQUENT / ALL APPS). Empty = no sections (default; also the height-0
+  // section delegate below covers the "empty role" interpretation).
+  property string sectionRole: ""
   property string footerHint: "\u2191\u2193 navigate \u00b7 \u23ce select"
   property string closeHint: "esc  Close"
   property bool countShown: false
@@ -798,6 +803,26 @@ Item {
         focus: false
         interactive: true
         flickDeceleration: 2500
+
+        section {
+          property: root.sectionRole
+          criteria: ViewSection.FullString
+          delegate: Item {
+            required property string section
+            width: resultsList.width
+            // 0 height when sections are disabled (empty role name) so a
+            // disabled-section interpretation can never add dead space.
+            height: section !== "" ? 40 : 0
+            Text {
+              anchors { left: parent.left; leftMargin: 12; top: parent.top; topMargin: 12 }
+              text: section
+              font.family: "JetBrainsMono Nerd Font"
+              font.pixelSize: 12
+              font.weight: Font.DemiBold
+              color: Colors.text_alt
+            }
+          }
+        }
 
         // List geometry is resolved immediately; the whole surface fades in.
         delegate: Rectangle {
