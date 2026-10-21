@@ -52,40 +52,60 @@ if [ ! -f "$CONFIG_FILE" ]; then
 else
   TMP_FILE="${CONFIG_FILE}.swt"
   awk '
-    # First pass (FNR == NR): collect the repo [ui] section''s key lines.
+    # First pass (FNR == NR): collect repo-owned [ui] and [keys] values.
     FNR == NR {
-      if ($0 ~ /^[ \t]*\[[^]]*\][ \t]*$/) { in_ui = ($0 ~ /^[ \t]*\[ui\][ \t]*$/); next }
-      if (in_ui && $0 ~ /^[ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t]*=/) {
+      if ($0 ~ /^[ \t]*\[[^]]*\][ \t]*$/) {
+        section = $0; gsub(/[ \t\[\]]/, "", section)
+        in_managed = (section == "ui" || section == "keys")
+        next
+      }
+      if (in_managed && $0 ~ /^[ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t]*=/) {
         key = $0; sub(/[ \t]*=.*/, "", key); gsub(/[ \t]/, "", key)
-        managed[key] = $0; num_keys++
+        managed_section[section, key] = $0
+        managed_count[section]++
       }
       next
     }
     # Second pass: the live config.
     { n++; lines[n] = $0 }
     END {
-      ui_header = 0; in_ui = 0
+      ui_header = 0; keys_header = 0; in_section = ""
       for (i = 1; i <= n; i++) {
         if (lines[i] ~ /^[ \t]*\[[^]]*\][ \t]*$/) {
-          in_ui = (lines[i] ~ /^[ \t]*\[ui\][ \t]*$/)
-          if (in_ui) ui_header = i
+          in_section = lines[i]; gsub(/[ \t\[\]]/, "", in_section)
+          if (in_section == "ui") ui_header = i
+          if (in_section == "keys") keys_header = i
           continue
         }
-        if (in_ui) {
+        if (in_section == "ui" || in_section == "keys") {
           key = lines[i]; sub(/[ \t]*=.*/, "", key); gsub(/[ \t]/, "", key)
-          if (key in managed) { replace_at[i] = key; present[key] = 1 }
+          section = in_section
+          if ((section, key) in managed_section) {
+            replace_at[i] = section SUBSEP key
+            present[section, key] = 1
+          }
         }
       }
       for (i = 1; i <= n; i++) {
-        if (i in replace_at) { print managed[replace_at[i]]; continue }
+        if (i in replace_at) { print managed_section[replace_at[i]]; continue }
         print lines[i]
-        if (i == ui_header)
-          for (key in managed) if (!(key in present)) print managed[key]
+        if (i == ui_header || i == keys_header) {
+          section = (i == ui_header ? "ui" : "keys")
+          for (managed_key in managed_section) {
+            split(managed_key, parts, SUBSEP)
+            if (parts[1] == section && !((section, parts[2]) in present)) print managed_section[managed_key]
+          }
+        }
       }
-      if (!ui_header && num_keys > 0) {
+      for (section in managed_count) {
+        header = (section == "ui" ? ui_header : keys_header)
+        if (header) continue
         if (n > 0 && lines[n] !~ /^[ \t]*$/) print ""
-        print "[ui]"
-        for (key in managed) print managed[key]
+        print "[" section "]"
+        for (managed_key in managed_section) {
+          split(managed_key, parts, SUBSEP)
+          if (parts[1] == section) print managed_section[managed_key]
+        }
       }
     }
   ' "$REPO_DIR/config/herdr/config.toml" "$CONFIG_FILE" > "$TMP_FILE"

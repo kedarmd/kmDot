@@ -15,5 +15,9 @@
 # it back to the auto-namer.
 prompt_new_tab_name = false
 
+[keys]
+# Jump directly to one of the first nine workspaces with prefix+shift+1..9.
+switch_workspace = "prefix+shift+1..9"
+
 [theme]
 name = "tokyo-night"
