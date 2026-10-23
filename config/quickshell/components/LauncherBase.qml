@@ -25,6 +25,7 @@ Item {
   property string headerTitle: ""
   property string resultsLabel: ""
   property string listStatusText: ""
+  property string listErrorText: ""
   property string listStatusActionText: ""
   property string listStatusActionGlyph: ""
   property real listStatusActionWidth: 0

@@ -7,10 +7,14 @@ LauncherBase {
   id: root
 
   sockName: "kmdot-bluetooth"
+  castStyle: true
   title: "Bluetooth"
   searchPlaceholder: "Search devices…"
   headerTitle: "Bluetooth"
-  cardHeight: 592
+  cardHeight: 520
+  primaryActionText: !root.selectedItem ? "Connect"
+    : root.selectedItem.connected ? "Disconnect" : root.selectedItem.paired ? "Connect" : "Pair"
+  listErrorText: BluetoothStore.errorText
   footerHint: "↑↓ navigate · ⏎ connect/pair · tab toggle"
   countShown: false
   footerActionVisible: false
@@ -25,7 +29,8 @@ LauncherBase {
   // activate intent, and the footer pill only.
   readonly property var adapter: BluetoothStore.adapter
   property string forgetPath: ""
-  itemActions: [{ key: Qt.Key_Delete, ctrl: true, hint: "Ctrl+Del forget" }]
+  itemActions: root.selectedItem && root.selectedItem.paired
+    ? [{ key: Qt.Key_Delete, ctrl: true, hint: "Ctrl+Del forget" }] : []
 
   function batterySuffix(d) {
     return d.batteryAvailable ? " · Battery " + d.battery + "%" : ""

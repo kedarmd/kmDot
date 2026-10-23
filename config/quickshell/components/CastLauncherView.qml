@@ -190,7 +190,7 @@ PanelWindow {
 
     Item {
       id: body
-      anchors { top: header.bottom; bottom: footer.top; left: parent.left; right: parent.right; leftMargin: 12; rightMargin: 12; topMargin: 8; bottomMargin: 8 }
+      anchors { top: header.bottom; bottom: footer.top; left: parent.left; right: parent.right; leftMargin: 12; rightMargin: 12; topMargin: 8; bottomMargin: listError.visible ? listError.height + 24 : 8 }
 
       Text {
         id: sectionLabel
@@ -371,6 +371,19 @@ PanelWindow {
       }
     }
 
+    Text {
+      id: listError
+      objectName: "castLauncherListError"
+      anchors { left: parent.left; right: parent.right; bottom: footer.top; leftMargin: 24; rightMargin: 24; bottomMargin: 12 }
+      visible: view.controller.listErrorText !== ""
+      text: view.controller.listErrorText
+      textFormat: Text.PlainText
+      wrapMode: Text.Wrap
+      font.family: view.uiFont
+      font.pixelSize: 14
+      color: Colors.error_text
+    }
+
     Item {
       id: footer
       objectName: "castLauncherFooter"
@@ -378,6 +391,7 @@ PanelWindow {
       height: 40
       Rectangle { anchors { top: parent.top; left: parent.left; right: parent.right } height: 1; color: Colors.divider }
       Row {
+        objectName: "castLauncherFooterContext"
         anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
         spacing: 8
         Cast.BrandMark { width: 18; height: 18; anchors.verticalCenter: parent.verticalCenter }
