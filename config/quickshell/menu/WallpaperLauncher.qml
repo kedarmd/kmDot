@@ -3,6 +3,7 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs
 import "../components"
 import "../components/popuppos.js" as Pos
@@ -173,7 +174,8 @@ Item {
   PanelWindow {
     id: launcherWin
     visible: root.presentationVisible
-    screen: Pos.primaryScreen(Quickshell.screens)
+    screen: Pos.focusedWorkspaceScreen(Quickshell.screens, Hyprland.monitorFor,
+      Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.monitor : Hyprland.focusedMonitor)
     color: Qt.rgba(0, 0, 0, 0)
     focusable: true
 

@@ -42,6 +42,22 @@ function primaryScreen(screens) {
   return screens.length > 0 ? screens[0] : null
 }
 
+// Fullscreen launchers should follow the monitor showing Hyprland's focused
+// workspace, rather than assuming Quickshell's first screen is the target.
+function focusedWorkspaceScreen(screens, monitorFor, focusedMonitor) {
+  if (focusedMonitor) {
+    for (let i = 0; i < screens.length; i++) {
+      const monitor = monitorFor(screens[i])
+      // Compare stable connector names rather than QML wrapper identity.
+      if (monitor && monitor.name === focusedMonitor.name) return screens[i]
+    }
+    // Fallback for backends where monitorFor() cannot resolve the ShellScreen.
+    const byPosition = screenFor(screens, focusedMonitor.x + focusedMonitor.width / 2)
+    if (byPosition) return byPosition
+  }
+  return primaryScreen(screens)
+}
+
 function cardXFor(centerX, cardWidth, screen, global = false) {
   const sX = global && screen ? screen.x : 0
   const sW = screen ? screen.width : 0

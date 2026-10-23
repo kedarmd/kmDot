@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs
 import "./popuppos.js" as Pos
 
@@ -420,7 +421,8 @@ Item {
     id: launcherWin
     visible: root.presentationVisible
     // NOTE: Pos.primaryScreen (indexed), not .values (see PopupBase screen binding).
-    screen: Pos.primaryScreen(Quickshell.screens)
+    screen: Pos.focusedWorkspaceScreen(Quickshell.screens, Hyprland.monitorFor,
+      Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.monitor : Hyprland.focusedMonitor)
     color: Qt.rgba(0, 0, 0, 0)
     focusable: true
 
