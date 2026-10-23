@@ -7,14 +7,11 @@ import Quickshell.Hyprland
 import qs
 import "../components"
 import "../components/popuppos.js" as Pos
+import "../launcher/plugin/ui" as Cast
+import "../launcher/plugin/compat" as CastCompat
 
-// Wallpaper switcher (option B, WP-2 rev 2): 3-column grid of the active
-// theme's wallpapers. Arrows move selection only; Enter applies via
-// set_wallpaper.sh; Esc closes. No live preview, no revert logic.
-// Standalone (not a LauncherBase subclass): LauncherBase owns a vertical
-// ListView, while this card needs a GridView. Geometry follows the Penpot
-// Wallpaper grid boards: 640x480 card,
-// 186x148 tiles, 12px gaps, and an inset footer divider.
+// Wallpaper switcher: a dedicated GridView in the shared launcher chrome.
+// Arrows move selection only; Enter applies via set_wallpaper.sh; Esc closes.
 Item {
   id: root
 
@@ -27,6 +24,7 @@ Item {
   property bool loading: false
   property string themeName: ""
   readonly property int columns: 3
+  readonly property string uiFont: CastCompat.Style.font.menuFamily
   readonly property int resultCount: root.pool.length
   readonly property var selectedItem: root.pool.length > 0
     && root.selectedIndex >= 0 && root.selectedIndex < root.pool.length
@@ -189,11 +187,12 @@ Item {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
+    WlrLayershell.namespace: root.sockName
 
     Rectangle {
       anchors.fill: parent
       color: Colors.scrim
-      opacity: root.opened ? 1 : 0
+      opacity: root.opened ? 0.3 : 0
       Behavior on opacity {
         NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
       }
@@ -206,17 +205,25 @@ Item {
 
     Rectangle {
       id: card
-      width: Math.min(640, parent.width - 32)
-      height: Math.min(480, parent.height - 32)
+      objectName: "wallpaperLauncherCard"
+      width: Math.min(680, parent.width - 32)
+      height: Math.min(520, parent.height - 32)
       anchors.centerIn: parent
-      radius: 32
+      radius: 20
       color: Colors.surface_high
-      border.width: Tokens.surfaceBorderWidth
-      border.color: Colors.border
+      border.width: 1
+      border.color: Colors.outline_variant
       opacity: root.opened ? 1 : 0
 
       Behavior on opacity {
         NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
+      }
+      layer.enabled: true
+      layer.effect: MultiEffect {
+        shadowEnabled: true
+        shadowColor: "#50000000"
+        shadowBlur: 0.6
+        shadowVerticalOffset: 8
       }
 
       MouseArea {
@@ -237,73 +244,102 @@ Item {
       }
 
       Text {
-        anchors { top: parent.top; left: parent.left; topMargin: 20; leftMargin: 24 }
-        text: "Wallpapers"
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 20
-        font.weight: Font.Bold
-        color: Colors.text
-      }
-
-      Text {
-        anchors { top: parent.top; left: parent.left; topMargin: 52; leftMargin: 24 }
-        text: root.subtitle()
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 12
+        id: sectionLabel
+        objectName: "wallpaperLauncherSection"
+        anchors { top: header.bottom; left: parent.left; topMargin: 8; leftMargin: 24 }
+        height: 30
+        text: "WALLPAPERS"
+        font.family: root.uiFont
+        font.pixelSize: 11
+        font.weight: Font.DemiBold
+        font.letterSpacing: 0.7
         color: Colors.text_alt
       }
 
-      R1Icon {
-        width: 24
-        height: 24
-        anchors { right: parent.right; top: parent.top; rightMargin: 32; topMargin: 26 }
-        glyph: "\uf00d"
-        font.family: "JetBrainsMono Nerd Font Propo"
-        font.pixelSize: 16
-        color: Colors.text_alt
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-        MouseArea {
-          anchors.fill: parent
-          anchors.margins: -8
-          cursorShape: Qt.PointingHandCursor
-          onClicked: root.closeLauncher()
+      Item {
+        id: header
+        objectName: "wallpaperLauncherHeader"
+        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 1 }
+        height: 64
+        Cast.BrandMark {
+          width: 26
+          height: 26
+          anchors { left: parent.left; leftMargin: 19; verticalCenter: parent.verticalCenter }
         }
+        Column {
+          anchors { left: parent.left; leftMargin: 56; right: closeButton.left; rightMargin: 14; verticalCenter: parent.verticalCenter }
+          spacing: 2
+          Text {
+            width: parent.width
+            text: "Wallpapers"
+            font.family: root.uiFont
+            font.pixelSize: 17
+            color: Colors.text
+            elide: Text.ElideRight
+          }
+          Text {
+            width: parent.width
+            text: root.subtitle()
+            font.family: root.uiFont
+            font.pixelSize: 12
+            color: Colors.text_alt
+            elide: Text.ElideRight
+          }
+        }
+        Item {
+          id: closeButton
+          anchors { right: parent.right; rightMargin: 18; verticalCenter: parent.verticalCenter }
+          width: closeHint.implicitWidth
+          height: closeHint.implicitHeight
+          Cast.KeyHint {
+            id: closeHint
+            keys: "Esc"
+            color: Colors.text
+            fontFamily: root.uiFont
+          }
+          MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: root.closeLauncher()
+          }
+        }
+        Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Colors.divider }
       }
 
       GridView {
         id: grid
+        objectName: "wallpaperLauncherGrid"
         anchors {
-          top: parent.top
+          top: sectionLabel.bottom
           left: parent.left
           right: parent.right
           bottom: footer.top
-          leftMargin: 24
-          rightMargin: 22
-          topMargin: 96
+          leftMargin: 12
+          rightMargin: 12
+          topMargin: 4
           bottomMargin: 8
         }
         visible: !root.loading && root.pool.length > 0
         clip: true
         model: root.pool
         cellWidth: Math.floor(width / root.columns)
-        cellHeight: 160
+        cellHeight: 164
         flow: GridView.FlowLeftToRight
 
         delegate: Item {
           required property var modelData
           required property int index
           width: grid.cellWidth
-          height: 160
+          height: 164
 
           Rectangle {
             id: cell
-            width: grid.cellWidth - 12
-            height: 148
-            radius: 16
+            width: grid.cellWidth - 10
+            height: 154
+            radius: 12
             color: root.selectedIndex === index ? Colors.primary_container : "transparent"
-            border.width: root.selectedIndex === index ? 2 : 1
-            border.color: root.selectedIndex === index ? Colors.focus : Tokens.outlineVariant
+            border.width: 1
+            border.color: root.selectedIndex === index ? Colors.primary : Colors.outline_variant
 
             // Reserve the widest (selected) outline permanently. Selection must not
             // resize the image/sourceSize: that triggers an asynchronous reload.
@@ -311,7 +347,7 @@ Item {
             Item {
               id: previewSlot
               anchors { top: parent.top; left: parent.left; right: parent.right; margins: 2 }
-              height: 101
+              height: 98
 
               Rectangle {
                 anchors.fill: parent
@@ -356,7 +392,7 @@ Item {
                   id: activeLabel
                   anchors.centerIn: parent
                   text: "Active"
-                  font.family: "JetBrainsMono Nerd Font"
+                  font.family: root.uiFont
                   font.pixelSize: 12
                   font.weight: Font.Bold
                   color: Colors.text_alt
@@ -365,22 +401,22 @@ Item {
             }
 
             Text {
-              anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 109; leftMargin: 12; rightMargin: 12 }
+              anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 106; leftMargin: 10; rightMargin: 10 }
               text: modelData.label
               elide: Text.ElideRight
-              font.family: "JetBrainsMono Nerd Font"
-              font.pixelSize: 12
+              font.family: root.uiFont
+              font.pixelSize: 13
               font.weight: root.selectedIndex === index ? Font.Bold : Font.Normal
               color: root.selectedIndex === index ? Colors.on_primary_container : Colors.text_alt
             }
 
             Text {
-              anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 125; leftMargin: 12; rightMargin: 12 }
+              anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 128; leftMargin: 10; rightMargin: 10 }
               text: modelData.meta
               elide: Text.ElideRight
-              font.family: "JetBrainsMono Nerd Font"
-              font.pixelSize: 12
-              color: root.selectedIndex === index ? Colors.on_primary_container : Colors.muted
+              font.family: root.uiFont
+              font.pixelSize: 11
+              color: root.selectedIndex === index ? Colors.on_primary_container : Colors.text_alt
             }
 
             MouseArea {
@@ -425,14 +461,16 @@ Item {
 
       Item {
         id: footer
+        objectName: "wallpaperLauncherFooter"
         anchors {
           left: parent.left
           right: parent.right
           bottom: parent.bottom
-          leftMargin: 24
-          rightMargin: 24
+          leftMargin: 1
+          rightMargin: 1
+          bottomMargin: 1
         }
-        height: 56
+        height: 40
 
         Rectangle {
           anchors { top: parent.top; left: parent.left; right: parent.right }
@@ -440,20 +478,27 @@ Item {
           color: Colors.divider
         }
 
-        Text {
-          anchors { left: parent.left; top: parent.top; leftMargin: 12; topMargin: 18 }
-          text: "Arrows select · Enter apply"
-          font.pixelSize: 12
-          font.family: "JetBrainsMono Nerd Font"
-          color: Colors.muted
+        Row {
+          anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+          spacing: 8
+          Cast.BrandMark { width: 18; height: 18; anchors.verticalCenter: parent.verticalCenter }
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: "Wallpapers · " + root.resultCount
+            font.family: root.uiFont
+            font.pixelSize: 12
+            color: Colors.text_alt
+          }
         }
 
-        Text {
-          anchors { right: parent.right; top: parent.top; rightMargin: 30; topMargin: 18 }
-          text: "esc Close"
-          font.pixelSize: 12
-          font.family: "JetBrainsMono Nerd Font"
-          color: Colors.muted
+        Row {
+          anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
+          spacing: 8
+          Text { anchors.verticalCenter: parent.verticalCenter; text: "Navigate"; font.family: root.uiFont; font.pixelSize: 12; color: Colors.text_alt }
+          Cast.KeyHint { anchors.verticalCenter: parent.verticalCenter; keys: "↑ ↓ ← →"; color: Colors.text; fontFamily: root.uiFont }
+          Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
+          Text { anchors.verticalCenter: parent.verticalCenter; text: "Apply"; font.family: root.uiFont; font.pixelSize: 12; color: Colors.text }
+          Cast.KeyHint { anchors.verticalCenter: parent.verticalCenter; keys: "↵"; color: Colors.text; fontFamily: root.uiFont }
         }
       }
     }
