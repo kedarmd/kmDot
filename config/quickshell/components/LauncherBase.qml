@@ -46,6 +46,7 @@ Item {
   // section delegate below covers the "empty role" interpretation).
   property string sectionRole: ""
   property string footerHint: "\u2191\u2193 navigate \u00b7 \u23ce select"
+  property string primaryActionText: "Open"
   property string closeHint: "esc  Close"
   property bool countShown: false
   property string countNoun: "item"

@@ -14,6 +14,8 @@ PanelWindow {
   id: view
   required property var controller
   readonly property string uiFont: CastCompat.Style.font.menuFamily
+  readonly property bool hasHeaderAction: controller.listStatusActionText !== ""
+    || (controller.footerActionVisible && controller.footerActionText !== "")
   property alias inputItem: searchInput
   property alias listItem: resultsList
   property alias navItem: navKeys
@@ -90,7 +92,7 @@ PanelWindow {
         Text {
           anchors.fill: parent
           visible: searchInput.text === ""
-          text: view.controller.promptMode ? view.controller.promptTitle
+          text: view.controller.promptMode ? "Enter password…"
             : (view.controller.searchPlaceholder || view.controller.title)
           font: searchInput.font
           color: Colors.text
@@ -135,7 +137,7 @@ PanelWindow {
       }
       Item {
         id: escapeButton
-        anchors { right: parent.right; rightMargin: 18; verticalCenter: parent.verticalCenter }
+        anchors { right: headerAction.visible ? headerAction.left : parent.right; rightMargin: headerAction.visible ? 8 : 18; verticalCenter: parent.verticalCenter }
         width: escapeHint.implicitWidth
         height: escapeHint.implicitHeight
         Cast.KeyHint {
@@ -144,7 +146,31 @@ PanelWindow {
           color: Colors.text
           fontFamily: view.uiFont
         }
-        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: view.controller.closeLauncher() }
+        MouseArea {
+          anchors.fill: parent
+          cursorShape: Qt.PointingHandCursor
+          onClicked: {
+            if (view.controller.promptMode) view.controller.exitPrompt()
+            else view.controller.closeLauncher()
+          }
+        }
+      }
+      PillButton {
+        id: headerAction
+        objectName: "castLauncherHeaderAction"
+        anchors { right: parent.right; rightMargin: 18; verticalCenter: parent.verticalCenter }
+        visible: view.hasHeaderAction
+        height: 28
+        radius: 7
+        text: view.controller.listStatusActionText || view.controller.footerActionText
+        glyph: view.controller.footerActionGlyph
+        fontFamily: view.uiFont
+        textSize: 12
+        active: view.controller.footerActionActive
+        filled: true
+        fillColor: Colors.primary_container
+        activeTextColor: Colors.on_primary_container
+        onClicked: view.controller.footerActionClicked()
       }
       Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Colors.divider }
     }
@@ -170,7 +196,8 @@ PanelWindow {
         id: sectionLabel
         objectName: "castLauncherSection"
         anchors { top: parent.top; left: parent.left; leftMargin: 12 }
-        height: 30
+        height: visible ? 30 : 0
+        visible: !view.controller.promptMode
         verticalAlignment: Text.AlignVCenter
         text: view.controller.headerTitle.toUpperCase()
         font.family: view.uiFont
@@ -261,7 +288,8 @@ PanelWindow {
         }
       }
       Rectangle {
-        visible: resultsList.contentHeight > resultsList.height
+        objectName: "castLauncherScrollbar"
+        visible: resultsList.visible && resultsList.contentHeight > resultsList.height
         anchors.right: parent.right
         width: 2
         height: Math.max(24, resultsList.height * resultsList.height / Math.max(1, resultsList.contentHeight))
@@ -280,12 +308,65 @@ PanelWindow {
           glyph: view.controller.loading ? "\uf110" : ""
           font.pixelSize: 24
           color: Colors.text_alt
+          RotationAnimation on rotation {
+            from: 0
+            to: 360
+            duration: Tokens.busyRotation
+            loops: Animation.Infinite
+            running: view.controller.loading && !Tokens.reducedMotion
+          }
         }
         Text {
           text: view.controller.loading ? view.controller.loadingText : view.controller.emptyText
           font.family: view.uiFont
           font.pixelSize: 14
           color: Colors.text_alt
+        }
+      }
+      Column {
+        id: passwordPrompt
+        objectName: "castLauncherPasswordPrompt"
+        anchors.centerIn: parent
+        width: Math.min(480, parent.width - 48)
+        visible: view.controller.promptMode
+        spacing: 12
+        R1Icon {
+          anchors.horizontalCenter: parent.horizontalCenter
+          glyph: "\uf023"
+          font.pixelSize: 24
+          color: Colors.primary
+        }
+        Text {
+          width: parent.width
+          text: view.controller.promptTitle
+          textFormat: Text.PlainText
+          font.family: view.uiFont
+          font.pixelSize: 17
+          font.weight: Font.Medium
+          color: Colors.text
+          wrapMode: Text.Wrap
+          horizontalAlignment: Text.AlignHCenter
+        }
+        Text {
+          width: parent.width
+          text: "Enter the network password to connect."
+          font.family: view.uiFont
+          font.pixelSize: 14
+          color: Colors.text_alt
+          wrapMode: Text.Wrap
+          horizontalAlignment: Text.AlignHCenter
+        }
+        Text {
+          objectName: "castLauncherPromptError"
+          width: parent.width
+          visible: view.controller.promptError !== ""
+          text: view.controller.promptError
+          textFormat: Text.PlainText
+          font.family: view.uiFont
+          font.pixelSize: 14
+          color: Colors.error_text
+          wrapMode: Text.Wrap
+          horizontalAlignment: Text.AlignHCenter
         }
       }
     }
@@ -309,13 +390,37 @@ PanelWindow {
         }
       }
       Row {
+        objectName: "castLauncherFooterActions"
         anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
         spacing: 8
-        Text { anchors.verticalCenter: parent.verticalCenter; text: "Navigate"; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text_alt }
-        Cast.KeyHint { anchors.verticalCenter: parent.verticalCenter; keys: "↑ ↓"; color: Colors.text; fontFamily: view.uiFont }
-        Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
-        Text { anchors.verticalCenter: parent.verticalCenter; text: "Open"; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text }
+        Text { visible: !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; text: "Navigate"; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text_alt }
+        Cast.KeyHint { visible: !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; keys: "↑ ↓"; color: Colors.text; fontFamily: view.uiFont }
+        Rectangle { visible: !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
+        Text { anchors.verticalCenter: parent.verticalCenter; text: view.controller.primaryActionText; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text }
         Cast.KeyHint { anchors.verticalCenter: parent.verticalCenter; keys: "↵"; color: Colors.text; fontFamily: view.uiFont }
+        Repeater {
+          model: view.controller.promptMode ? [] : view.controller.itemActions
+          delegate: Row {
+            required property var modelData
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 8
+            Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              text: {
+                const words = (modelData.hint || "").split(" ").slice(1).join(" ")
+                return words.charAt(0).toUpperCase() + words.slice(1)
+              }
+              font.family: view.uiFont
+              font.pixelSize: 12
+              color: Colors.text_alt
+            }
+            Cast.KeyHint { anchors.verticalCenter: parent.verticalCenter; keys: (modelData.hint || "").split(" ")[0].replace(/\+/g, " "); color: Colors.text; fontFamily: view.uiFont }
+          }
+        }
+        Rectangle { visible: view.hasHeaderAction && !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
+        Text { visible: view.hasHeaderAction && !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; text: "Toggle"; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text_alt }
+        Cast.KeyHint { visible: view.hasHeaderAction && !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; keys: "Tab"; color: Colors.text; fontFamily: view.uiFont }
       }
     }
   }

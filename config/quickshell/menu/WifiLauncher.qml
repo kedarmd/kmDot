@@ -9,10 +9,12 @@ LauncherBase {
   id: root
 
   sockName: "kmdot-wifi"
+  castStyle: true
   title: "Wi-Fi"
   searchPlaceholder: "Search networks…"
   headerTitle: "Wi-Fi"
-  cardHeight: 592
+  cardHeight: 520
+  primaryActionText: root.promptMode || !root.selectedItem || !root.selectedItem.active ? "Connect" : "Disconnect"
   footerHint: "↑↓ navigate · ⏎ connect/disconnect · tab toggle"
   countShown: false
   footerActionVisible: false
@@ -29,7 +31,8 @@ LauncherBase {
   // across submits and re-prompts (survives startPrompt resets).
   property string promptSsid: ""
   property string forgetSsid: ""
-  itemActions: [{ key: Qt.Key_Delete, ctrl: true, hint: "Ctrl+Del forget" }]
+  itemActions: !root.promptMode && root.selectedItem && root.selectedItem.saved
+    ? [{ key: Qt.Key_Delete, ctrl: true, hint: "Ctrl+Del forget" }] : []
 
   function sigGlyph(sig) { return WifiJs.signalGlyph(sig) }
 
