@@ -17,9 +17,30 @@ PanelWindow {
   readonly property bool hasHeaderAction: !controller.detailMode && (controller.listStatusActionText !== ""
     || (controller.footerActionVisible && controller.footerActionText !== "")
     )
+  readonly property bool hasHeaderMenu: controller.headerActionOptions.length > 0
+  property int headerMenuSelectedIndex: 0
   property alias inputItem: searchInput
   property alias listItem: resultsList
   property alias navItem: navKeys
+
+  function openHeaderMenu() {
+    const options = view.controller.headerActionOptions
+    const selected = options.findIndex(option => option.id === view.controller.headerActionValue)
+    view.headerMenuSelectedIndex = Math.max(0, selected)
+    view.controller.headerMenuOpen = !view.controller.headerMenuOpen
+  }
+
+  function moveHeaderMenu(delta) {
+    const length = view.controller.headerActionOptions.length
+    if (length > 0) view.headerMenuSelectedIndex = (view.headerMenuSelectedIndex + delta + length) % length
+  }
+
+  function chooseHeaderMenu(index) {
+    const option = view.controller.headerActionOptions[index]
+    if (!option) return
+    view.controller.headerMenuOpen = false
+    view.controller.headerActionSelected(option.id)
+  }
 
   visible: controller.presentationVisible
   screen: Pos.focusedWorkspaceScreen(Quickshell.screens, Hyprland.monitorFor,
@@ -30,6 +51,11 @@ PanelWindow {
   WlrLayershell.namespace: controller.sockName
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+
+  Connections {
+    target: view.controller
+    function onOpenedChanged() { if (!view.controller.opened) view.controller.headerMenuOpen = false }
+  }
 
   Rectangle {
     anchors.fill: parent
@@ -102,17 +128,27 @@ PanelWindow {
         }
         onTextEdited: if (!view.controller.promptMode) view.controller.query = text
         onAccepted: {
-          if (view.controller.detailMode) view.controller.detailAcceptRequested()
+          if (view.controller.headerMenuOpen) view.chooseHeaderMenu(view.headerMenuSelectedIndex)
+          else if (view.controller.detailMode) view.controller.detailAcceptRequested()
           else if (view.controller.promptMode) {
             const value = text
             view.controller.exitPrompt()
             view.controller.promptSubmitted(value)
           } else view.controller.activate()
         }
-        Keys.onDownPressed: function(event) { view.controller.step(1); event.accepted = true }
-        Keys.onUpPressed: function(event) { view.controller.step(-1); event.accepted = true }
+        Keys.onDownPressed: function(event) {
+          if (view.controller.headerMenuOpen) view.moveHeaderMenu(1)
+          else view.controller.step(1)
+          event.accepted = true
+        }
+        Keys.onUpPressed: function(event) {
+          if (view.controller.headerMenuOpen) view.moveHeaderMenu(-1)
+          else view.controller.step(-1)
+          event.accepted = true
+        }
         Keys.onEscapePressed: function(event) {
-          if (view.controller.detailMode) view.controller.detailBackRequested()
+          if (view.controller.headerMenuOpen) view.controller.headerMenuOpen = false
+          else if (view.controller.detailMode) view.controller.detailBackRequested()
           else if (view.controller.promptMode) view.controller.exitPrompt()
           else view.controller.closeLauncher()
           event.accepted = true
@@ -123,6 +159,14 @@ PanelWindow {
         }
         Keys.onBacktabPressed: function(event) { event.accepted = true }
         Keys.onPressed: function(event) {
+          if (view.controller.headerMenuOpen) {
+            if (event.key === Qt.Key_Down) view.moveHeaderMenu(1)
+            else if (event.key === Qt.Key_Up) view.moveHeaderMenu(-1)
+            else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) view.chooseHeaderMenu(view.headerMenuSelectedIndex)
+            else if (event.key === Qt.Key_Escape) view.controller.headerMenuOpen = false
+            event.accepted = true
+            return
+          }
           if (event.key === Qt.Key_PageUp) { view.controller.step(10); event.accepted = true }
           else if (event.key === Qt.Key_PageDown) { view.controller.step(-10); event.accepted = true }
           else if (view.controller.tryItemAction(event)) event.accepted = true
@@ -140,7 +184,7 @@ PanelWindow {
       }
       Item {
         id: escapeButton
-        anchors { right: headerAction.visible ? headerAction.left : parent.right; rightMargin: headerAction.visible ? 8 : 18; verticalCenter: parent.verticalCenter }
+        anchors { right: headerMenuButton.visible ? headerMenuButton.left : headerAction.visible ? headerAction.left : parent.right; rightMargin: view.hasHeaderAction ? 8 : 18; verticalCenter: parent.verticalCenter }
         width: escapeHint.implicitWidth
         height: escapeHint.implicitHeight
         Cast.KeyHint {
@@ -163,7 +207,7 @@ PanelWindow {
         id: headerAction
         objectName: "castLauncherHeaderAction"
         anchors { right: parent.right; rightMargin: 18; verticalCenter: parent.verticalCenter }
-        visible: view.hasHeaderAction
+        visible: view.hasHeaderAction && !view.hasHeaderMenu
         height: 28
         radius: 7
         text: view.controller.listStatusActionText || view.controller.footerActionText
@@ -176,6 +220,33 @@ PanelWindow {
         activeTextColor: Colors.on_primary_container
         onClicked: view.controller.footerActionClicked()
       }
+      Rectangle {
+        id: headerMenuButton
+        objectName: "castLauncherHeaderMenuButton"
+        anchors { right: parent.right; rightMargin: 18; verticalCenter: parent.verticalCenter }
+        visible: view.hasHeaderAction && view.hasHeaderMenu
+        width: menuButtonLabel.implicitWidth + 20
+        height: 27
+        radius: 7
+        color: Colors.surface_alt
+        border.width: 1
+        border.color: Colors.outline_variant
+        z: view.controller.headerMenuOpen ? 6 : 0
+        Text {
+          id: menuButtonLabel
+          anchors.centerIn: parent
+          text: (view.controller.listStatusActionText || view.controller.footerActionText) + "  ▾"
+          textFormat: Text.PlainText
+          font.family: view.uiFont
+          font.pixelSize: 12
+          color: view.controller.headerMenuOpen ? Colors.text : Colors.text_alt
+        }
+        MouseArea {
+          anchors.fill: parent
+          cursorShape: Qt.PointingHandCursor
+          onClicked: view.openHeaderMenu()
+        }
+      }
       Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Colors.divider }
     }
 
@@ -184,7 +255,14 @@ PanelWindow {
       anchors.fill: parent
       visible: !view.controller.searchEnabled
       Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_Down) { view.controller.step(1); event.accepted = true }
+        if (view.controller.headerMenuOpen) {
+          if (event.key === Qt.Key_Down) view.moveHeaderMenu(1)
+          else if (event.key === Qt.Key_Up) view.moveHeaderMenu(-1)
+          else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) view.chooseHeaderMenu(view.headerMenuSelectedIndex)
+          else if (event.key === Qt.Key_Escape) view.controller.headerMenuOpen = false
+          event.accepted = true
+        }
+        else if (event.key === Qt.Key_Down) { view.controller.step(1); event.accepted = true }
         else if (event.key === Qt.Key_Up) { view.controller.step(-1); event.accepted = true }
         else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
           if (view.controller.detailMode) view.controller.detailAcceptRequested()
@@ -196,7 +274,67 @@ PanelWindow {
           else view.controller.closeLauncher()
           event.accepted = true
         }
+        else if (event.key === Qt.Key_Tab) {
+          if (view.controller.footerActionText !== "" || view.controller.listStatusActionText !== "") view.controller.footerActionClicked()
+          event.accepted = true
+        }
         else if (view.controller.tryNavItemAction(event)) event.accepted = true
+      }
+    }
+
+    MouseArea {
+      anchors.fill: parent
+      visible: view.controller.headerMenuOpen
+      z: 5
+      onClicked: view.controller.headerMenuOpen = false
+    }
+    Rectangle {
+      id: headerMenu
+      objectName: "castLauncherHeaderMenu"
+      visible: view.controller.headerMenuOpen
+      z: 6
+      anchors { top: header.bottom; right: parent.right; topMargin: 4; rightMargin: 18 }
+      width: 220
+      height: Math.min(220, headerMenuList.contentHeight + 12)
+      radius: 14
+      color: Colors.surface_high
+      border.width: 1
+      border.color: Colors.outline_variant
+      clip: true
+      ListView {
+        id: headerMenuList
+        anchors.fill: parent
+        anchors.margins: 6
+        clip: true
+        model: view.controller.headerActionOptions
+        delegate: Rectangle {
+          required property var modelData
+          required property int index
+          width: ListView.view.width
+          height: 34
+          radius: 8
+          color: index === view.headerMenuSelectedIndex ? Colors.primary_container : "transparent"
+          Text {
+            anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
+            text: modelData.title
+            font.family: view.uiFont
+            font.pixelSize: 14
+            color: index === view.headerMenuSelectedIndex ? Colors.on_primary_container : Colors.text
+          }
+          R1Icon {
+            anchors { right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
+            visible: modelData.id === view.controller.headerActionValue
+            glyph: "\uf00c"
+            font.pixelSize: 13
+            color: index === view.headerMenuSelectedIndex ? Colors.on_primary_container : Colors.primary
+          }
+          MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: view.headerMenuSelectedIndex = index
+            onClicked: view.chooseHeaderMenu(index)
+          }
+        }
       }
     }
 
@@ -240,9 +378,10 @@ PanelWindow {
           required property var modelData
           required property int index
           readonly property bool selected: view.controller.selectedIndex === index
+          readonly property string bodyText: view.controller.itemBody(resultRow.modelData.item)
           objectName: "castLauncherRow"
           width: ListView.view.width
-          height: 56
+          height: bodyText === "" ? 56 : Math.max(92, rowText.implicitHeight + 20)
           radius: 10
           color: selected ? Colors.primary_container : "transparent"
 
@@ -272,7 +411,15 @@ PanelWindow {
           }
           Column {
             id: rowText
-            anchors { left: rowImage.visible ? rowImage.right : glyph.right; right: rowMeta.left; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 12 }
+            anchors {
+              left: rowImage.visible ? rowImage.right : glyph.right
+              right: rowMeta.left
+              verticalCenter: resultRow.bodyText === "" ? parent.verticalCenter : undefined
+              top: resultRow.bodyText !== "" ? parent.top : undefined
+              topMargin: resultRow.bodyText !== "" ? 10 : 0
+              leftMargin: 12
+              rightMargin: 12
+            }
             spacing: 3
             Text {
               width: parent.width
@@ -285,6 +432,7 @@ PanelWindow {
               elide: Text.ElideRight
             }
             Text {
+              id: rowSubtitle
               width: parent.width
               visible: text !== ""
               text: view.controller.itemSubtitleLive(resultRow.modelData.item)
@@ -295,10 +443,22 @@ PanelWindow {
               opacity: resultRow.selected ? 0.7 : 1
               elide: Text.ElideRight
             }
+            Text {
+              id: rowBody
+              width: parent.width
+              visible: resultRow.bodyText !== ""
+              text: resultRow.bodyText
+              textFormat: Text.PlainText
+              font.family: view.uiFont
+              font.pixelSize: 12
+              color: resultRow.selected ? Colors.on_primary_container : Colors.text_alt
+              opacity: resultRow.selected ? 0.7 : 1
+              wrapMode: Text.Wrap
+            }
           }
           Item {
             id: rowMeta
-            anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+            anchors { right: rowStatus.left; rightMargin: rowStatus.width > 0 ? 8 : 12; verticalCenter: parent.verticalCenter }
             width: view.controller.metaAsKeys ? shortcutKeys.implicitWidth : metaText.implicitWidth
             height: view.controller.metaAsKeys ? shortcutKeys.implicitHeight : metaText.implicitHeight
             Text {
@@ -316,6 +476,36 @@ PanelWindow {
               keys: view.controller.itemMeta(resultRow.modelData.item)
               fontFamily: view.uiFont
               color: resultRow.selected ? Colors.on_primary_container : Colors.text
+            }
+          }
+          Item {
+            id: rowStatus
+            anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+            width: view.controller.itemStatusGlyph(resultRow.modelData.item) === "" ? 0 : 18
+            height: 18
+            R1Icon {
+              anchors.fill: parent
+              visible: parent.width > 0
+              glyph: view.controller.itemStatusGlyph(resultRow.modelData.item)
+              font.pixelSize: 15
+              color: resultRow.selected ? Colors.on_primary_container : Colors.primary
+              RotationAnimation on rotation {
+                from: 0; to: 360; duration: Tokens.busyRotation; loops: Animation.Infinite
+                running: rowStatus.width > 0 && view.controller.itemStatusGlyph(resultRow.modelData.item) === "\uf110" && !Tokens.reducedMotion
+              }
+            }
+          }
+          Rectangle {
+            visible: view.controller.itemProgress(resultRow.modelData.item) > 0
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: 10; rightMargin: 10 }
+            height: 2
+            radius: 1
+            color: "transparent"
+            Rectangle {
+              width: parent.width * Math.max(0, Math.min(1, view.controller.itemProgress(resultRow.modelData.item)))
+              height: parent.height
+              radius: parent.radius
+              color: resultRow.selected ? Colors.on_primary_container : Colors.primary
             }
           }
           MouseArea {

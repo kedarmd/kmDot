@@ -29,6 +29,9 @@ Item {
   property string listStatusActionText: ""
   property string listStatusActionGlyph: ""
   property real listStatusActionWidth: 0
+  property var headerActionOptions: []
+  property string headerActionValue: ""
+  property bool headerMenuOpen: false
   property Component listToolbar: null
   property bool toolbarBeforeSearch: false
   property real cardHeight: 608
@@ -108,6 +111,7 @@ Item {
 
   signal activated(var item)
   signal footerActionClicked()
+  signal headerActionSelected(string value)
   signal itemAction(var action, var item)
   // Optional per-item modifier chords (e.g. Ctrl+R retry): each entry is
   // { key: int, ctrl: bool, hint: string }. A chord match on the search input

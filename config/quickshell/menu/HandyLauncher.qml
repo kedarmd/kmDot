@@ -8,10 +8,11 @@ LauncherBase {
   id: root
 
   sockName: "kmdot-handy-launcher"
+  castStyle: true
   title: "Handy"
   searchPlaceholder: "Search installed models…"
-  headerTitle: "Handy"
-  cardHeight: 608
+  headerTitle: root.mode === 0 ? "Handy" : "History"
+  cardHeight: 520
   countShown: false
   listToolbar: modeTabs
   toolbarBeforeSearch: true
@@ -21,22 +22,27 @@ LauncherBase {
   // the list; a title row takes its slot.
   searchEnabled: root.mode === 0
   headerGlyph: ""
-  headerText: ""
+  headerText: root.mode === 1 ? "Handy History" : ""
+  primaryActionText: root.mode === 0 ? "Select model" : "Copy"
+  listErrorText: HandyStore.errorText
 
   // Mode pill: shows the current mode; Tab or click flips it.
   footerActionGlyph: ""
   footerActionActive: true
   footerActionText: root.mode === 0 ? "Models" : "History"
-  footerActionVisible: false
+  footerActionVisible: true
+  headerActionOptions: [
+    { id: "models", title: "Models" },
+    { id: "history", title: "History" }
+  ]
+  headerActionValue: root.mode === 0 ? "models" : "history"
   // Store mutation/fetch errors surface here (the launcher has no error
   // line; the footer hint is its plain-language error surface).
-  footerHint: HandyStore.errorText !== ""
-    ? HandyStore.errorText
-    : (root.mode === 0
-      ? "\u2191\u2193 navigate \u00b7 \u23ce select"
-      : (root.confirmId >= 0
-        ? "Del again to confirm"
-        : "\u23ce copy"))
+  footerHint: root.mode === 0
+    ? "↑↓ navigate · ↵ select · Tab switch"
+    : (root.confirmId >= 0
+      ? "Del again to confirm · Tab switch"
+      : "↵ copy · Ctrl+P play · Ctrl+R retry · Del delete · Tab switch")
   // Secondary chords are History-only (retry/play); empty in Models mode so
   // the auto-appended hints disappear too.
   itemActions: root.mode === 1 ? [
@@ -252,6 +258,10 @@ LauncherBase {
 
   onFooterActionClicked: {
     root.setMode(root.mode === 0 ? 1 : 0)
+  }
+
+  onHeaderActionSelected: function(value) {
+    root.setMode(value === "history" ? 1 : 0)
   }
 
   Timer {
