@@ -41,6 +41,12 @@ PanelWindow {
   property bool socketEnabled: true
   property string title: "Connections"
   property real cardWidth: 424
+  // Opt-in chrome lets individual popups migrate without restyling siblings.
+  property real cardRadius: 32
+  property real cardBorderWidth: Tokens.surfaceBorderWidth
+  property color cardBorderColor: Colors.border
+  property bool closeButtonVisible: true
+  property bool dimBackground: false
   property bool centerCard: false
   // Card vertical chrome (top+bottom padding) and optional height cap (0 = uncapped).
   // Taller panel cards set explicit bounds to match their Penpot frames.
@@ -164,6 +170,15 @@ PanelWindow {
       event.accepted = true
     }
 
+    Rectangle {
+      anchors.fill: parent
+      color: Colors.scrim
+      opacity: root.dimBackground && root.opened ? 0.3 : 0
+      Behavior on opacity {
+        NumberAnimation { duration: root.animatePresentation ? Tokens.motionStandard : 0; easing.type: Tokens.motionEasing }
+      }
+    }
+
     MouseArea {
       anchors.fill: parent
       onClicked: root.close()
@@ -171,14 +186,15 @@ PanelWindow {
 
     Rectangle {
       id: card
+      objectName: "popupCard"
       width: root.cardWidth
       height: Math.min(parent.height - 80, root.cardMaxHeight > 0
         ? Math.min(Math.max(body.implicitHeight + footerSlot.height + (footerSlot.children.length > 0 ? 16 : 0) + root.cardChrome, root.cardMinHeight), root.cardMaxHeight)
         : Math.max(body.implicitHeight + footerSlot.height + (footerSlot.children.length > 0 ? 16 : 0) + root.cardChrome, root.cardMinHeight))
-      radius: 32
+      radius: root.cardRadius
       color: Colors.surface_high
-      border.width: Tokens.surfaceBorderWidth
-      border.color: Colors.border
+      border.width: root.cardBorderWidth
+      border.color: root.cardBorderColor
       opacity: root.opened ? 1 : 0
 
       // Resolve geometry immediately: animating height makes newly mapped
@@ -226,6 +242,7 @@ PanelWindow {
       }
 
       R1Icon {
+        visible: root.closeButtonVisible
         width: 24
         height: 24
         anchors { top: parent.top; right: parent.right; topMargin: 24; rightMargin: 24 }

@@ -1,12 +1,19 @@
 import QtQuick
 import qs
 import "../components"
+import "../launcher/plugin/ui" as Cast
+import "../launcher/plugin/compat" as CastCompat
 
 PopupBase {
   id: root
   title: "Confirm"
   cardWidth: 424
-  cardMinHeight: root.confirmHeight
+  cardMinHeight: 220
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
+  closeButtonVisible: false
+  dimBackground: true
   centerCard: true
   socketEnabled: false
   focusItem: keyFocus
@@ -16,17 +23,11 @@ PopupBase {
   property string supportingText: ""
   property string titleGlyph: "\uf071"
   property color titleGlyphColor: Tokens.warning
-  property int titleSize: 18
-  property int messageSize: 12
-  property int messageWeight: Font.Normal
-  property int buttonTextSize: 12
+  readonly property string uiFont: CastCompat.Style.font.menuFamily
   property string confirmText: "Forget"
   property string cancelText: "Cancel"
-  property real confirmHeight: 312
   property color confirmFill: Tokens.errorContainer
   property color confirmTextColor: Tokens.on_error_container
-  property real topGap: 0
-  property real actionGap: 0
   property int selectedAction: 0
   property bool showKeyboardHints: true
 
@@ -41,17 +42,10 @@ PopupBase {
     root.supportingText = opts.supportingText || ""
     root.titleGlyph = opts.titleGlyph || "\uf071"
     root.titleGlyphColor = opts.titleGlyphColor || Tokens.warning
-    root.titleSize = opts.titleSize !== undefined ? opts.titleSize : 18
-    root.messageSize = opts.messageSize !== undefined ? opts.messageSize : 12
-    root.messageWeight = opts.messageWeight !== undefined ? opts.messageWeight : Font.Normal
-    root.buttonTextSize = opts.buttonTextSize !== undefined ? opts.buttonTextSize : 12
     root.confirmText = opts.confirmText || "Forget"
     root.cancelText = opts.cancelText || "Cancel"
-    root.confirmHeight = opts.cardHeight || 312
     root.confirmFill = opts.confirmFill || Tokens.errorContainer
     root.confirmTextColor = opts.confirmTextColor || Tokens.on_error_container
-    root.topGap = opts.topGap || 0
-    root.actionGap = opts.actionGap || 0
     root.selectedAction = 0
     root.showKeyboardHints = opts.showKeyboardHints !== false
     root.open()
@@ -76,8 +70,7 @@ PopupBase {
 
   function openedChange() {
     // Any dismissal path must invalidate the request that opened this shared
-    // confirmation surface. In particular, SystemLauncher listens for
-    // `cancelled` to discard a pending power command.
+    // confirmation surface so its caller discards the pending operation.
     if (!root.opened && !root.fired) {
       root.fired = true
       root.cancelled()
@@ -85,7 +78,9 @@ PopupBase {
   }
 
   Column {
-    width: parent.width; spacing: 12
+    width: parent.width
+    spacing: 16
+
     Item {
       id: keyFocus
       width: 0
@@ -106,27 +101,110 @@ PopupBase {
         }
       }
     }
-    Row { width: parent.width; spacing: 10
-      R1Icon { id: titleIcon; glyph: root.titleGlyph; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: root.titleSize; color: root.titleGlyphColor; anchors.verticalCenter: parent.verticalCenter }
-      Text { id: titleText; text: root.title; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: root.titleSize; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
-      Item { width: Math.max(1, parent.width - titleIcon.implicitWidth - titleText.implicitWidth - 10); height: 1 }
+
+    Item {
+      objectName: "confirmationHeading"
+      width: parent.width
+      height: Math.max(26, titleText.implicitHeight)
+      R1Icon {
+        id: titleIcon
+        width: 26
+        height: 26
+        anchors { left: parent.left; verticalCenter: parent.verticalCenter }
+        glyph: root.titleGlyph
+        font.pixelSize: 20
+        color: root.titleGlyphColor
+      }
+      Text {
+        id: titleText
+        anchors { left: titleIcon.right; right: escapeButton.left; verticalCenter: parent.verticalCenter; leftMargin: 10; rightMargin: 12 }
+        text: root.title
+        textFormat: Text.PlainText
+        elide: Text.ElideRight
+        font.family: root.uiFont
+        font.pixelSize: 17
+        font.weight: Font.Medium
+        color: Colors.text
+      }
+      Item {
+        id: escapeButton
+        anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+        width: escapeHint.implicitWidth
+        height: escapeHint.implicitHeight
+        Cast.KeyHint { id: escapeHint; keys: "Esc"; color: Colors.text; fontFamily: root.uiFont }
+        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.cancelFromKeyboard() }
+      }
     }
-    Item { width: 1; height: root.supportingText !== "" ? root.topGap : 0; visible: root.supportingText !== "" }
-    Text { width: parent.width; text: root.message; wrapMode: Text.Wrap; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: root.messageSize; font.weight: root.messageWeight }
-    Text { width: parent.width; visible: root.supportingText !== ""; text: root.supportingText; wrapMode: Text.Wrap; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
-    Item { width: 1; height: root.supportingText !== "" ? root.actionGap : 0; visible: root.supportingText !== "" }
-    Row { width: parent.width; spacing: 8
-      PillButton { width: (parent.width - 8) / 2; filled: true; keyboardSelected: root.selectedAction === 0; text: root.cancelText; textSize: root.buttonTextSize; onClicked: root.cancelFromKeyboard() }
-      PillButton { width: (parent.width - 8) / 2; active: true; keyboardSelected: root.selectedAction === 1; fillColor: root.confirmFill; activeTextColor: root.confirmTextColor; text: root.confirmText; textSize: root.buttonTextSize; onClicked: { root.fired = true; root.confirmed(); root.close() } }
+
+    Text {
+      objectName: "confirmationMessage"
+      width: parent.width
+      text: root.message
+      textFormat: Text.PlainText
+      wrapMode: Text.Wrap
+      color: Colors.text_alt
+      font.family: root.uiFont
+      font.pixelSize: 14
     }
     Text {
-      visible: root.showKeyboardHints
+      objectName: "confirmationSupportingText"
       width: parent.width
-      horizontalAlignment: Text.AlignRight
-      text: "\u2190\u2192 choose  \u00b7  Enter activate  \u00b7  Esc cancel"
-      color: Tokens.mutedText
-      font.family: "JetBrainsMono Nerd Font"
-      font.pixelSize: 12
+      visible: root.supportingText !== ""
+      text: root.supportingText
+      textFormat: Text.PlainText
+      wrapMode: Text.Wrap
+      color: Colors.text_alt
+      font.family: root.uiFont
+      font.pixelSize: 14
+    }
+  }
+
+  bottomContent: Item {
+    width: parent.width
+    height: 51 + (root.showKeyboardHints ? 30 : 0)
+    Rectangle { anchors { top: parent.top; left: parent.left; right: parent.right } height: 1; color: Colors.divider }
+    Row {
+      id: actionButtons
+      objectName: "confirmationActions"
+      anchors { top: parent.top; right: parent.right; topMargin: 17 }
+      spacing: 8
+      PillButton {
+        objectName: "confirmationCancel"
+        width: Math.max(100, implicitWidth)
+        height: 34
+        radius: 8
+        horizontalPadding: 16
+        fontFamily: root.uiFont
+        textSize: 14
+        filled: true
+        keyboardSelected: root.selectedAction === 0
+        text: root.cancelText
+        onClicked: root.cancelFromKeyboard()
+      }
+      PillButton {
+        objectName: "confirmationAccept"
+        width: Math.max(100, implicitWidth)
+        height: 34
+        radius: 8
+        horizontalPadding: 16
+        fontFamily: root.uiFont
+        textSize: 14
+        active: true
+        keyboardSelected: root.selectedAction === 1
+        fillColor: root.confirmFill
+        activeTextColor: root.confirmTextColor
+        text: root.confirmText
+        onClicked: { root.selectedAction = 1; root.confirmFromKeyboard() }
+      }
+    }
+    Row {
+      visible: root.showKeyboardHints
+      anchors { top: actionButtons.bottom; right: parent.right; topMargin: 12 }
+      spacing: 6
+      Text { anchors.verticalCenter: parent.verticalCenter; text: "Choose"; color: Colors.text_alt; font.family: root.uiFont; font.pixelSize: 11 }
+      Cast.KeyHint { anchors.verticalCenter: parent.verticalCenter; keys: "← →"; color: Colors.text; fontFamily: root.uiFont }
+      Text { anchors.verticalCenter: parent.verticalCenter; text: "Activate"; color: Colors.text_alt; font.family: root.uiFont; font.pixelSize: 11 }
+      Cast.KeyHint { anchors.verticalCenter: parent.verticalCenter; keys: "↵"; color: Colors.text; fontFamily: root.uiFont }
     }
   }
 }

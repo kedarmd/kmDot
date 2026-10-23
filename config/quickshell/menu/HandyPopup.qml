@@ -67,14 +67,11 @@ PopupBase {
     if (root.busy || !root.scope || !root.scope.confirmPopup) return
     root.pendingDeleteRow = row
     root.scope.confirmPopup.ask("Delete recording?", root.historyTitle(row.timestamp), {
-      cardHeight: 392,
       showKeyboardHints: false,
-      titleGlyph: "\uf1f8", titleGlyphColor: Colors.text, titleSize: 24,
-      messageSize: 20, messageWeight: Font.DemiBold,
+      titleGlyph: "\uf1f8", titleGlyphColor: Colors.text,
       supportingText: "This deletes the recording and its transcription. This action cannot be undone.",
-      confirmText: "Delete", cancelText: "Keep recording", buttonTextSize: 14,
-      confirmFill: Colors.error, confirmTextColor: Colors.surface,
-      topGap: 14, actionGap: 136
+      confirmText: "Delete", cancelText: "Keep recording",
+      confirmFill: Colors.error, confirmTextColor: Colors.surface
     })
   }
 

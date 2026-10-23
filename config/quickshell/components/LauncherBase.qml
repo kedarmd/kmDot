@@ -13,6 +13,12 @@ Item {
 
   // ---- configuration ----
   property string sockName: "kmdot-launcher"
+  // Migrate one launcher at a time; the legacy presentation remains the default
+  // until each launcher has been reviewed. Both views use this same controller.
+  property bool castStyle: false
+  readonly property var viewInput: root.castStyle ? (castViewLoader.item ? castViewLoader.item.inputItem : null) : searchInput
+  readonly property var viewList: root.castStyle ? (castViewLoader.item ? castViewLoader.item.listItem : null) : resultsList
+  readonly property var viewNav: root.castStyle ? (castViewLoader.item ? castViewLoader.item.navItem : null) : navKeys
   property string title: "Search"
   property string searchPlaceholder: ""
   // Compact destination title. The search placeholder remains `title`.
@@ -303,11 +309,11 @@ Item {
     const filtered = root.filterAndSort(root.pool, q)
     root.results = filtered
     if (root.selectedIndex >= filtered.length) root.selectedIndex = 0
-    if (filtered.length > 0) resultsList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+    if (filtered.length > 0 && root.viewList) root.viewList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
   }
 
   function animateResultsPage(direction) {
-    if (resultsList.width <= 0) return
+    if (!root.viewList || root.viewList.width <= 0) return
     if (Tokens.reducedMotion) { root.resultPageOffset = 0; return }
     root.resultPageTransitionActive = true
     resultsChromeSlide.stop()
@@ -317,7 +323,7 @@ Item {
 
   function openLauncher() {
     root.query = ""
-    searchInput.text = ""
+    if (root.viewInput) root.viewInput.text = ""
     root.selectedIndex = 0
     root.promptMode = false
     root.refreshItems()
@@ -346,29 +352,29 @@ Item {
     root.promptTitle = title
     root.promptError = error || ""
     root.query = ""
-    searchInput.text = ""
+    if (root.viewInput) root.viewInput.text = ""
     root.promptMode = true
-    searchInput.forceActiveFocus()
+    if (root.viewInput) root.viewInput.forceActiveFocus()
   }
 
   function exitPrompt() {
     root.promptMode = false
     root.query = ""
-    searchInput.text = ""
+    if (root.viewInput) root.viewInput.text = ""
     root.recompute()
   }
 
   function step(delta) {
     if (root.results.length === 0) return
     root.selectedIndex = (root.selectedIndex + delta + root.results.length) % root.results.length
-    resultsList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
+    if (root.viewList) root.viewList.positionViewAtIndex(root.selectedIndex, ListView.Contain)
   }
 
   // Clear the query both logically and visually (subclasses can't reach the
   // private search input).
   function resetQuery() {
     root.query = ""
-    searchInput.text = ""
+    if (root.viewInput) root.viewInput.text = ""
   }
 
   function activate() {
@@ -401,7 +407,8 @@ Item {
         focusTimer.stop()
         return
       }
-      const target = root.searchEnabled ? searchInput : navKeys
+      const target = root.searchEnabled ? root.viewInput : root.viewNav
+      if (!target) return
       target.forceActiveFocus()
       if (target.activeFocus) focusTimer.stop()
     }
@@ -417,9 +424,16 @@ Item {
     }
   }
 
+  Loader {
+    id: castViewLoader
+    active: root.castStyle
+    sourceComponent: Component { CastLauncherView { controller: root } }
+    onLoaded: root.recompute()
+  }
+
   PanelWindow {
     id: launcherWin
-    visible: root.presentationVisible
+    visible: root.presentationVisible && !root.castStyle
     // NOTE: Pos.primaryScreen (indexed), not .values (see PopupBase screen binding).
     screen: Pos.focusedWorkspaceScreen(Quickshell.screens, Hyprland.monitorFor,
       Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.monitor : Hyprland.focusedMonitor)

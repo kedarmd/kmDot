@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "kmdot.kmdot-launcher",
+  "name": "kmdot-launcher",
+  "version": "0.1.0",
+  "author": "typecraft",
+  "description": "kmDot's integrated app-and-command launcher, adapted from oma-cast",
+  "kinds": [
+    "menu"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "menu": "Launcher.qml"
+  }
+}

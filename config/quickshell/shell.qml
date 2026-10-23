@@ -16,7 +16,6 @@ Scope {
   property var openingSurface: null
   property bool hasNotifications: false
   property bool lockRequested: false
-  property AppLauncher appLauncher: AppLauncher { scope: shellRoot }
   property KmdotLauncher kmdotLauncher: KmdotLauncher { scope: shellRoot }
   property SystemLauncher systemLauncher: SystemLauncher { scope: shellRoot }
   property ThemeLauncher themeLauncher: ThemeLauncher { scope: shellRoot }
@@ -60,7 +59,7 @@ Scope {
   function closeAllExcept(except) {
     const previousOpening = shellRoot.openingSurface
     shellRoot.openingSurface = except
-    const launchers = [shellRoot.appLauncher, shellRoot.kmdotLauncher, shellRoot.systemLauncher,
+    const launchers = [shellRoot.kmdotLauncher, shellRoot.systemLauncher,
       shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.keybindsLauncher,
       shellRoot.clipboardLauncher, shellRoot.handyLauncher, shellRoot.wallpaperLauncher]
     for (const l of launchers) {
@@ -236,6 +235,9 @@ Scope {
   }
 
   Component.onCompleted: {
+    // The migrated launcher's Wayland surfaces require a full process restart
+    // for source changes. Theme/config data still refresh through FileView.
+    Quickshell.watchFiles = false
     // Force-instantiate the calendar popup at startup so its 30-min resync
     // timer (and the initial ICS fetch) run even if it's never opened.
     calendarPopup

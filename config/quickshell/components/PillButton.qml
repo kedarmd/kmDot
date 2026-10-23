@@ -12,6 +12,7 @@ Rectangle {
   property bool emphasized: false
   property bool enabled: true
   property string text: ""
+  property string fontFamily: "JetBrainsMono Nerd Font"
   property string glyph: ""
   property real glyphSize: 12
   property real textSize: 14
@@ -73,7 +74,7 @@ Rectangle {
     Text {
       visible: root.text !== ""
       text: root.text
-      font.family: "JetBrainsMono Nerd Font"
+      font.family: root.fontFamily
       font.pixelSize: root.textSize
       font.weight: root.active || root.emphasized ? Font.DemiBold : Font.Normal
       color: root.fg
