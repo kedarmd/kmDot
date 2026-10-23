@@ -2,27 +2,28 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../components"
+import "../launcher/plugin/compat" as CastCompat
 import qs
 
 LauncherBase {
   id: root
 
   sockName: "kmdot-clipboard"
+  castStyle: true
   title: "Clipboard"
   searchPlaceholder: "Search clipboard history…"
-  headerTitle: root.previewMode ? "Clipboard - Image Preview" : "Clipboard"
-  cardHeight: 600
+  headerTitle: root.previewMode ? "Clipboard Preview" : "Clipboard"
+  cardHeight: 520
+  primaryActionText: root.previewMode ? "Copy image" : "Copy"
   closeOnActivate: false
-  footerHint: root.previewMode
-    ? "\u23ce copy image \u00b7 esc back"
-    : (root.resultCount > 0 ? "\u2191\u2193 navigate \u00b7 \u23ce copy" : "")
+  footerHint: root.resultCount > 0 ? "↑↓ navigate · ↵ copy" : ""
   footerActionText: root.previewMode || root.loading || root.pool.length === 0 ? "" : "Clear history"
   footerActionVisible: false
   emptyText: root.pool.length === 0 ? "Copy text or an image to see it here." : "No matching entries"
   emptyIconName: "clipboard"
   loadingText: "Loading clipboard…"
   listStatusText: root.previewMode || root.pool.length === 0 ? "" : "History expires after 24 hours"
-  listStatusActionText: root.previewMode || root.loading || root.pool.length === 0 ? "" : "Clear history"
+  listStatusActionText: ""
   listStatusActionWidth: 160
   detailMode: root.previewMode
   searchEnabled: !root.previewMode
@@ -143,21 +144,21 @@ LauncherBase {
       Rectangle {
         id: imageFrame
         anchors { top: parent.top; left: parent.left; right: parent.right }
-        height: 304
-        radius: 24
+        height: 256
+        radius: 16
         color: Colors.base
 
         Rectangle {
           anchors { top: parent.top; left: parent.left; right: parent.right; margins: 16 }
-          height: 24
-          radius: 12
+          height: 18
+          radius: 9
           color: Colors.surface_high
         }
 
         Image {
           anchors.centerIn: parent
-          width: Math.min(368, parent.width - 32)
-          height: 208
+          width: Math.min(560, parent.width - 48)
+          height: 196
           source: root.previewItem ? root.previewItem.imageSource : ""
           fillMode: Image.PreserveAspectFit
           asynchronous: true
@@ -165,38 +166,38 @@ LauncherBase {
       }
 
       Text {
-        anchors { top: imageFrame.bottom; left: parent.left; right: parent.right; topMargin: 32 }
+        anchors { top: imageFrame.bottom; left: parent.left; right: parent.right; topMargin: 14 }
         text: root.previewItem ? root.previewItem.label : "Image"
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 20
+        font.family: CastCompat.Style.font.menuFamily
+        font.pixelSize: 17
         font.weight: Font.DemiBold
         color: Colors.text
         elide: Text.ElideRight
       }
 
       Text {
-        anchors { top: imageFrame.bottom; left: parent.left; right: parent.right; topMargin: 76 }
+        anchors { top: imageFrame.bottom; left: parent.left; right: parent.right; topMargin: 40 }
         text: root.previewItem ? root.previewItem.previewSubtitle : "PNG image"
-        font.family: "JetBrainsMono Nerd Font"
+        font.family: CastCompat.Style.font.menuFamily
         font.pixelSize: 12
         color: Colors.text_alt
         elide: Text.ElideRight
       }
 
       Rectangle {
-        width: 160
-        height: 40
-        radius: 20
-        anchors { top: imageFrame.bottom; horizontalCenter: parent.horizontalCenter; topMargin: 96 }
-        color: Tokens.primary
+        width: 124
+        height: 34
+        radius: 8
+        anchors { right: parent.right; bottom: parent.bottom; bottomMargin: 8 }
+        color: Colors.primary
 
         Text {
           anchors.centerIn: parent
           text: "Copy image"
-          font.family: "JetBrainsMono Nerd Font"
-          font.pixelSize: 14
+          font.family: CastCompat.Style.font.menuFamily
+          font.pixelSize: 12
           font.weight: Font.DemiBold
-          color: Tokens.on_primary
+          color: Colors.on_primary
         }
 
         MouseArea {

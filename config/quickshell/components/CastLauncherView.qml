@@ -14,8 +14,9 @@ PanelWindow {
   id: view
   required property var controller
   readonly property string uiFont: CastCompat.Style.font.menuFamily
-  readonly property bool hasHeaderAction: controller.listStatusActionText !== ""
+  readonly property bool hasHeaderAction: !controller.detailMode && (controller.listStatusActionText !== ""
     || (controller.footerActionVisible && controller.footerActionText !== "")
+    )
   property alias inputItem: searchInput
   property alias listItem: resultsList
   property alias navItem: navKeys
@@ -78,7 +79,7 @@ PanelWindow {
           left: parent.left; right: escapeButton.left; verticalCenter: parent.verticalCenter
           leftMargin: 56; rightMargin: 14
         }
-        visible: view.controller.searchEnabled
+        visible: view.controller.searchEnabled && !view.controller.detailMode
         font.family: view.uiFont
         font.pixelSize: 17
         color: Colors.text
@@ -101,7 +102,8 @@ PanelWindow {
         }
         onTextEdited: if (!view.controller.promptMode) view.controller.query = text
         onAccepted: {
-          if (view.controller.promptMode) {
+          if (view.controller.detailMode) view.controller.detailAcceptRequested()
+          else if (view.controller.promptMode) {
             const value = text
             view.controller.exitPrompt()
             view.controller.promptSubmitted(value)
@@ -110,7 +112,8 @@ PanelWindow {
         Keys.onDownPressed: function(event) { view.controller.step(1); event.accepted = true }
         Keys.onUpPressed: function(event) { view.controller.step(-1); event.accepted = true }
         Keys.onEscapePressed: function(event) {
-          if (view.controller.promptMode) view.controller.exitPrompt()
+          if (view.controller.detailMode) view.controller.detailBackRequested()
+          else if (view.controller.promptMode) view.controller.exitPrompt()
           else view.controller.closeLauncher()
           event.accepted = true
         }
@@ -128,8 +131,8 @@ PanelWindow {
 
       Text {
         anchors { left: parent.left; right: escapeButton.left; verticalCenter: parent.verticalCenter; leftMargin: 56; rightMargin: 14 }
-        visible: !view.controller.searchEnabled
-        text: view.controller.headerText || view.controller.headerTitle || view.controller.title
+        visible: !view.controller.searchEnabled || view.controller.detailMode
+        text: view.controller.detailMode ? view.controller.headerTitle : (view.controller.headerText || view.controller.headerTitle || view.controller.title)
         font.family: view.uiFont
         font.pixelSize: 17
         color: Colors.text
@@ -150,7 +153,8 @@ PanelWindow {
           anchors.fill: parent
           cursorShape: Qt.PointingHandCursor
           onClicked: {
-            if (view.controller.promptMode) view.controller.exitPrompt()
+            if (view.controller.detailMode) view.controller.detailBackRequested()
+            else if (view.controller.promptMode) view.controller.exitPrompt()
             else view.controller.closeLauncher()
           }
         }
@@ -182,8 +186,16 @@ PanelWindow {
       Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Down) { view.controller.step(1); event.accepted = true }
         else if (event.key === Qt.Key_Up) { view.controller.step(-1); event.accepted = true }
-        else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) { view.controller.activate(); event.accepted = true }
-        else if (event.key === Qt.Key_Escape) { view.controller.closeLauncher(); event.accepted = true }
+        else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+          if (view.controller.detailMode) view.controller.detailAcceptRequested()
+          else view.controller.activate()
+          event.accepted = true
+        }
+        else if (event.key === Qt.Key_Escape) {
+          if (view.controller.detailMode) view.controller.detailBackRequested()
+          else view.controller.closeLauncher()
+          event.accepted = true
+        }
         else if (view.controller.tryNavItemAction(event)) event.accepted = true
       }
     }
@@ -197,7 +209,7 @@ PanelWindow {
         objectName: "castLauncherSection"
         anchors { top: parent.top; left: parent.left; leftMargin: 12 }
         height: visible ? 30 : 0
-        visible: !view.controller.promptMode
+        visible: !view.controller.promptMode && !view.controller.detailMode
         verticalAlignment: Text.AlignVCenter
         text: view.controller.headerTitle.toUpperCase()
         font.family: view.uiFont
@@ -211,7 +223,7 @@ PanelWindow {
         objectName: "castLauncherResults"
         anchors { top: sectionLabel.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
         clip: true
-        visible: !view.controller.promptMode
+        visible: !view.controller.promptMode && !view.controller.detailMode
         model: view.controller.results
         boundsBehavior: Flickable.StopAtBounds
         interactive: true
@@ -239,13 +251,28 @@ PanelWindow {
             width: 26
             height: 26
             anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
+            visible: view.controller.itemIcon(resultRow.modelData.item) === ""
             glyph: view.controller.itemGlyph(resultRow.modelData.item)
             font.pixelSize: 20
             color: resultRow.selected ? Colors.on_primary_container : Colors.text_alt
           }
+          Image {
+            id: rowImage
+            objectName: "castLauncherRowImage"
+            width: 40
+            height: 40
+            anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
+            visible: view.controller.itemIcon(resultRow.modelData.item) !== ""
+            source: view.controller.itemIcon(resultRow.modelData.item)
+            sourceSize: Qt.size(80, 80)
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            cache: true
+            clip: true
+          }
           Column {
             id: rowText
-            anchors { left: glyph.right; right: rowMeta.left; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 12 }
+            anchors { left: rowImage.visible ? rowImage.right : glyph.right; right: rowMeta.left; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 12 }
             spacing: 3
             Text {
               width: parent.width
@@ -312,9 +339,16 @@ PanelWindow {
         color: Colors.text_alt
         opacity: 0.25
       }
+      Loader {
+        objectName: "castLauncherDetail"
+        anchors.fill: parent
+        visible: view.controller.detailMode
+        active: view.controller.detailMode
+        sourceComponent: view.controller.detailContent
+      }
       Column {
         anchors.centerIn: parent
-        visible: view.controller.results.length === 0 && !view.controller.promptMode
+        visible: view.controller.results.length === 0 && !view.controller.promptMode && !view.controller.detailMode
         spacing: 12
         R1Icon {
           anchors.horizontalCenter: parent.horizontalCenter
@@ -342,7 +376,7 @@ PanelWindow {
         objectName: "castLauncherPasswordPrompt"
         anchors.centerIn: parent
         width: Math.min(480, parent.width - 48)
-        visible: view.controller.promptMode
+        visible: view.controller.promptMode && !view.controller.detailMode
         spacing: 12
         R1Icon {
           anchors.horizontalCenter: parent.horizontalCenter
@@ -421,8 +455,8 @@ PanelWindow {
         objectName: "castLauncherFooterActions"
         anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
         spacing: 8
-        Text { visible: !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; text: "Navigate"; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text_alt }
-        Cast.KeyHint { visible: !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; keys: "↑ ↓"; color: Colors.text; fontFamily: view.uiFont }
+        Text { visible: !view.controller.promptMode && !view.controller.detailMode; anchors.verticalCenter: parent.verticalCenter; text: "Navigate"; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text_alt }
+        Cast.KeyHint { visible: !view.controller.promptMode && !view.controller.detailMode; anchors.verticalCenter: parent.verticalCenter; keys: "↑ ↓"; color: Colors.text; fontFamily: view.uiFont }
         Rectangle { visible: !view.controller.promptMode && view.controller.deactivatable; anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
         Text { visible: view.controller.deactivatable; anchors.verticalCenter: parent.verticalCenter; text: view.controller.primaryActionText; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text }
         Cast.KeyHint { visible: view.controller.deactivatable; anchors.verticalCenter: parent.verticalCenter; keys: "↵"; color: Colors.text; fontFamily: view.uiFont }
