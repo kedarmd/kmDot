@@ -8,9 +8,10 @@ LauncherBase {
   id: root
 
   sockName: "kmdot-theme"
+  castStyle: true
   title: "Appearance"
   headerTitle: "Appearance"
-  cardHeight: 760
+  cardHeight: 520
   themePreview: true
   themePreviewPalette: root.selectedItem ? root.selectedItem.palette : null
   searchEnabled: false
@@ -26,10 +27,10 @@ LauncherBase {
   }
 
   function themeGlyph(name) {
-    if (name === "tokyonight") return "\uf186" // moon
-    if (name === "catppuccin") return "\uf00a" // grid
-    if (name === "everforest") return "\uf0ac" // globe
-    if (name === "nord") return "\uf011" // power
+    if (name === "tokyonight") return "\ueee6" // torii gate
+    if (name === "catppuccin") return "󰄛" // cat
+    if (name === "everforest") return "\uf06c" // leaf
+    if (name === "nord") return "󰜗" // snowflake
     return "\uf1fc" // paint brush for an unrecognized future theme
   }
 

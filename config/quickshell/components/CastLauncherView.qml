@@ -356,10 +356,76 @@ PanelWindow {
         font.letterSpacing: 0.7
         color: Colors.text_alt
       }
+      Item {
+        id: themePreviewPanel
+        objectName: "castLauncherThemePreview"
+        anchors { top: sectionLabel.bottom; left: parent.left; right: parent.right; topMargin: 2; leftMargin: 10; rightMargin: 10 }
+        height: view.controller.themePreview ? 154 : 0
+        visible: view.controller.themePreview
+        Rectangle {
+          anchors.fill: parent
+          radius: 14
+          color: view.controller.themePreviewColor("base")
+          Rectangle {
+            anchors { top: parent.top; left: parent.left; right: parent.right; margins: 12 }
+            height: 16
+            radius: 8
+            color: view.controller.themePreviewBarColor()
+          }
+          Rectangle {
+            anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 36 }
+            width: Math.min(330, parent.width - 32)
+            height: 78
+            radius: 12
+            color: view.controller.themePreviewCardColor()
+            Text {
+              anchors { left: parent.left; top: parent.top; right: parent.right; leftMargin: 14; rightMargin: 14; topMargin: 10 }
+              text: view.controller.selectedItem ? view.controller.itemLabel(view.controller.selectedItem) : "Choose a color theme"
+              textFormat: Text.PlainText
+              elide: Text.ElideRight
+              font.family: view.uiFont
+              font.pixelSize: 16
+              font.weight: Font.DemiBold
+              color: view.controller.themePreviewColor("text")
+            }
+            Rectangle {
+              anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: 14; rightMargin: 14; bottomMargin: 10 }
+              height: 28
+              radius: 8
+              color: view.controller.themePreviewColor("primary_container")
+              Text {
+                anchors.centerIn: parent
+                text: "A little calm. A little color."
+                font.family: view.uiFont
+                font.pixelSize: 11
+                color: view.controller.themePreviewColor("on_primary_container")
+              }
+            }
+          }
+          Row {
+            anchors { left: parent.left; bottom: parent.bottom; leftMargin: 16; bottomMargin: 8 }
+            spacing: 8
+            Repeater {
+              model: ["primary", "primary_alt", "accent", "success", "warning", "error"]
+              delegate: Rectangle {
+                required property string modelData
+                width: 12
+                height: 12
+                radius: 6
+                color: view.controller.themePreviewColor(modelData)
+              }
+            }
+          }
+        }
+      }
       ListView {
         id: resultsList
         objectName: "castLauncherResults"
-        anchors { top: sectionLabel.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
+        anchors {
+          top: view.controller.themePreview ? themePreviewPanel.bottom : sectionLabel.bottom
+          left: parent.left; right: parent.right; bottom: parent.bottom
+          topMargin: view.controller.themePreview ? 8 : 0
+        }
         clip: true
         visible: !view.controller.promptMode && !view.controller.detailMode
         model: view.controller.results
@@ -524,7 +590,8 @@ PanelWindow {
         anchors.right: parent.right
         width: 2
         height: Math.max(24, resultsList.height * resultsList.height / Math.max(1, resultsList.contentHeight))
-        y: sectionLabel.height + Math.max(0, Math.min(1, resultsList.contentY / Math.max(1, resultsList.contentHeight - resultsList.height))) * (resultsList.height - height)
+        y: sectionLabel.height + (themePreviewPanel.visible ? themePreviewPanel.height + 10 : 0)
+          + Math.max(0, Math.min(1, resultsList.contentY / Math.max(1, resultsList.contentHeight - resultsList.height))) * (resultsList.height - height)
         radius: 1
         color: Colors.text_alt
         opacity: 0.25
