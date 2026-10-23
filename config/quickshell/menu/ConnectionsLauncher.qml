@@ -7,10 +7,11 @@ LauncherBase {
   id: root
 
   sockName: "kmdot-connections"
+  castStyle: true
   title: "Connections"
   searchPlaceholder: "Search connections…"
   headerTitle: "Connections"
-  cardHeight: 400
+  cardHeight: 520
   footerHint: "\u2191\u2193 navigate \u00b7 \u23ce open"
   countShown: false
 
