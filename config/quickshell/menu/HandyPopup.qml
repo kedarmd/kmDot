@@ -193,8 +193,8 @@ PopupBase {
         Item { width: parent.width; height: 4 }
         Row {
           width: parent.width; spacing: 8
-          PillButton { width: (parent.width - 8) / 2; text: "Models"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.switchTab(0) }
-          PillButton { width: (parent.width - 8) / 2; text: "History"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.switchTab(1) }
+          PillButton { buttonStyle: "pill"; width: (parent.width - 8) / 2; text: "Models"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.switchTab(0) }
+          PillButton { buttonStyle: "pill"; width: (parent.width - 8) / 2; text: "History"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.switchTab(1) }
         }
         Text { visible: root.effectiveError !== ""; width: parent.width; height: visible ? implicitHeight : 0; text: root.effectiveError; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
 

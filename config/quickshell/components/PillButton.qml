@@ -11,6 +11,9 @@ Rectangle {
   property bool outlined: false
   property bool emphasized: false
   property bool enabled: true
+  // Action buttons follow the confirmation dialog. Use `pill` for grouped
+  // selectors such as tabs, profiles, and display options.
+  property string buttonStyle: "action"
   property string text: ""
   property string fontFamily: "JetBrainsMono Nerd Font"
   property string glyph: ""
@@ -29,9 +32,9 @@ Rectangle {
 
   property real horizontalPadding: 12
 
-  implicitHeight: 40
+  implicitHeight: root.buttonStyle === "pill" ? 40 : 34
   implicitWidth: row.implicitWidth + horizontalPadding * 2
-  radius: height / 2
+  radius: root.buttonStyle === "pill" ? height / 2 : 8
   opacity: root.enabled ? 1 : 0.38
   // Hover/keyboard emphasis uses the theme focus outline, without inventing a tint.
   color: !root.enabled ? (root.outlined ? "transparent" : root.inactiveFillColor)

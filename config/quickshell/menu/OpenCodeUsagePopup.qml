@@ -170,8 +170,8 @@ PopupBase {
   Row {
     width: parent.width
     spacing: 8
-    PillButton { width: (parent.width - 8) / 2; text: "Daily"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.switchTab(0) }
-    PillButton { width: (parent.width - 8) / 2; text: "Models"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.switchTab(1) }
+    PillButton { buttonStyle: "pill"; width: (parent.width - 8) / 2; text: "Daily"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.switchTab(0) }
+    PillButton { buttonStyle: "pill"; width: (parent.width - 8) / 2; text: "Models"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.switchTab(1) }
   }
 
   Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }

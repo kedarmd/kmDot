@@ -9,6 +9,9 @@ PopupBase {
   id: root
   sockName: "kmdot-battery"
   cardWidth: 424
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
   // Keep the card close to its content; the current 624px fixed height leaves
   // a large unused area below the power profile note.
   cardMinHeight: 0
@@ -173,8 +176,8 @@ PopupBase {
     Row {
       width: parent.width
       spacing: 12
-      R1Icon { glyph: "󰁹"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
-      Text { text: "Battery"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+      R1Icon { glyph: "󰁹"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.primary; anchors.verticalCenter: parent.verticalCenter }
+      Text { text: "Battery"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
     }
 
     Column {
@@ -182,13 +185,13 @@ PopupBase {
       spacing: 4
       Row {
         spacing: 8
-        Text { id: percentValue; text: root.present ? root.percent.toString() : "—"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 48; font.weight: Font.DemiBold; color: root.charging ? Colors.success : Colors.text }
+        Text { id: percentValue; text: root.present ? root.percent.toString() : "—"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 44; font.weight: Font.DemiBold; color: root.charging ? Colors.success : Colors.text }
         Text { text: "%"; visible: root.present; anchors.baseline: percentValue.baseline; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; color: root.charging ? Colors.success : Colors.text_alt }
       }
       Text {
         width: parent.width
         text: !root.present ? "No battery detected" : root.charging ? "Charging" : (root.full ? "Fully charged" : "Until your next recharge")
-        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: root.charging ? 24 : 16; color: Colors.text
+        font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; font.weight: root.charging ? Font.DemiBold : Font.Normal; color: Colors.text
       }
       Text {
         width: parent.width
@@ -201,7 +204,7 @@ PopupBase {
     Rectangle {
       width: parent.width
       visible: root.present && !root.charging
-      radius: 24
+      radius: 16
       color: Colors.surface_alt
       implicitHeight: chartColumn.implicitHeight + 32
       Column {
@@ -276,9 +279,9 @@ PopupBase {
     Row {
       width: parent.width
       spacing: 8
-      PillButton { width: (parent.width - 16) / 3; height: 40; filled: true; active: root.isProfileActive(PowerProfile.PowerSaver); text: "Saver"; textSize: 14; onClicked: PowerProfiles.profile = PowerProfile.PowerSaver }
-      PillButton { width: (parent.width - 16) / 3; height: 40; filled: true; active: root.isProfileActive(PowerProfile.Balanced); text: "Balanced"; textSize: 14; onClicked: PowerProfiles.profile = PowerProfile.Balanced }
-      PillButton { width: (parent.width - 16) / 3; height: 40; filled: true; active: root.isProfileActive(PowerProfile.Performance); enabled: PowerProfiles.hasPerformanceProfile; text: "Performance"; textSize: 14; onClicked: PowerProfiles.profile = PowerProfile.Performance }
+      PillButton { buttonStyle: "pill"; width: (parent.width - 16) / 3; height: 34; filled: true; active: root.isProfileActive(PowerProfile.PowerSaver); text: "Saver"; textSize: 13; onClicked: PowerProfiles.profile = PowerProfile.PowerSaver }
+      PillButton { buttonStyle: "pill"; width: (parent.width - 16) / 3; height: 34; filled: true; active: root.isProfileActive(PowerProfile.Balanced); text: "Balanced"; textSize: 13; onClicked: PowerProfiles.profile = PowerProfile.Balanced }
+      PillButton { buttonStyle: "pill"; width: (parent.width - 16) / 3; height: 34; filled: true; active: root.isProfileActive(PowerProfile.Performance); enabled: PowerProfiles.hasPerformanceProfile; text: "Performance"; textSize: 13; onClicked: PowerProfiles.profile = PowerProfile.Performance }
     }
     Text {
       width: parent.width

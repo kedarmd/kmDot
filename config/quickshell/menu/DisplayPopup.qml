@@ -365,6 +365,7 @@ PopupBase {
           model: [1, 1.25, 1.5, 2]
           PillButton {
             required property var modelData
+            buttonStyle: "pill"
             width: (parent.width - 24) / 4; height: 40; filled: true
             inactiveFillColor: Colors.surface_alt
             active: root.selectedDisplay && root.selectedDisplay.scale === modelData
@@ -385,6 +386,7 @@ PopupBase {
           model: [{ label: "Extend", value: "extend" }, { label: "Mirror", value: "mirror" }, { label: "External", value: "external" }]
           PillButton {
             required property var modelData
+            buttonStyle: "pill"
             width: (parent.width - 16) / 3; height: 40; filled: true
             inactiveFillColor: Colors.surface_alt
             active: DisplayState.currentMode === modelData.value

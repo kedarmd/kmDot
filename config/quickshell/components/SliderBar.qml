@@ -12,6 +12,12 @@ Item {
   property color fillColor: Colors.control
   property int barRadius: 5
   property real trackHeight: Math.max(4, root.height - 7)
+  // Audio rows opt into the launcher-style slider: a slim track and a clear
+  // thumb. Other controls keep their existing flat bar by default.
+  property bool thumbVisible: false
+  property real thumbSize: 16
+  property color thumbColor: Colors.surface_high
+  property color thumbBorderColor: Colors.primary
   property real dragValue: root.value
   readonly property real displayedValue: mouse.pressed ? root.dragValue : root.value
 
@@ -46,6 +52,21 @@ Item {
     height: root.trackHeight
     radius: root.barRadius
     color: root.fillColor
+  }
+
+  Rectangle {
+    id: thumb
+    visible: root.thumbVisible
+    width: root.thumbSize
+    height: width
+    x: root.displayedValue * root.width - width / 2
+    anchors.verticalCenter: parent.verticalCenter
+    radius: width / 2
+    color: root.thumbColor
+    border.width: 2
+    border.color: root.thumbBorderColor
+    scale: mouse.pressed ? 1.12 : mouse.containsMouse ? 1.06 : 1
+    Behavior on scale { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
   }
 
   MouseArea {

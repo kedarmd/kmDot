@@ -172,7 +172,6 @@ PopupBase {
         objectName: "confirmationCancel"
         width: Math.max(100, implicitWidth)
         height: 34
-        radius: 8
         horizontalPadding: 16
         fontFamily: root.uiFont
         textSize: 14
@@ -185,7 +184,6 @@ PopupBase {
         objectName: "confirmationAccept"
         width: Math.max(100, implicitWidth)
         height: 34
-        radius: 8
         horizontalPadding: 16
         fontFamily: root.uiFont
         textSize: 14

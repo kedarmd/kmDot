@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs
 import "../components"
 import "../components/notificationidentity.js" as Identity
@@ -13,8 +14,11 @@ PanelWindow {
   color: Qt.rgba(0, 0, 0, 0)
   focusable: false
 
-  // NOTE: Pos.primaryScreen (indexed), not .values (see PopupBase screen binding).
-  screen: Pos.primaryScreen(Quickshell.screens)
+  // Keep an active toast stack on the monitor where its first notification
+  // arrived. New stacks follow the focused workspace, like the launchers.
+  property var toastScreen: null
+  screen: root.toastScreen || Pos.focusedWorkspaceScreen(Quickshell.screens,
+    Hyprland.monitorFor, Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.monitor : Hyprland.focusedMonitor)
 
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -51,6 +55,10 @@ PanelWindow {
 
   function addNotification(notif) {
     if (DnDState.dndEnabled || (root.scope && root.scope.notificationCenter && root.scope.notificationCenter.opened)) return
+    if (popupModel.count === 0) {
+      root.toastScreen = Pos.focusedWorkspaceScreen(Quickshell.screens,
+        Hyprland.monitorFor, Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.monitor : Hyprland.focusedMonitor)
+    }
     root.removeNotification(notif.id)
     const isScreenshot = root.isScreenshotApp(notif)
     const duration = notif.urgency === 2 ? 0 : (isScreenshot ? 10000 : 5000)
@@ -207,10 +215,10 @@ PanelWindow {
         required property var modelData
         width: popupColumn.width
         height: cardBody.implicitHeight + 32
-        radius: 24
+        radius: 20
         color: Colors.surface_high
-        border.width: Tokens.surfaceBorderWidth
-        border.color: modelData.urgency === 2 ? Colors.error : Colors.border
+        border.width: 1
+        border.color: modelData.urgency === 2 ? Colors.error : Colors.outline_variant
         enabled: root.opened && index >= 0
 
         HoverHandler {
@@ -220,6 +228,20 @@ PanelWindow {
         Connections {
           target: card.modelData._ref
           function onClosed() { root.removeNotification(card.modelData.notifId) }
+        }
+
+        Rectangle {
+          anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: 16; rightMargin: 16; bottomMargin: 7 }
+          height: 3
+          radius: 2
+          visible: card.modelData.duration > 0
+          color: Colors.surface_alt
+          Rectangle {
+            width: parent.width * Math.max(0, Math.min(1, card.modelData.remaining / Math.max(1, card.modelData.duration)))
+            height: parent.height
+            radius: parent.radius
+            color: card.modelData.urgency === 2 ? Colors.error : Colors.primary
+          }
         }
 
         Column {
@@ -331,7 +353,7 @@ PanelWindow {
 
               PillButton {
                 required property int index
-                height: 40
+                height: 34
                 readonly property bool replyAction: card.modelData._ref
                   && card.modelData._ref.hasInlineReply
                   && index === root.actionCount(card.modelData.actions)

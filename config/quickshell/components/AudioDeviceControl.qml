@@ -142,8 +142,14 @@ Item {
     SliderBar {
       width: parent.width - 48
       height: 40
-      barRadius: 20
-      trackColor: Colors.slider_track
+      trackHeight: 8
+      barRadius: 4
+      thumbVisible: true
+      thumbSize: 16
+      trackColor: Colors.surface_alt
+      fillColor: Colors.primary
+      thumbColor: Colors.surface_high
+      thumbBorderColor: Colors.primary
       value: root.shownLevel
       opacity: root.nodeReady ? 1 : 0.65
       onChanged: if (root.nodeReady) root.audio.volume = v

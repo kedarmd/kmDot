@@ -9,6 +9,11 @@ PopupBase {
   id: root
   sockName: "kmdot-volume"
   cardWidth: 424
+  // Match the reviewed launcher card while keeping this device panel's
+  // content and controls intact.
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
 
   // anchorItem seam: set by the bar module before toggling (see PopupBase).
   property var sinks: []
@@ -201,10 +206,10 @@ Column {
 
   Row {
     width: parent.width
-    height: 40
-    spacing: 16
-    R1Icon { glyph: "\uf028"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
-    Text { text: "Sound"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+    height: 36
+    spacing: 12
+    R1Icon { glyph: "\uf028"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.primary; anchors.verticalCenter: parent.verticalCenter }
+    Text { text: "Sound"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
   }
 
   Item { width: 1; height: 24 }
@@ -213,7 +218,7 @@ Column {
     visible: nowPlaying.player !== null
     width: parent.width
     height: 176
-    radius: 24
+    radius: 16
     color: Colors.surface_alt
     NowPlaying { id: nowPlaying; anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 } }
   }

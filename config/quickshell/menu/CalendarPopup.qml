@@ -235,6 +235,7 @@ PopupBase {
         model: [-1, 1]
         PillButton {
           required property var modelData
+          buttonStyle: "pill"
           width: 40; height: 40; glyph: modelData < 0 ? "\uf053" : "\uf054"; glyphSize: 16
           onClicked: root.shiftMonth(modelData)
         }
