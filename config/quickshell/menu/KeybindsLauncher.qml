@@ -8,72 +8,73 @@ LauncherBase {
   id: root
 
   sockName: "kmdot-keybinds"
+  castStyle: true
+  metaAsKeys: true
   title: "Keybinds"
   searchPlaceholder: "Search shortcuts…"
   headerTitle: "Keybinds"
-  cardHeight: 584
-  footerHint: "\u2191\u2193 navigate"
+  cardHeight: 520
+  footerHint: "↑↓ navigate"
   deactivatable: false
+  countShown: true
+  countNoun: "shortcut"
+  property bool snapshotLoaded: false
+  loadingText: "Reading active keybindings…"
+  emptyText: root.pool.length > 0 ? "No matching shortcuts" : "No active keybindings"
 
-  property var shortcutTargets: [
-    { target: "kmdot-launcher", label: "Applications", subtitle: "Open the application launcher", glyph: "\uf00a", fallback: "Super Space" },
-    { target: "kmdot-kmdot", label: "Command hub", subtitle: "Open all shell actions", glyph: "\uf120", fallback: "Super K" },
-    { target: "kmdot-clipboard", label: "Clipboard", subtitle: "Browse clipboard history", glyph: "\uf0ea", fallback: "Super V" },
-    { target: "kmdot-handy-launcher", label: "Handy", subtitle: "Switch models and copy transcripts", glyph: "\uf130", fallback: "Super H" },
-    { target: "kmdot-system", label: "System", subtitle: "Open power actions", glyph: "\uf011", fallback: "Super Esc" }
-  ]
-
-  function formatShortcut(key) {
-    return String(key).split(/\s*\+\s*/).map(function(part) {
-      const upper = part.toUpperCase()
-      if (upper === "SUPER") return "Super"
-      if (upper === "SHIFT") return "Shift"
-      if (upper === "CTRL" || upper === "CONTROL") return "Ctrl"
-      if (upper === "ALT") return "Alt"
-      if (upper === "ESCAPE" || upper === "ESC") return "Esc"
-      if (upper === "RETURN") return "Enter"
-      if (upper === "SPACE") return "Space"
-      return part.length === 1 ? upper : part
-    }).join(" ")
-  }
+  readonly property string collectorPath: decodeURIComponent(Qt.resolvedUrl("../scripts/keybinds.mjs").toString().replace(/^file:\/\//, ""))
 
   function refreshItems() {
-    root.pool = root.shortcutTargets.map(function(entry) {
-      return {
-        target: entry.target,
-        label: entry.label,
-        subtitle: entry.subtitle,
-        glyph: entry.glyph,
-        meta: entry.fallback
-      }
-    })
-    keybindsProc.exec(["sh", "-c",
-      "lua ~/.config/kmdot/hyprland/scripts/keybinds.lua ~/.config/kmdot/hyprland/keybinds.lua"])
+    if (snapshotProc.running) return
+    root.loading = !root.snapshotLoaded
+    snapshotProc.exec(["node", root.collectorPath])
   }
 
-  function addBinding(line) {
-    const parts = String(line).replace(/[\r\n]+$/, "").split("\t")
-    if (parts.length < 3) return
-    const entry = root.shortcutTargets.find(function(target) { return target.target === parts[2] })
-    if (!entry) return
-    const current = root.pool.slice()
-    const index = root.shortcutTargets.indexOf(entry)
-    current[index] = {
-      target: entry.target,
-      label: entry.label,
-      subtitle: entry.subtitle,
-      glyph: entry.glyph,
-      meta: root.formatShortcut(parts[0] || "")
+  function applySnapshot(text) {
+    root.snapshotLoaded = true
+    try {
+      const data = JSON.parse(text)
+      if (!data.ok || !Array.isArray(data.items)) throw new Error(data.error || "Unable to read active keybindings")
+      root.listErrorText = ""
+      if (JSON.stringify(root.pool) !== JSON.stringify(data.items)) {
+        const selectedId = root.selectedItem ? root.selectedItem.id : ""
+        root.pool = data.items
+        const index = root.results.findIndex(row => row.item.id === selectedId)
+        if (index >= 0) root.selectedIndex = index
+      }
+    } catch (error) {
+      root.pool = []
+      root.listErrorText = String(error.message || error)
     }
-    root.pool = current.filter(function(item) { return !!item })
+  }
+
+  function matchScore(item, query) {
+    const normalise = value => String(value || "").replace(/\+/g, " ").replace(/\s+/g, " ").trim()
+    const keyScore = value => {
+      const keys = normalise(value).toLowerCase()
+      const wanted = normalise(query).toLowerCase()
+      if (query.indexOf("+") >= 0) return keys === wanted ? 100000 : keys.indexOf(wanted) >= 0 ? 50000 : -1
+      return root.fieldScore(keys, wanted)
+    }
+    return Math.max(root.fieldScore(item.label, query), root.fieldScore(item.subtitle, query),
+      keyScore(item.meta), keyScore(item.rawKeys))
+  }
+
+  Timer {
+    interval: 2000
+    repeat: true
+    running: root.opened
+    onTriggered: root.refreshItems()
   }
 
   Process {
-    id: keybindsProc
-    stdout: SplitParser {
-      splitMarker: "\n"
-      onRead: function(data) {
-        if (String(data).trim()) root.addBinding(data)
+    id: snapshotProc
+    stdout: StdioCollector { onStreamFinished: root.applySnapshot(text) }
+    onExited: function(exitCode) {
+      root.loading = false
+      if (exitCode !== 0) {
+        root.pool = []
+        root.listErrorText = "Unable to read active keybindings"
       }
     }
   }

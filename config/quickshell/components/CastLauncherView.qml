@@ -269,13 +269,27 @@ PanelWindow {
               elide: Text.ElideRight
             }
           }
-          Text {
+          Item {
             id: rowMeta
             anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
-            text: view.controller.itemMeta(resultRow.modelData.item)
-            font.family: view.uiFont
-            font.pixelSize: 12
-            color: resultRow.selected ? Colors.on_primary_container : Colors.text_alt
+            width: view.controller.metaAsKeys ? shortcutKeys.implicitWidth : metaText.implicitWidth
+            height: view.controller.metaAsKeys ? shortcutKeys.implicitHeight : metaText.implicitHeight
+            Text {
+              id: metaText
+              visible: !view.controller.metaAsKeys
+              text: view.controller.itemMeta(resultRow.modelData.item)
+              font.family: view.uiFont
+              font.pixelSize: 12
+              color: resultRow.selected ? Colors.on_primary_container : Colors.text_alt
+            }
+            Cast.KeyHint {
+              id: shortcutKeys
+              objectName: "castLauncherShortcutKeys"
+              visible: view.controller.metaAsKeys
+              keys: view.controller.itemMeta(resultRow.modelData.item)
+              fontFamily: view.uiFont
+              color: resultRow.selected ? Colors.on_primary_container : Colors.text
+            }
           }
           MouseArea {
             anchors.fill: parent
@@ -397,7 +411,7 @@ PanelWindow {
         Cast.BrandMark { width: 18; height: 18; anchors.verticalCenter: parent.verticalCenter }
         Text {
           anchors.verticalCenter: parent.verticalCenter
-          text: view.controller.headerTitle
+          text: view.controller.headerTitle + (view.controller.countShown ? " · " + view.controller.resultCount : "")
           font.family: view.uiFont
           font.pixelSize: 12
           color: Colors.text_alt
@@ -409,9 +423,9 @@ PanelWindow {
         spacing: 8
         Text { visible: !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; text: "Navigate"; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text_alt }
         Cast.KeyHint { visible: !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; keys: "↑ ↓"; color: Colors.text; fontFamily: view.uiFont }
-        Rectangle { visible: !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
-        Text { anchors.verticalCenter: parent.verticalCenter; text: view.controller.primaryActionText; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text }
-        Cast.KeyHint { anchors.verticalCenter: parent.verticalCenter; keys: "↵"; color: Colors.text; fontFamily: view.uiFont }
+        Rectangle { visible: !view.controller.promptMode && view.controller.deactivatable; anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
+        Text { visible: view.controller.deactivatable; anchors.verticalCenter: parent.verticalCenter; text: view.controller.primaryActionText; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text }
+        Cast.KeyHint { visible: view.controller.deactivatable; anchors.verticalCenter: parent.verticalCenter; keys: "↵"; color: Colors.text; fontFamily: view.uiFont }
         Repeater {
           model: view.controller.promptMode ? [] : view.controller.itemActions
           delegate: Row {

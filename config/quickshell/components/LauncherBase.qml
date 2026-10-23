@@ -48,6 +48,7 @@ Item {
   property string sectionRole: ""
   property string footerHint: "\u2191\u2193 navigate \u00b7 \u23ce select"
   property string primaryActionText: "Open"
+  property bool metaAsKeys: false
   property string closeHint: "esc  Close"
   property bool countShown: false
   property string countNoun: "item"
