@@ -45,6 +45,10 @@ When changing a palette, adding a semantic color role, or changing a component's
 
 Every theme explicitly defines the complete schema in `theme-switcher/quickshell.roles`. `render-quickshell.sh` validates it before deployment or preview. `Colors.qml` is generated during sync; it has no repository default. Sync takes the saved theme selection or an explicit theme argument. Use upstream role definitions and documented UI precedents; record desktop adaptations when upstream does not specify a role. Store derived upstream values in the theme file. Keep `Tokens.qml` as semantic aliases; preserve each role's explicit foreground/background pair.
 
+## Quickshell visual design
+
+When creating, restyling, or reviewing a Quickshell launcher, popup, dropdown, or control, read [the Quickshell design language](docs/quickshell-design-language.md). It records the oma-cast reference and approved kmDot adaptations for geometry, control states, menu behavior, affordances, and visual review.
+
 ## Key Quirks
 
 - **Screenshots**: the PRINT binds in `config/hyprland/keybinds.lua` call bare `hyprshot -m window|output|region`, so the save location comes entirely from the environment. The packaged hyprshot (**1.3.0**) has **no config file at all** — no `hyprshot.conf`, and it never sources one; it only reads `HYPRSHOT_DIR` (else `XDG_PICTURES_DIR`, else `~`) and creates the dir itself with `mkdir -p`. So the location is set once in `config/hyprland/env.lua` via `hl.env("HYPRSHOT_DIR", …)` → `~/Pictures/Screenshots`. Don't look for a hyprshot config file in `config/hyprland/` (it would be ignored); the other alternative is passing `-o` on every bind. `hl.env` only reaches compositor-spawned processes (the binds, and anything launched from the quickshell launcher), so a `hyprshot` typed inside an already-running terminal still uses the old default unless the var is also exported in the shell rc.
