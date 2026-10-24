@@ -8,6 +8,9 @@ PopupBase {
   id: root
   sockName: "kmdot-calendar"
   cardWidth: 424
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
   cardMinHeight: 704
   focusItem: nav
 
@@ -355,7 +358,8 @@ PopupBase {
       text: root.syncText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt; elide: Text.ElideRight
     }
     PillButton {
-      anchors.right: parent.right; width: 120; height: 40; filled: true; inactiveFillColor: Colors.surface_alt
+      anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+      width: 120; height: 34; filled: true; inactiveFillColor: Colors.surface_alt
       text: root.loading ? "Syncing…" : "Sync"; textSize: 14; enabled: !root.loading
       onClicked: root.syncNow()
     }
