@@ -140,6 +140,7 @@ Singleton {
     } else mirrorOf = "none"
     return {
       name: String(raw.name),
+      colorPreset: String(raw.colorManagementPreset || "srgb"),
       width: width,
       height: height,
       refresh: refresh,

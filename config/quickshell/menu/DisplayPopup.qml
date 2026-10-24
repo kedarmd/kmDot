@@ -15,6 +15,7 @@ PopupBase {
   readonly property var selectedDisplay: DisplayState.selectedDisplay
   readonly property bool canArrange: displays.length > 1
     && DisplayState.currentMode === "extend" && !DisplayState.changeBusy
+  property bool colorOpen: false
   property bool resolutionOpen: false
   property string pendingDisplayMode: ""
 
@@ -27,10 +28,11 @@ PopupBase {
   function refreshItems() {
     DisplayState.refreshDisplays()
     DisplayState.detectBacklights()
+    DisplayColorState.refresh()
   }
   function openedChange() {
     DisplayState.monitorsActive = root.opened
-    if (!root.opened) root.resolutionOpen = false
+    if (!root.opened) { root.resolutionOpen = false; root.colorOpen = false }
   }
 
   function logicalWidth(display) { return display.width / (display.scale || 1) }
@@ -109,7 +111,14 @@ PopupBase {
     DisplayState.setDisplayPosition(name, x, y)
   }
 
+  DisplayColorControls {
+    width: parent.width
+    visible: root.colorOpen
+    onBack: root.colorOpen = false
+  }
+
   Column {
+    visible: !root.colorOpen
     width: parent.width
     spacing: 16
 
@@ -354,6 +363,13 @@ PopupBase {
         onChanged: value => DisplayState.applyBrightness(DisplayState.selectedDevice,
           Math.round(value * DisplayState.maxFor(DisplayState.selectedDevice)))
       }
+    }
+
+    PillButton {
+      width: parent.width; height: 40; filled: true
+      text: "Color adjustment"; glyph: "\uf1de"
+      enabled: !!root.selectedDisplay
+      onClicked: { root.colorOpen = true; root.resolutionOpen = false; DisplayColorState.refresh() }
     }
 
     Column {
