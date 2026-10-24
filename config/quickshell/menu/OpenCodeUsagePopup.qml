@@ -8,20 +8,26 @@ PopupBase {
   id: root
   sockName: "kmdot-opencode-usage"
   cardWidth: 424
-  cardMinHeight: root.tab === 0 ? 576 : 528
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
+  cardMinHeight: 576
   tabNavigation: true
 
   property int tab: 0
   property int tabDirection: 1
+  readonly property int tabButtonHeight: 34
   property var report: null
   property string errorText: ""
   property var agents: []
   property string selectedAgent: "opencode"
   property bool loading: false
   property bool agentMenuOpen: false
+  property int hoveredAgentIndex: -1
   property string requestAgent: ""
   property var hoveredDay: null
   property real hoveredX: 0
+  onAgentMenuOpenChanged: if (!root.agentMenuOpen) root.hoveredAgentIndex = -1
   function switchTab(index) {
     if (root.tab === index) return
     const direction = index > root.tab ? 1 : -1
@@ -105,9 +111,9 @@ PopupBase {
 
   Item {
     width: parent.width
-    height: 48
-    R1Icon { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf121"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.text }
-    Text { anchors.left: parent.left; anchors.leftMargin: 40; anchors.verticalCenter: parent.verticalCenter; text: root.agentName(root.selectedAgent) + " usage"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
+    height: 36
+    R1Icon { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf121"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.primary }
+    Text { anchors.left: parent.left; anchors.leftMargin: 36; anchors.verticalCenter: parent.verticalCenter; text: root.agentName(root.selectedAgent) + " usage"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.text }
   }
 
   function agentName(id) { const found = agents.find(agent => agent.id === id); return found ? found.name : "AI agent" }
@@ -115,14 +121,16 @@ PopupBase {
   Item {
     id: agentSelector
     width: parent.width
-    height: 40
+    height: 34
     z: root.agentMenuOpen ? 10 : 0
     Rectangle {
       id: agentSelectorButton
       width: parent.width
-      height: 40
-      radius: 20
+      height: 34
+      radius: 8
       color: Colors.surface_alt
+      border.width: 1
+      border.color: root.agentMenuOpen ? Colors.focus : Colors.outline_variant
       R1Icon { anchors.left: parent.left; anchors.leftMargin: 14; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf121"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14 }
       Text { anchors.left: parent.left; anchors.leftMargin: 38; anchors.verticalCenter: parent.verticalCenter; text: root.agentName(root.selectedAgent); color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14 }
       R1Icon { anchors.right: parent.right; anchors.rightMargin: 14; anchors.verticalCenter: parent.verticalCenter; glyph: root.agentMenuOpen ? "\uf078" : "\uf078"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14; rotation: root.agentMenuOpen ? 180 : 0; Behavior on rotation { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } } }
@@ -133,11 +141,11 @@ PopupBase {
       visible: root.agentMenuOpen || opacity > 0
       width: parent.width
       height: menuContent.implicitHeight + 12
-      y: 46
-      radius: 16
+      y: 40
+      radius: 12
       color: Colors.surface_high
-      border.width: Tokens.surfaceBorderWidth
-      border.color: Colors.border
+      border.width: 1
+      border.color: Colors.outline_variant
       clip: true
       opacity: root.agentMenuOpen ? 1 : 0
       Behavior on opacity { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
@@ -151,15 +159,22 @@ PopupBase {
             required property var modelData
             required property int index
             width: menuContent.width
-            height: 38
+            height: 34
+            readonly property bool chosen: root.selectedAgent === modelData.id
+            readonly property bool hovered: root.hoveredAgentIndex === index
             Rectangle {
               anchors.fill: parent
-              radius: 10
-              color: root.selectedAgent === modelData.id ? Colors.surface_alt : "transparent"
+              radius: 8
+              color: parent.hovered || (parent.chosen && root.hoveredAgentIndex < 0) ? Colors.surface_alt : "transparent"
             }
-            Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData.name; color: root.selectedAgent === modelData.id ? Colors.text : Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 13 }
-            R1Icon { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; visible: root.selectedAgent === modelData.id; glyph: "\uf00c"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 13 }
-            MouseArea { anchors.fill: parent; onClicked: root.selectAgent(modelData.id) }
+            Text { anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: modelData.name; color: parent.chosen ? Colors.text : Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 13 }
+            R1Icon { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; visible: parent.chosen; glyph: "\uf00c"; color: Colors.primary; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 13 }
+            MouseArea {
+              anchors.fill: parent; hoverEnabled: true
+              onEntered: root.hoveredAgentIndex = index
+              onExited: if (root.hoveredAgentIndex === index) root.hoveredAgentIndex = -1
+              onClicked: root.selectAgent(modelData.id)
+            }
             Rectangle { visible: index < root.agents.length - 1; anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom; anchors.leftMargin: 10; anchors.rightMargin: 10; height: 1; color: Colors.outline_variant; opacity: 0.45 }
           }
         }
@@ -169,9 +184,10 @@ PopupBase {
 
   Row {
     width: parent.width
+    height: root.tabButtonHeight
     spacing: 8
-    PillButton { buttonStyle: "pill"; width: (parent.width - 8) / 2; text: "Daily"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.switchTab(0) }
-    PillButton { buttonStyle: "pill"; width: (parent.width - 8) / 2; text: "Models"; textSize: 14; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.switchTab(1) }
+    PillButton { buttonStyle: "action"; width: (parent.width - 8) / 2; height: root.tabButtonHeight; text: "Daily"; textSize: 13; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.switchTab(0) }
+    PillButton { buttonStyle: "action"; width: (parent.width - 8) / 2; height: root.tabButtonHeight; text: "Models"; textSize: 13; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.switchTab(1) }
   }
 
   Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
@@ -262,10 +278,8 @@ PopupBase {
         y: 2
         width: tooltipValue.implicitWidth + 20
         height: 34
-        radius: 10
-        color: Colors.surface_high
-        border.width: Tokens.surfaceBorderWidth
-        border.color: Colors.border
+        radius: 8
+        color: Colors.surface_alt
         Text {
           id: tooltipValue
           anchors.centerIn: parent
@@ -300,11 +314,10 @@ PopupBase {
       radius: 16
       color: Colors.surface_alt
       R1Icon { anchors.left: parent.left; anchors.leftMargin: 16; anchors.verticalCenter: parent.verticalCenter; width: 24; height: 24; glyph: "\uf120"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-      Column { anchors.left: parent.left; anchors.leftMargin: 56; anchors.right: trailing.left; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+      Column { anchors.left: parent.left; anchors.leftMargin: 56; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; spacing: 4
         Text { width: parent.width; text: root.formatModelName(modelData.model); color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
         Text { width: parent.width; text: root.formatTokens(modelData.tokens) + " tokens · " + root.formatCost(modelData.cost); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; elide: Text.ElideRight }
       }
-      R1Icon { id: trailing; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: "\uf054"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14 }
       }
     }
 
@@ -328,7 +341,7 @@ PopupBase {
 
   bottomContent: Item {
     width: parent.width
-    height: 48
+    height: 34
     Column {
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
