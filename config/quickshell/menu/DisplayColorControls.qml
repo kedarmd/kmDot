@@ -10,14 +10,17 @@ Column {
   readonly property bool changed: adjustment.contrast !== 1 || adjustment.saturation !== 1 || adjustment.gamma !== 1
 
   PillButton {
+    buttonStyle: "action"
+    height: 34
     text: "Display"; glyph: "\uf060"; outlined: true
+    textSize: 13
     onClicked: root.back()
   }
   Column {
     width: parent.width; spacing: 6
     Text {
       text: "Color adjustment"
-      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 23; font.weight: Font.DemiBold; color: Colors.text
+      font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.text
     }
     Text {
       width: parent.width
@@ -52,8 +55,10 @@ Column {
         }
       }
       SliderBar {
-        width: parent.width; height: 40; trackHeight: 40
-        trackColor: Colors.slider_track; barRadius: 20
+        width: parent.width; height: 40; trackHeight: 8
+        trackColor: Colors.surface_alt; fillColor: Colors.primary; barRadius: 4
+        thumbVisible: true; thumbSize: 16
+        thumbColor: Colors.surface_high; thumbBorderColor: Colors.primary
         value: (root.adjustment[modelData.key] - modelData.min) / (modelData.max - modelData.min)
         wheelStep: 0.01 / (modelData.max - modelData.min)
         activeFocusOnTab: true
@@ -61,7 +66,7 @@ Column {
         Keys.onRightPressed: changed(Math.min(1, value + wheelStep))
         Rectangle {
           anchors.fill: parent; anchors.margins: -3
-          radius: 23; color: "transparent"
+          radius: 13; color: "transparent"
           border.width: parent.activeFocus ? 2 : 0; border.color: Colors.focus
         }
         onChanged: v => DisplayColorState.setValue(modelData.key, modelData.min + v * (modelData.max - modelData.min))
@@ -73,8 +78,11 @@ Column {
     }
   }
   PillButton {
+    buttonStyle: "action"
+    height: 34
     visible: DisplayColorState.supported
     text: "Reset to default"; glyph: "\uf0e2"; outlined: true
+    textSize: 13
     enabled: root.changed
     onClicked: DisplayColorState.reset()
   }
