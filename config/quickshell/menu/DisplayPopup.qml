@@ -10,6 +10,9 @@ PopupBase {
   title: "Display"
   cardWidth: 424
   cardChrome: 48
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
 
   readonly property var displays: DisplayState.displays
   readonly property var selectedDisplay: DisplayState.selectedDisplay
@@ -17,7 +20,9 @@ PopupBase {
     && DisplayState.currentMode === "extend" && !DisplayState.changeBusy
   property bool colorOpen: false
   property bool resolutionOpen: false
+  property int hoveredModeIndex: -1
   property string pendingDisplayMode: ""
+  onResolutionOpenChanged: if (!root.resolutionOpen) root.hoveredModeIndex = -1
 
   Timer {
     id: applyModeTimer
@@ -279,13 +284,18 @@ PopupBase {
     }
 
     Column {
+      id: resolutionSection
       width: parent.width; spacing: 8
+      z: root.resolutionOpen ? 10 : 0
       Text { text: "RESOLUTION · REFRESH RATE"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
-      Column {
-        width: parent.width; spacing: 6
+      Item {
+        id: resolutionControl
+        width: parent.width
+        height: 34
         Rectangle {
-          width: parent.width; height: 40; radius: 20; color: Colors.surface_alt
-          border.width: root.resolutionOpen ? 1 : 0; border.color: Colors.focus
+          anchors.fill: parent
+          radius: 8; color: Colors.surface_alt
+          border.width: 1; border.color: root.resolutionOpen ? Colors.focus : Colors.outline_variant
           Text {
             anchors.left: parent.left; anchors.leftMargin: 14; anchors.verticalCenter: parent.verticalCenter
             text: root.selectedDisplay ? root.selectedDisplay.width + " × " + root.selectedDisplay.height : "No display selected"
@@ -305,8 +315,9 @@ PopupBase {
           MouseArea { anchors.fill: parent; enabled: !!root.selectedDisplay && !DisplayState.changeBusy; onClicked: root.resolutionOpen = !root.resolutionOpen }
         }
         Rectangle {
+          y: parent.height + 6
           width: parent.width; height: root.resolutionOpen ? Math.min(resolutionList.contentHeight + 12, 180) : 0
-          visible: root.resolutionOpen; radius: 16; color: Colors.surface_high; border.width: Tokens.surfaceBorderWidth; border.color: Colors.border; clip: true
+          visible: root.resolutionOpen; radius: 12; color: Colors.surface_high; border.width: 1; border.color: Colors.outline_variant; clip: true
           ListView {
             id: resolutionList
             anchors.fill: parent; anchors.margins: 6; clip: true
@@ -314,24 +325,38 @@ PopupBase {
             delegate: Item {
               required property var modelData
               required property int index
-              width: resolutionList.width; height: 36
+              width: resolutionList.width; height: 34
+              readonly property bool hovered: root.hoveredModeIndex === index
               readonly property bool chosen: root.selectedDisplay
                 && root.selectedDisplay.width === modelData.width
                 && root.selectedDisplay.height === modelData.height
                 && Math.abs(root.selectedDisplay.refresh - modelData.refresh) < 0.02
-              Rectangle { anchors.fill: parent; radius: 10; color: parent.chosen ? Colors.surface_alt : "transparent" }
+              Rectangle {
+                anchors.fill: parent; radius: 8
+                color: parent.hovered || (parent.chosen && root.hoveredModeIndex < 0) ? Colors.surface_alt : "transparent"
+              }
               Text {
                 anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter
                 text: modelData.width + " × " + modelData.height
                 font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 13; color: parent.chosen ? Colors.text : Colors.text_alt
               }
               Text {
-                anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter
+                anchors.right: parent.right; anchors.rightMargin: parent.chosen ? 34 : 12; anchors.verticalCenter: parent.verticalCenter
                 text: modelData.refresh.toFixed(2) + " Hz"
                 font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 13; color: parent.chosen ? Colors.text : Colors.text_alt
               }
+              R1Icon {
+                anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter
+                visible: parent.chosen; glyph: "\uf00c"
+                font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 12; color: Colors.primary
+              }
               MouseArea {
+                id: modeMouse
                 anchors.fill: parent; enabled: !DisplayState.changeBusy
+                hoverEnabled: true
+                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onEntered: root.hoveredModeIndex = index
+                onExited: if (root.hoveredModeIndex === index) root.hoveredModeIndex = -1
                 onClicked: { DisplayState.applyDisplayMode(modelData); root.resolutionOpen = false }
               }
             }
@@ -355,18 +380,20 @@ PopupBase {
         }
       }
       SliderBar {
-        width: parent.width; height: 40; trackHeight: 40
+        width: parent.width; height: 40; trackHeight: 8; barRadius: 4
         enabled: root.selectedDisplay && DisplayState.selectedHasBacklight
+        thumbVisible: enabled; thumbSize: 16
         opacity: enabled ? 1 : 0.38
         value: DisplayState.curFor(DisplayState.selectedDevice) / DisplayState.maxFor(DisplayState.selectedDevice)
-        trackColor: Colors.slider_track; barRadius: 20
+        trackColor: Colors.surface_alt; fillColor: Colors.primary
+        thumbColor: Colors.surface_high; thumbBorderColor: Colors.primary
         onChanged: value => DisplayState.applyBrightness(DisplayState.selectedDevice,
           Math.round(value * DisplayState.maxFor(DisplayState.selectedDevice)))
       }
     }
 
     PillButton {
-      width: parent.width; height: 40; filled: true
+      width: parent.width; height: 34; filled: true
       text: "Color adjustment"; glyph: "\uf1de"
       enabled: !!root.selectedDisplay
       onClicked: { root.colorOpen = true; root.resolutionOpen = false; DisplayColorState.refresh() }
@@ -381,12 +408,12 @@ PopupBase {
           model: [1, 1.25, 1.5, 2]
           PillButton {
             required property var modelData
-            buttonStyle: "pill"
-            width: (parent.width - 24) / 4; height: 40; filled: true
+            buttonStyle: "action"
+            width: (parent.width - 24) / 4; height: 34; filled: true
             inactiveFillColor: Colors.surface_alt
             active: root.selectedDisplay && root.selectedDisplay.scale === modelData
             enabled: !!root.selectedDisplay && !DisplayState.changeBusy
-            text: Math.round(modelData * 100) + "%"; textSize: 14
+            text: Math.round(modelData * 100) + "%"; textSize: 13
             onClicked: DisplayState.applyScale(DisplayState.selectedName, modelData)
           }
         }
@@ -402,13 +429,13 @@ PopupBase {
           model: [{ label: "Extend", value: "extend" }, { label: "Mirror", value: "mirror" }, { label: "External", value: "external" }]
           PillButton {
             required property var modelData
-            buttonStyle: "pill"
-            width: (parent.width - 16) / 3; height: 40; filled: true
+            buttonStyle: "action"
+            width: (parent.width - 16) / 3; height: 34; filled: true
             inactiveFillColor: Colors.surface_alt
             active: DisplayState.currentMode === modelData.value
             enabled: root.displays.length > 0 && !DisplayState.changeBusy
               && (modelData.value === "extend" || root.displays.length > 1)
-            text: modelData.label; textSize: 14
+            text: modelData.label; textSize: 13
             onClicked: {
               if (modelData.value === DisplayState.currentMode) return
               // Release the fullscreen input grab before its screen becomes
