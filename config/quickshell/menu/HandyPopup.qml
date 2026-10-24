@@ -9,6 +9,9 @@ PopupBase {
   id: root
   sockName: "kmdot-handy"
   cardWidth: 424
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
   cardMinHeight: root.tab === 0 ? 536 : 624
   cardMaxHeight: root.tab === 0 ? Math.max(536, root.modelListHeight + 272) : 624
 
@@ -185,16 +188,16 @@ PopupBase {
 
         Item {
           width: parent.width; height: 28
-          R1Icon { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: 2; width: 24; height: 24; glyph: "\uf130"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-          Text { anchors.left: parent.left; anchors.leftMargin: 40; anchors.verticalCenter: parent.verticalCenter; text: "Handy"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
+          R1Icon { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: 2; width: 24; height: 24; glyph: "\uf130"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.primary; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+          Text { anchors.left: parent.left; anchors.leftMargin: 40; anchors.verticalCenter: parent.verticalCenter; text: "Handy"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.text }
           Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: root.busy ? "Working" : ""; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Tokens.mutedText }
         }
 
         Item { width: parent.width; height: 4 }
         Row {
-          width: parent.width; spacing: 8
-          PillButton { buttonStyle: "pill"; width: (parent.width - 8) / 2; text: "Models"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.switchTab(0) }
-          PillButton { buttonStyle: "pill"; width: (parent.width - 8) / 2; text: "History"; textSize: 14; emphasized: true; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.switchTab(1) }
+          width: parent.width; height: 34; spacing: 8
+          PillButton { buttonStyle: "action"; width: (parent.width - 8) / 2; anchors.top: parent.top; anchors.bottom: parent.bottom; text: "Models"; textSize: 13; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 0; onClicked: root.switchTab(0) }
+          PillButton { buttonStyle: "action"; width: (parent.width - 8) / 2; anchors.top: parent.top; anchors.bottom: parent.bottom; text: "History"; textSize: 13; filled: true; inactiveFillColor: Colors.surface_alt; active: root.tab === 1; onClicked: root.switchTab(1) }
         }
         Text { visible: root.effectiveError !== ""; width: parent.width; height: visible ? implicitHeight : 0; text: root.effectiveError; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; wrapMode: Text.WordWrap }
 
@@ -223,11 +226,11 @@ PopupBase {
             width: modelList.width; height: 72; radius: 16
             color: modelData.id === root.selectedModel ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
             R1Icon { anchors.left: parent.left; anchors.leftMargin: 16; anchors.verticalCenter: parent.verticalCenter; width: 24; height: 24; glyph: "\uf130"; color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-            Column { anchors.left: parent.left; anchors.leftMargin: 56; anchors.right: trailing.left; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+            Column { anchors.left: parent.left; anchors.leftMargin: 56; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; spacing: 4
               Text { width: parent.width; text: modelData.name; color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: modelData.id === root.selectedModel ? Font.DemiBold : Font.Normal; elide: Text.ElideRight }
               Text { width: parent.width; text: root.modelDescription(modelData); color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; elide: Text.ElideRight }
             }
-            R1Icon { id: trailing; anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; glyph: modelData.id === root.selectedModel ? "\uf00c" : "\uf054"; color: modelData.id === root.selectedModel ? Tokens.on_primary_container : Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14 }
+            R1Icon { anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; visible: modelData.id === root.selectedModel; glyph: "\uf00c"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 14 }
             MouseArea { anchors.fill: parent; enabled: !root.busy; onClicked: root.selectModel(modelData.id) }
           }
         }
@@ -403,7 +406,9 @@ PopupBase {
       visible: root.tab === 0
       width: parent.width
       anchors.bottom: parent.bottom
-      height: 40
+      height: 34
+      buttonStyle: "action"
+      textSize: 13
       text: "Refresh models"
       filled: true
       active: true

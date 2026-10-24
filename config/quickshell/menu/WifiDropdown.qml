@@ -113,7 +113,6 @@ PopupBase {
       }
       MouseArea { anchors.fill: parent; enabled: root.radioEnabled && !root.busySsid; cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor; onClicked: root.activate(modelData) }
       R1Icon { anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; visible: modelData.active; glyph: "\uf00c"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16 }
-      R1Icon { anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; visible: !modelData.active && root.busySsid !== modelData.ssid; glyph: "\uf105"; color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16 }
     }
   }
 

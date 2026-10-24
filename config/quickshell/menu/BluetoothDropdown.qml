@@ -93,12 +93,12 @@ PopupBase {
       }
       MouseArea { anchors.fill: parent; enabled: root.radioEnabled && !root.busyPath; onClicked: root.activate(modelData) }
       R1Icon {
-        visible: !busy
+        visible: modelData.connected && !busy
         anchors.right: parent.right
         anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
-        glyph: modelData.connected ? "\uf00c" : "\uf105"
-        color: modelData.connected ? Colors.success : Colors.text_alt
+        glyph: "\uf00c"
+        color: Colors.success
         font.family: "JetBrainsMono Nerd Font Propo"
         font.pixelSize: 13
       }
