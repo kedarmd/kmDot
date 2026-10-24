@@ -21,7 +21,13 @@ else
     })
 end
 
--- Keep the numbered workspace slots available to the bar even when empty.
-for workspace = 1, 5 do
-    hl.workspace_rule({ workspace = tostring(workspace), persistent = true })
+-- Keep the numbered workspace slots available to the bar and place them on
+-- their intended displays whenever Hyprland creates or restores them.
+for workspace = 1, 4 do
+    hl.workspace_rule({
+        workspace = tostring(workspace),
+        monitor = "HDMI-A-1",
+        persistent = true,
+    })
 end
+hl.workspace_rule({ workspace = "5", monitor = "eDP-1", persistent = true })

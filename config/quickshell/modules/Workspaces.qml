@@ -42,7 +42,8 @@ Item {
         required property int index
 
         readonly property int wsId: index + 1
-        readonly property bool active: Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.id === wsId
+        readonly property bool active: Hyprland.focusedWorkspace
+                                       && Hyprland.focusedWorkspace.id === wsId
         readonly property bool urgent: {
           const ws = root.workspace(wsId)
           return ws ? ws.urgent : false
