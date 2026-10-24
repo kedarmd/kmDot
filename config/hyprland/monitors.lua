@@ -20,3 +20,8 @@ else
         scale    = 1,
     })
 end
+
+-- Keep the numbered workspace slots available to the bar even when empty.
+for workspace = 1, 5 do
+    hl.workspace_rule({ workspace = tostring(workspace), persistent = true })
+end
