@@ -7,6 +7,9 @@ PopupBase {
   id: root
   sockName: "kmdot-wifi-dropdown"
   title: "Wi-Fi"
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
   // Let the card follow the network count instead of leaving a large blank
   // block below the join button. The list still grows up to its viewport cap.
   cardMinHeight: !root.radioEnabled || (root.scanning && root.networks.length === 0) ? 400 : 0

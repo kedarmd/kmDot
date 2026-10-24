@@ -6,6 +6,9 @@ PopupBase {
   id: root
   sockName: "kmdot-bluetooth-dropdown"
   title: "Bluetooth"
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
   cardMinHeight: 504
   escapeCloses: true
 
@@ -172,7 +175,7 @@ PopupBase {
 
   bottomContent: PillButton {
     width: parent.width
-    height: 40
+    height: 34
     filled: true
     glyph: "\uf067"
     text: "Pair new device"
