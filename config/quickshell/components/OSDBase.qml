@@ -3,7 +3,9 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Pipewire
+import Quickshell.Hyprland
 import qs
+import "./popuppos.js" as Pos
 
 // Shared, short-lived on-screen display for media-key feedback.
 PanelWindow {
@@ -30,7 +32,8 @@ PanelWindow {
   visible: opened
   color: "transparent"
   focusable: false
-  screen: Quickshell.screens.length ? Quickshell.screens[0] : null
+  screen: Pos.focusedWorkspaceScreen(Quickshell.screens, Hyprland.monitorFor,
+    Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.monitor : Hyprland.focusedMonitor)
   WlrLayershell.layer: WlrLayer.Overlay
   WlrLayershell.exclusionMode: ExclusionMode.Ignore
   anchors { top: true; bottom: true; left: true; right: true }
@@ -68,19 +71,19 @@ PanelWindow {
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
     anchors.bottomMargin: 90
-    width: 300
-    height: 76
-    radius: 24
+    width: Math.min(360, parent.width - 32)
+    height: 84
+    radius: 20
     color: Colors.surface_high
-    border.color: Colors.border
-    border.width: Tokens.surfaceBorderWidth
+    border.color: Colors.outline_variant
+    border.width: 1
     opacity: root.opened ? 1 : 0
 
     Behavior on opacity { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
 
     R1Icon {
       id: glyph
-      anchors { left: parent.left; leftMargin: 22; verticalCenter: parent.verticalCenter; verticalCenterOffset: -12 }
+      anchors { left: parent.left; leftMargin: 20; top: parent.top; topMargin: 16 }
       width: 24
       height: 24
       iconName: root.iconName
@@ -89,29 +92,31 @@ PanelWindow {
     }
 
     Text {
-      anchors { left: glyph.right; leftMargin: 16; verticalCenter: parent.verticalCenter; verticalCenterOffset: -12 }
+      anchors { left: glyph.right; leftMargin: 12; verticalCenter: glyph.verticalCenter }
       text: root.kind === "volume" ? "Volume" : root.kind === "microphone" ? "Microphone" : "Brightness"
       color: Colors.text_alt
-      font.pixelSize: 12
+      font.family: "JetBrainsMono Nerd Font"
+      font.pixelSize: 13
       font.weight: Font.Medium
     }
     Text {
-      anchors { right: parent.right; rightMargin: 22; verticalCenter: parent.verticalCenter; verticalCenterOffset: -12 }
+      anchors { right: parent.right; rightMargin: 20; verticalCenter: glyph.verticalCenter }
       text: root.isMuted ? "Muted" : root.kind === "microphone" ? "On" : Math.round(root.amount * 100) + "%"
       color: Colors.text
-      font.pixelSize: 19
+      font.family: "JetBrainsMono Nerd Font"
+      font.pixelSize: 16
       font.weight: Font.DemiBold
     }
     Rectangle {
-      anchors { left: glyph.right; leftMargin: 16; right: parent.right; rightMargin: 22; bottom: parent.bottom; bottomMargin: 16 }
-      height: 8
-      radius: 4
+      anchors { left: parent.left; leftMargin: 20; right: parent.right; rightMargin: 20; bottom: parent.bottom; bottomMargin: 18 }
+      height: 6
+      radius: 3
       color: Colors.slider_track
       Rectangle {
         width: parent.width * (root.isMuted ? 0 : root.amount)
         height: parent.height
         radius: parent.radius
-        color: Colors.control
+        color: Colors.primary
         Behavior on width { NumberAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
       }
     }
