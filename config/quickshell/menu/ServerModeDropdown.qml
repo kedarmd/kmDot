@@ -9,6 +9,9 @@ PopupBase {
   id: root
   sockName: "kmdot-server"
   cardWidth: 424
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
   cardMinHeight: root.errorText && root.failedService ? 424 : 576
 
   property string mode: "off"
@@ -122,12 +125,12 @@ PopupBase {
     Row {
       y: 140; width: parent.width; spacing: 8
       PillButton {
-        width: 224; height: 40; filled: true; active: true; enabled: !root.busy; textSize: 14
+        width: 224; height: 34; filled: true; active: true; enabled: !root.busy; textSize: 14
         text: root.busyAction === "mode" ? "Working…" : root.on ? "Turn off + services" : "Turn on + services"
         onClicked: root.toggleServerMode(false)
       }
       PillButton {
-        width: parent.width - 232; height: 40; filled: true; inactiveFillColor: Colors.surface_alt; enabled: !root.busy; textSize: 14
+        width: parent.width - 232; height: 34; filled: true; inactiveFillColor: Colors.surface_alt; enabled: !root.busy; textSize: 14
         text: root.busyAction === "mode:nosvc" ? "Working…" : "Mode only"
         onClicked: root.toggleServerMode(true)
       }
@@ -151,7 +154,7 @@ PopupBase {
           }
           PillButton {
             anchors { right: parent.right; rightMargin: 16; verticalCenter: parent.verticalCenter }
-            width: 72; height: 40; filled: true; inactiveFillColor: Colors.surface; textSize: 14; enabled: !root.busy
+            width: 72; height: 34; filled: true; inactiveFillColor: Colors.surface; textSize: 14; enabled: !root.busy
             text: root.busyAction === "service:" + modelData.service ? "…" : modelData.state === "active" ? "Stop" : "Start"
             onClicked: root.serviceAction(modelData.service, modelData.state === "active" ? "stop" : "start")
           }
@@ -204,8 +207,8 @@ PopupBase {
     }
     Row {
       y: 336; width: parent.width; spacing: 8
-      PillButton { width: (parent.width - 8) / 2; height: 40; filled: true; text: "Close"; textSize: 14; onClicked: root.close() }
-      PillButton { width: (parent.width - 8) / 2; height: 40; active: true; text: "Retry service"; textSize: 14; onClicked: root.serviceAction(root.failedService, root.failedServiceAction) }
+      PillButton { width: (parent.width - 8) / 2; height: 34; filled: true; text: "Close"; textSize: 14; onClicked: root.close() }
+      PillButton { width: (parent.width - 8) / 2; height: 34; active: true; text: "Retry service"; textSize: 14; onClicked: root.serviceAction(root.failedService, root.failedServiceAction) }
     }
   }
 }
