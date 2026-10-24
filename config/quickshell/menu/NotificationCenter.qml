@@ -11,6 +11,9 @@ PopupBase {
   sockName: "kmdot-notifications"
   animatePresentation: !Tokens.reducedMotion
   cardWidth: 424
+  cardRadius: 20
+  cardBorderWidth: 1
+  cardBorderColor: Colors.outline_variant
   cardChrome: 48
   readonly property real panelHeight: Math.min(760, root.height - 80)
   cardMinHeight: panelHeight
@@ -336,14 +339,14 @@ PopupBase {
       Text { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; text: "Do not disturb"; color: Colors.text; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; font.weight: Font.DemiBold }
       Rectangle {
         anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-        width: 52; height: 30; radius: 15
+        width: 48; height: 28; radius: 14
         color: DnDState.dndEnabled ? Colors.control : Colors.control_off
         border.width: DnDState.dndEnabled ? 0 : 1
         border.color: Colors.control_off_outline
         Rectangle {
           anchors.verticalCenter: parent.verticalCenter
           x: DnDState.dndEnabled ? parent.width - width - 4 : 4
-          width: 22; height: 22; radius: 11
+          width: 20; height: 20; radius: 10
           color: DnDState.dndEnabled ? Colors.on_control : Colors.on_control_off
           Behavior on x { NumberAnimation { duration: Tokens.notificationMotion; easing.type: Tokens.motionEasing } }
         }
@@ -377,7 +380,7 @@ PopupBase {
     Column {
       id: groupsContent
       width: parent.width
-      spacing: 16
+      spacing: 12
       Repeater {
         id: groupsRepeater
         // Stable delegates when a group's content/expanded state changes.
@@ -389,8 +392,10 @@ PopupBase {
           readonly property var groupData: root.groups[index]
           width: groupsContent.width
           height: 32 + groupHeader.height + 16 + (groupData.expanded ? entries.implicitHeight : collapsed.implicitHeight)
-          radius: 24
+          radius: 16
           color: Colors.surface_alt
+          border.width: 1
+          border.color: Colors.outline_variant
           clip: true
 
           Item {
@@ -475,11 +480,11 @@ PopupBase {
                       PillButton {
                         required property var modelData
                         width: Math.min(implicitWidth, entries.width)
-                        height: 40; textSize: 12; filled: true; active: true; text: modelData.text || "Open"
+                        height: 34; textSize: 12; filled: true; active: true; text: modelData.text || "Open"
                         onClicked: { modelData.invoke(); root.dismissEntry(entry.modelData) }
                       }
                     }
-                    PillButton { visible: !!entry.live && entry.live.hasInlineReply; height: 40; text: "Reply"; textSize: 12; filled: true; active: true; onClicked: root.openReply(entry.modelData) }
+                    PillButton { visible: !!entry.live && entry.live.hasInlineReply; height: 34; text: "Reply"; textSize: 12; filled: true; active: true; onClicked: root.openReply(entry.modelData) }
                   }
                 }
                 Rectangle { width: parent.width; height: 1; visible: entry.index < groupCard.groupData.entries.length - 1; color: Colors.outline_variant }
@@ -495,6 +500,6 @@ PopupBase {
     width: parent.width; height: 56
     Rectangle { width: parent.width; height: 1; color: Colors.outline_variant }
     Text { anchors.left: parent.left; anchors.bottom: parent.bottom; anchors.bottomMargin: 12; text: historyModel.count + (historyModel.count === 1 ? " notification" : " notifications"); font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
-    PillButton { anchors.right: parent.right; anchors.bottom: parent.bottom; width: 120; height: 40; filled: true; active: true; text: "Clear all"; visible: historyModel.count > 0; onClicked: root.clearAll() }
+    PillButton { anchors.right: parent.right; anchors.bottom: parent.bottom; width: 120; height: 34; filled: true; active: true; text: "Clear all"; visible: historyModel.count > 0; onClicked: root.clearAll() }
   }
 }
