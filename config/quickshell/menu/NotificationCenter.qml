@@ -38,6 +38,15 @@ PopupBase {
     return null
   }
 
+  function actionCount(actions) {
+    if (!actions) return 0
+    return actions.count !== undefined ? actions.count : (actions.length || 0)
+  }
+
+  function actionAt(actions, index) {
+    return actions && actions.get ? actions.get(index) : actions[index]
+  }
+
   function refreshItems() {
     let changed = false
     const tracked = notifServer.trackedNotifications.values || []
@@ -89,10 +98,12 @@ PopupBase {
   }
 
   function dismissEntry(entry) {
-    if (entry.liveId > 0) {
-      const live = root.findLiveById(entry.liveId)
-      if (live) live.dismiss()
-    }
+    const live = entry.liveId > 0 ? root.findLiveById(entry.liveId) : null
+    if (live) live.dismiss()
+    root.removeHistoryEntry(entry)
+  }
+
+  function removeHistoryEntry(entry) {
     for (let i = historyModel.count - 1; i >= 0; i--) {
       const n = historyModel.get(i)
       if (n.liveId === entry.liveId && n.summary === entry.summary && n.timestamp === entry.timestamp) {
@@ -102,6 +113,16 @@ PopupBase {
     }
     saveHistory()
     rebuildGroups()
+  }
+
+  function invokeEntryAction(entry, action, live) {
+    if (!live || !action || !action.invoke) return
+    const resident = live.resident
+    action.invoke()
+    // invoke() already closes non-resident notifications. Explicitly close
+    // only resident ones, then remove this history row without closing twice.
+    if (resident) live.dismiss()
+    root.removeHistoryEntry(entry)
   }
 
   function openReply(entry) {
@@ -476,12 +497,13 @@ PopupBase {
                     layoutDirection: Qt.RightToLeft; spacing: 8
                     visible: !!entry.live && (entry.live.actions.length > 0 || entry.live.hasInlineReply)
                     Repeater {
-                      model: entry.live ? entry.live.actions : []
+                      model: root.actionCount(entry.live ? entry.live.actions : null)
                       PillButton {
-                        required property var modelData
+                        required property int index
+                        readonly property var action: root.actionAt(entry.live.actions, index)
                         width: Math.min(implicitWidth, entries.width)
-                        height: 34; textSize: 12; filled: true; active: true; text: modelData.text || "Open"
-                        onClicked: { modelData.invoke(); root.dismissEntry(entry.modelData) }
+                        height: 34; textSize: 12; filled: true; active: true; text: action ? (action.text || "Open") : "Open"
+                        onClicked: root.invokeEntryAction(entry.modelData, action, entry.live)
                       }
                     }
                     PillButton { visible: !!entry.live && entry.live.hasInlineReply; height: 34; text: "Reply"; textSize: 12; filled: true; active: true; onClicked: root.openReply(entry.modelData) }
