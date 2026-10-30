@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "compat"
+import "compat" as Compat
 import "core/Rpc.js" as Rpc
 import "core/Paths.js" as Paths
 import "core/Log.js" as Log
@@ -310,7 +311,7 @@ Item {
           version: backend.version,
           desktop: backend.desktop,
           platform: "kmdot",
-          theme: { loaded: Color.loaded, path: Color.themePath, error: Color.lastError, palette: Color.palette },
+          theme: { loaded: Compat.Color.loaded, path: Compat.Color.themePath, error: Compat.Color.lastError, palette: Compat.Color.palette },
           ready: backend.ready,
           uptimeMs: Date.now() - backend.startedAt,
           candidates: backend.candidates.length,

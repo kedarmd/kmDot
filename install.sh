@@ -51,33 +51,15 @@ for arg in "$@"; do
   esac
 done
 
-# --- Bootstrap: git + base-devel (needed for yay below) ---
+# --- Bootstrap: tools used by later install/config steps ---
 
-if ! command -v git &>/dev/null || ! command -v makepkg &>/dev/null; then
-  echo "Installing git and base-devel..."
-  sudo pacman -S --noconfirm --needed git base-devel
-  echo "git and base-devel installed."
+BOOTSTRAP_PKGS=()
+command -v curl >/dev/null 2>&1 || BOOTSTRAP_PKGS+=(curl)
+command -v git >/dev/null 2>&1 || BOOTSTRAP_PKGS+=(git)
+if [ ${#BOOTSTRAP_PKGS[@]} -gt 0 ]; then
+  echo "Installing bootstrap tools from the official Arch repositories: ${BOOTSTRAP_PKGS[*]}"
+  sudo pacman -S --noconfirm --needed "${BOOTSTRAP_PKGS[@]}"
 fi
-
-# --- Bootstrap: yay (AUR helper) ---
-
-install_yay() {
-  if command -v yay &>/dev/null; then
-    echo "yay is already installed."
-    return
-  fi
-
-  echo "Installing yay from AUR..."
-  local tmpdir
-  tmpdir=$(mktemp -d)
-  trap 'rm -rf "$tmpdir"' RETURN
-  git clone https://aur.archlinux.org/yay.git "$tmpdir/yay"
-  (cd "$tmpdir/yay" && makepkg -si --noconfirm)
-  rm -rf "$tmpdir"
-  echo "yay installed."
-}
-
-install_yay
 
 # --- Bootstrap: gum (needed by config scripts) ---
 
@@ -150,25 +132,24 @@ ensure_node_via_mise
 
 # --- Package mapping ---
 # Key = config directory name (matches sync/<name>.sh)
-# Value = pacman/yay package name(s), space-separated for multi-package entries
+# Value = official pacman package name(s), space-separated for multi-package entries
 # Empty value = config-only, skip with a note
 
 declare -A PKGS
 PKGS["fish"]="fish"
 PKGS["ghostty"]="ghostty"
-PKGS["herdr"]="herdr-bin"
+PKGS["herdr"]=""
 PKGS["hyprland"]="hyprland hypridle hyprlock hyprshot awww"
-PKGS["nvim"]="neovim"
-PKGS["quickshell"]="quickshell"
+PKGS["nvim"]="neovim gcc make"
+PKGS["quickshell"]="quickshell qt6-multimedia qt6-multimedia-ffmpeg qt6-5compat"
 PKGS["sddm"]="sddm"
 PKGS["starship"]="starship"
 PKGS["tmux"]="tmux"
 PKGS["xdg-desktop-portal"]="xdg-desktop-portal xdg-desktop-portal-hyprland"
 PKGS["battery"]=""
 PKGS["theme-switcher"]=""
-PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet pipewire wireplumber pipewire-pulse bluez blueman wl-clipboard brightnessctl upower jq playerctl curl libnotify power-profiles-daemon lua gnome-keyring nautilus zen-browser"
-# No-AUR apps: empty here — owned by install_opencode/install_zed/
-# install_handy below (npm global / official script / upstream AppImage).
+PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet pipewire wireplumber pipewire-pulse bluez blueman wl-clipboard brightnessctl upower jq playerctl curl git ripgrep libnotify power-profiles-daemon lua gnome-keyring nautilus"
+# Apps installed from upstream releases/installers; no package helper or AUR.
 PKGS["opencode"]=""
 PKGS["zed"]=""
 PKGS["handy"]=""
@@ -258,8 +239,8 @@ echo ""
 
 FAILED_PKGS=()
 
-# Single pacman/yay install with skip-if-present + failure reporting.
-# Prefer pacman for official repos, fall back to yay for AUR.
+# Official-repository packages only. Third-party packages use a dedicated,
+# upstream installer below; this function never invokes an AUR helper.
 install_pkg() {
   local pkg="$1"
 
@@ -278,24 +259,99 @@ install_pkg() {
       FAILED_PKGS+=("$pkg")
     fi
   else
-    if err=$(yay -S --noconfirm --needed "$pkg" 2>&1); then
-      echo "done."
-    else
-      echo "FAILED"
-      head -5 <<<"$err"
-      FAILED_PKGS+=("$pkg")
-    fi
+    echo "FAILED (not in official Arch repositories; AUR is disabled)"
+    FAILED_PKGS+=("$pkg")
   fi
 }
 
-# No-AUR installers. Each is idempotent (skip-if-present) and reports via
+# Upstream installers. Each is idempotent (skip-if-present) and reports via
 # FAILED_PKGS like install_pkg. Non-interactive: `mise exec` everywhere —
 # activation only fires at prompt time, so scripts must not rely on it.
 
+install_herdr() {
+  if [[ -x "$HOME/.local/bin/herdr" ]]; then
+    echo "  herdr: already installed from the upstream installer."
+    return 0
+  fi
+
+  echo -n "  Installing herdr (upstream installer)... "
+  tmp=$(mktemp) || { echo "FAILED (mktemp)"; FAILED_PKGS+=("herdr"); return 0; }
+  if err=$(curl -fSL -o "$tmp" https://herdr.dev/install.sh 2>&1) \
+    && echo "$HERDR_INSTALL_SHA256  $tmp" | sha256sum -c - &>/dev/null \
+    && HERDR_INSTALL_DIR="$HOME/.local/bin" sh "$tmp"; then
+    rm -f "$tmp"
+    echo "done."
+  else
+    echo "FAILED (download or installer checksum mismatch; re-verify HERDR_INSTALL_SHA256)"
+    head -5 <<<"$err"
+    rm -f "$tmp"
+    FAILED_PKGS+=("herdr")
+  fi
+}
+
+install_zen() {
+  local arch url archive install_dir launcher desktop icon
+  if [[ -x "$HOME/.local/bin/zen" ]]; then
+    echo "  zen-browser: already installed."
+    return 0
+  fi
+
+  case "$(uname -m)" in
+    x86_64) arch="x86_64" ;;
+    *)
+      echo "  zen-browser: no pinned upstream binary for $(uname -m)."
+      FAILED_PKGS+=("zen-browser")
+      return 0
+      ;;
+  esac
+
+  url="https://github.com/zen-browser/desktop/releases/download/$ZEN_VERSION/zen.linux-$arch.tar.xz"
+  echo -n "  Installing Zen Browser v$ZEN_VERSION (upstream binary)... "
+  tmpdir=$(mktemp -d) || { echo "FAILED (mktemp)"; FAILED_PKGS+=("zen-browser"); return 0; }
+  archive="$tmpdir/zen.tar.xz"
+  install_dir="$HOME/.local/opt/zen/$ZEN_VERSION"
+  if err=$(curl -fSL -o "$archive" "$url" 2>&1) \
+    && echo "$ZEN_SHA256  $archive" | sha256sum -c - &>/dev/null \
+    && tar -xJf "$archive" -C "$tmpdir" \
+    && [[ -x "$tmpdir/zen/zen" ]] \
+    && mkdir -p "$(dirname "$install_dir")" "$HOME/.local/bin" "$HOME/.local/share/applications" \
+    && mv "$tmpdir/zen" "$install_dir"; then
+    launcher="$HOME/.local/bin/zen"
+    desktop="$HOME/.local/share/applications/zen.desktop"
+    icon="$install_dir/browser/chrome/icons/default/default128.png"
+    cat >"$launcher" <<EOF
+#!/usr/bin/env bash
+exec "$install_dir/zen" "\$@"
+EOF
+    chmod +x "$launcher"
+    cat >"$desktop" <<EOF
+[Desktop Entry]
+Name=Zen Browser
+Comment=Experience tranquillity while browsing the web
+Keywords=web;browser;internet
+Exec=$install_dir/zen %u
+Icon=$icon
+Terminal=false
+StartupNotify=true
+StartupWMClass=zen
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+EOF
+    rm -rf "$tmpdir"
+    echo "done."
+  else
+    echo "FAILED (download or checksum mismatch; re-verify ZEN_VERSION and ZEN_SHA256)"
+    head -5 <<<"$err"
+    rm -rf "$tmpdir"
+    FAILED_PKGS+=("zen-browser")
+  fi
+}
+
 install_opencode() {
   if pacman -Qi opencode-bin &>/dev/null; then
-    echo "  WARNING: AUR package opencode-bin is installed and may shadow the npm install."
-    echo "  Remove it with: yay -Rns opencode-bin"
+    echo "  WARNING: legacy package opencode-bin may shadow the npm install."
+    echo "  Remove it with: sudo pacman -Rns opencode-bin"
   fi
   if (cd "$REPO_DIR" && mise exec -- opencode --version &>/dev/null); then
     echo "  opencode: already installed."
@@ -371,10 +427,16 @@ install_zed() {
 # ZED_INSTALL_SHA256: https://zed.dev/install.sh fetched 2026-10-03. Pins the
 #   installer logic; the script itself tracks Zed stable (Zed publishes no
 #   versioned checksums for the script path) — accepted residual risk.
+# HERDR_INSTALL_SHA256 pins the upstream installer script; the installer then
+# verifies the downloaded binary against Herdr's release manifest.
+# ZEN_VERSION + ZEN_SHA256 pin the official x86_64 release asset.
 OPENCODE_VERSION="1.18.34"
 HANDY_VERSION="0.9.7"
 HANDY_SHA256="e0625120b5a5c1d45e1e536b9d20f5220e7558e50c701e72e014f99c948e363a"
 ZED_INSTALL_SHA256="c42e96c9e3da1fae61ac11b0922ad033e8fcac3c34b44303805ad3796081b502"
+HERDR_INSTALL_SHA256="bf83668c944cff30b3365eee5a4fe15ff61a4b749ab0c73b98e7a203f70893dd"
+ZEN_VERSION="1.24b"
+ZEN_SHA256="323f2682e73e38247a51fbcc75e5628ed2bb9b404db00cf9cf16af329a916fae"
 
 install_handy() {
   if [[ -x "$HOME/.local/bin/handy" ]]; then
@@ -382,8 +444,8 @@ install_handy() {
     return 0
   fi
   if pacman -Qi handy-bin &>/dev/null; then
-    echo "  WARNING: AUR package handy-bin is installed and may shadow ~/.local/bin/handy."
-    echo "  Remove it with: yay -Rns handy-bin"
+    echo "  WARNING: legacy package handy-bin may shadow ~/.local/bin/handy."
+    echo "  Remove it with: sudo pacman -Rns handy-bin"
   fi
   # Runtime deps from official repos: fuse2 runs the AppImage,
   # gtk-layer-shell is the overlay window layer.
@@ -412,6 +474,7 @@ for app in "${SELECTED[@]}"; do
     opencode) install_opencode; continue ;;
     zed) install_zed; continue ;;
     handy) install_handy; continue ;;
+    herdr) install_herdr; continue ;;
   esac
 
   pkgs="${PKGS[$app]:-}"
@@ -424,6 +487,10 @@ for app in "${SELECTED[@]}"; do
   for pkg in $pkgs; do
     install_pkg "$pkg"
   done
+
+  if [[ "$app" == "runtime" ]]; then
+    install_zen
+  fi
 done
 
 echo ""

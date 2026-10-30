@@ -93,7 +93,17 @@ echo ""
 FAILED_APPS=()
 for app in "${SELECTED[@]}"; do
   echo "Installing $app..."
-  if "$REPO_DIR/sync/$app.sh"; then
+  if [[ "$app" == "quickshell" && "$MODE" == "all" && ! -f "$HOME/.cache/kmdot_theme" ]]; then
+    # QuickShell needs a generated palette during its sync. On a fresh --all
+    # install the active-theme cache does not exist until the final theme apply,
+    # so pass the same default explicitly for this one initial sync.
+    if "$REPO_DIR/sync/$app.sh" "$DEFAULT_THEME"; then
+      :
+    else
+      echo "WARNING: $app failed (continuing with remaining apps)" >&2
+      FAILED_APPS+=("$app")
+    fi
+  elif "$REPO_DIR/sync/$app.sh"; then
     :
   else
     echo "WARNING: $app failed (continuing with remaining apps)" >&2

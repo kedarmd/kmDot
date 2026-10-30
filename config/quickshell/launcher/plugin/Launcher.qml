@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "compat"
+import "compat" as Compat
 import "ui"
 
 Item {
@@ -23,7 +24,7 @@ Item {
 
 
   function open(payloadJson) {
-    Color.refresh()
+    Compat.Color.refresh()
     var payload = ({})
     try { payload = JSON.parse(payloadJson || "{}") } catch (e) { payload = ({}) }
     var wasOpen = root.opened

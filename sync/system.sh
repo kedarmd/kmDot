@@ -24,6 +24,22 @@ else
   echo "  sudo systemctl enable NetworkManager bluetooth"
 fi
 
+# Fish exports en_IN.UTF-8 for all interactive sessions. Arch ships that
+# locale definition commented out by default, so generate it on first sync to
+# keep GUI apps (including Qt/QuickShell) from falling back to C.UTF-8.
+if ! LC_ALL=C locale -a | grep -qi '^en_IN\.utf8$'; then
+  if grep -q '^#en_IN UTF-8' /etc/locale.gen; then
+    sudo sed -i 's/^#en_IN UTF-8/en_IN UTF-8/' /etc/locale.gen
+  else
+    printf '%s\n' 'en_IN UTF-8' | sudo tee -a /etc/locale.gen >/dev/null
+  fi
+  if sudo env LC_ALL=C locale-gen; then
+    echo "en_IN.UTF-8 locale generated."
+  else
+    echo "Could not generate en_IN.UTF-8. Run manually: sudo locale-gen" >&2
+  fi
+fi
+
 # Fish as default shell, only when it isn't already.
 CURRENT_SHELL="$(getent passwd "${USER:-$(id -un)}" | cut -d: -f7)"
 FISH_PATH="$(command -v fish || true)"

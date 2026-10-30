@@ -1,6 +1,7 @@
 import QtQuick
+import "." as Compat
 Rectangle {
-  property var borderSpec: ({ color: Color.menu.border, width: 1.5 })
+  property var borderSpec: ({ color: Compat.Color.menu.border, width: 1.5 })
   readonly property real borderLeft: border.width
   readonly property real borderRight: border.width
   readonly property real borderTop: border.width

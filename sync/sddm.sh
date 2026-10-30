@@ -37,4 +37,10 @@ fi
 
 sudo rm -rf "$OLD_SDDM_THEME_DIR"
 
+if sudo systemctl enable sddm.service; then
+  echo "SDDM enabled for the next boot."
+else
+  echo "Could not enable SDDM. Run manually: sudo systemctl enable sddm.service" >&2
+fi
+
 echo "kmDot SDDM greeter theme synced (takes effect on the next greeter start)."
