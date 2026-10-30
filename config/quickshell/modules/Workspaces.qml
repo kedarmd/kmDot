@@ -5,7 +5,14 @@ import qs
 Item {
   id: root
   implicitHeight: 32
-  width: 156
+  width: 16 + root.workspaceIds.length * 28
+
+  readonly property var workspaceIds: {
+    const ids = [1, 2, 3, 4, 5]
+    const focused = Hyprland.focusedWorkspace
+    if (focused && focused.id > 0 && !ids.includes(focused.id)) ids.push(focused.id)
+    return ids
+  }
 
   Component.onCompleted: Hyprland.refreshWorkspaces()
 
@@ -37,13 +44,13 @@ Item {
     anchors.centerIn: parent
 
     Repeater {
-      model: 5
+      model: root.workspaceIds
 
       delegate: Item {
         id: slot
         required property int index
 
-        readonly property int wsId: index + 1
+        readonly property int wsId: root.workspaceIds[index]
         readonly property bool active: {
           const ws = root.workspace(wsId)
           return ws ? ws.focused : false
