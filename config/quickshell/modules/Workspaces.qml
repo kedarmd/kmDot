@@ -7,6 +7,8 @@ Item {
   implicitHeight: 32
   width: 156
 
+  Component.onCompleted: Hyprland.refreshWorkspaces()
+
   Rectangle {
     anchors.fill: parent
     radius: 16
@@ -42,8 +44,10 @@ Item {
         required property int index
 
         readonly property int wsId: index + 1
-        readonly property bool active: Hyprland.focusedWorkspace
-                                       && Hyprland.focusedWorkspace.id === wsId
+        readonly property bool active: {
+          const ws = root.workspace(wsId)
+          return ws ? ws.focused : false
+        }
         readonly property bool urgent: {
           const ws = root.workspace(wsId)
           return ws ? ws.urgent : false

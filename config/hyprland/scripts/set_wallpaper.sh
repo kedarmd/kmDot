@@ -33,8 +33,11 @@ WALLPAPER="${FILES[$INDEX]}"
 INDEX_CACHE="$(wp_index_cache)"
 PATH_CACHE="$(wp_path_cache)"
 
+if ! wp_paint "$WALLPAPER"; then
+  printf 'set_wallpaper: failed to apply wallpaper: %s\n' "$WALLPAPER" >&2
+  exit 1
+fi
+
 mkdir -p "$(dirname "$INDEX_CACHE")"
 printf '%s\n' "$INDEX" > "$INDEX_CACHE"
 printf '%s\n' "$WALLPAPER" > "$PATH_CACHE"
-
-wp_paint "$WALLPAPER"

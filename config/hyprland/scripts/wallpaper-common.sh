@@ -60,11 +60,13 @@ wp_paint() {
     sleep 0.2
   fi
 
-  awww img "$wallpaper" \
+  if ! awww img "$wallpaper" \
     --transition-type grow \
     --transition-duration 1 \
     --transition-fps 60 \
-    >/dev/null 2>&1
+    >/dev/null; then
+    return 1
+  fi
 
   # Best effort: the lockscreen reads this copy, but a failure here (read-only
   # root-owned file, full /var/tmp) must not fail the wallpaper switch.
