@@ -23,6 +23,9 @@ PopupBase {
   property var groups: []
   property bool historyReady: false
   property bool animateGroups: false
+  // dismiss() updates the server's tracked model asynchronously. Keep IDs
+  // cleared by the user out of refreshItems() until the server drops them.
+  property var clearedLiveIds: ({})
 
   readonly property string historyPath: {
     const cache = Quickshell.env("XDG_CACHE_HOME")
@@ -50,8 +53,11 @@ PopupBase {
   function refreshItems() {
     let changed = false
     const tracked = notifServer.trackedNotifications.values || []
+    const liveIds = ({})
     for (let i = 0; i < tracked.length; i++) {
       const n = tracked[i]
+      liveIds[n.id] = true
+      if (root.clearedLiveIds[n.id]) continue
       let found = false
       for (let j = 0; j < historyModel.count; j++) {
         const h = historyModel.get(j)
@@ -72,6 +78,17 @@ PopupBase {
         })
       }
     }
+    // Once an ID is gone from the server model, it is safe to forget the
+    // suppression. A future notification has a new ID and can be recorded.
+    const cleared = Object.assign({}, root.clearedLiveIds)
+    let released = false
+    Object.keys(cleared).forEach(id => {
+      if (!liveIds[id]) {
+        delete cleared[id]
+        released = true
+      }
+    })
+    if (released) root.clearedLiveIds = cleared
     if (changed) { saveHistory(); rebuildGroups() }
   }
 
@@ -152,8 +169,12 @@ PopupBase {
 
   function clearAll() {
     const tracked = notifServer.trackedNotifications.values || []
-    for (let i = 0; i < tracked.length; i++)
+    const cleared = Object.assign({}, root.clearedLiveIds)
+    for (let i = 0; i < tracked.length; i++) {
+      cleared[tracked[i].id] = true
       tracked[i].dismiss()
+    }
+    root.clearedLiveIds = cleared
     historyModel.clear()
     saveHistory()
     root.groups = []

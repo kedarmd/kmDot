@@ -54,6 +54,8 @@ install -m644 "$PALETTE_TEMP" "$KMDOT_QUICKSHELL_CONFIG_DIR/Colors.qml"
 # or systemd units / cron / etc. fail to spawn them (systemd-inhibit once
 # exited status=1 because a spawned script wasn't +x).
 chmod +x "$KMDOT_QUICKSHELL_CONFIG_DIR/scripts/"*.sh
+# Glob-safe for .mjs (set -e would abort if the literal pattern never matches).
+find "$KMDOT_QUICKSHELL_CONFIG_DIR/scripts" -maxdepth 1 -name '*.mjs' -exec chmod +x {} +
 chmod +x "$KMDOT_QUICKSHELL_CONFIG_DIR/launcher/bin/"*
 
 ln -sf "$KMDOT_QUICKSHELL_CONFIG_DIR" "$QUICKSHELL_CONFIG_DIR"
