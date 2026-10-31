@@ -53,6 +53,12 @@ let level = 0;
 let noiseFloor = 0.025;
 let lastEmit = 0;
 const samples = Array(32).fill(0);
+const samplesPerBar = 90; // 1.875ms at 48kHz; 32 bars cover the latest 60ms.
+const framePeaks = [];
+let barPeak = 0;
+let barSampleCount = 0;
+let frameSquareSum = 0;
+let frameSampleCount = 0;
 
 rec.stdout.on("data", chunk => {
   const buf = Buffer.concat([leftover, chunk]);
@@ -64,36 +70,50 @@ rec.stdout.on("data", chunk => {
     if (Number.isFinite(raw)) {
       squareSum += raw * raw;
       sampleCount++;
+
+      if (historyMode) {
+        if (v > barPeak) barPeak = v;
+        barSampleCount++;
+        frameSquareSum += raw * raw;
+        frameSampleCount++;
+
+        if (barSampleCount >= samplesPerBar) {
+          framePeaks.push(barPeak);
+          barPeak = 0;
+          barSampleCount = 0;
+
+          if (framePeaks.length === samples.length) {
+            const rms = Math.sqrt(frameSquareSum / frameSampleCount);
+            // Learn only from quieter frames so speech cannot raise the noise gate.
+            if (rms < noiseFloor * 1.7) {
+              const rate = rms > noiseFloor ? 0.08 : 0.015;
+              noiseFloor += (rms - noiseFloor) * rate;
+            }
+            const threshold = Math.max(0.02, noiseFloor * 1.4);
+            for (let j = 0; j < samples.length; j++) {
+              const measured = Math.min(1, Math.max(0, framePeaks[j] - threshold) * 6.5);
+              samples[j] = Math.max(measured, samples[j] * 0.4);
+            }
+            process.stdout.write(JSON.stringify(samples) + "\n");
+            framePeaks.length = 0;
+            frameSquareSum = 0;
+            frameSampleCount = 0;
+          }
+        }
+      }
     }
   }
   leftover = buf.subarray(n * 4);
 
+  if (historyMode) return;
+
   const now = Date.now();
   if (now - lastEmit >= 80) {
     lastEmit = now;
-    let measure = peak;
-    if (historyMode && sampleCount > 0) {
-      const rms = Math.sqrt(squareSum / sampleCount);
-      // Track only quieter frames as room noise; louder speech must not raise
-      // the floor. This gates steady hum while keeping speech onset responsive.
-      if (rms < noiseFloor * 1.7) {
-        const rate = rms > noiseFloor ? 0.08 : 0.015;
-        noiseFloor += (rms - noiseFloor) * rate;
-      }
-      // Use the short-window peak for speech onset and consonants; subtract
-      // the learned room floor, then scale the remaining signal for the HUD.
-      measure = Math.max(0, peak - Math.max(0.02, noiseFloor * 1.65)) * 3.5;
-    }
-    level = Math.max(Math.min(1, measure), level * (historyMode ? 0.45 : 0.72));
+    level = Math.max(Math.min(1, peak), level * 0.72);
     peak = 0;
     squareSum = 0;
     sampleCount = 0;
-    if (historyMode) {
-      samples.shift();
-      samples.push(Number(level.toFixed(3)));
-      process.stdout.write(JSON.stringify(samples) + "\n");
-    } else {
-      process.stdout.write(level.toFixed(3) + "\n");
-    }
+    process.stdout.write(level.toFixed(3) + "\n");
   }
 });

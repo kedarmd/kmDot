@@ -15,7 +15,6 @@ PanelWindow {
   property int elapsedSeconds: 0
   property string meterTarget: ""
   property string transientError: ""
-  property real waveformPhase: 0
   readonly property var waveformProfile: [
     0.18, 0.27, 0.39, 0.56, 0.72, 0.48, 0.31, 0.61,
     0.86, 0.68, 0.42, 0.55, 0.94, 0.74, 0.38, 0.52,
@@ -91,12 +90,6 @@ PanelWindow {
     interval: 1000
     repeat: true
     onTriggered: root.elapsedSeconds++
-  }
-  Timer {
-    interval: 80
-    repeat: true
-    running: root.recording && !Tokens.reducedMotion
-    onTriggered: root.waveformPhase += 0.12
   }
   Timer {
     id: errorTimer
@@ -207,17 +200,20 @@ PanelWindow {
         model: 32
         delegate: Rectangle {
           required property int index
-          readonly property real liveLevel: Number(root.micSamples[root.micSamples.length - 1] || 0)
-          readonly property real motion: Tokens.reducedMotion
-            ? root.waveformProfile[index]
-            : 0.22 + 0.78 * Math.abs(Math.sin(root.waveformPhase * (0.9 + (index % 5) * 0.09) + index * 2.399))
-          readonly property real envelope: Math.min(1, liveLevel * motion)
+          readonly property real sample: Number(root.micSamples[index] || 0)
+          readonly property real envelope: Math.min(1, sample)
           width: 3
           height: 2 + envelope * 18
           anchors.verticalCenter: parent.verticalCenter
           radius: 2
           color: Colors.primary
-          Behavior on height { NumberAnimation { duration: Tokens.meterMotion; easing.type: Tokens.motionEasing } }
+          // Ease the measured mic peaks just enough to reduce jitter without masking speech changes.
+          Behavior on height {
+            NumberAnimation {
+              duration: Tokens.reducedMotion ? 0 : 140
+              easing.type: Easing.OutCubic
+            }
+          }
           Behavior on color { ColorAnimation { duration: Tokens.motionFast; easing.type: Tokens.motionEasing } }
         }
       }
