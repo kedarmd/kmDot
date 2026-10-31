@@ -15,6 +15,11 @@ WlSessionLockSurface {
   // Keep the secure surface fully present while PAM is checking credentials.
   // Only a confirmed success starts the desktop handoff animation.
   readonly property bool transitionOut: root.shell.lockUnlocking
+  // Keep the lockscreen itself steady through unlock. The shell-wide cover
+  // performs the only unlock animation so the card and backdrop cannot drift
+  // out of sync with each other.
+  readonly property real contentOpacity: root.lock.secure ? 1 : 0
+  readonly property int transitionDuration: root.shell.lockTransitionDuration
 
   Timer {
     interval: 1000
@@ -28,10 +33,18 @@ WlSessionLockSurface {
     source: "file:///var/tmp/kmdot-current.png"
     fillMode: Image.PreserveAspectCrop
     asynchronous: true
+    opacity: root.contentOpacity
+    Behavior on opacity {
+      NumberAnimation { duration: root.transitionDuration; easing.type: Easing.InOutCubic }
+    }
   }
   Rectangle {
     anchors.fill: parent
     color: Colors.scrim
+    opacity: root.contentOpacity
+    Behavior on opacity {
+      NumberAnimation { duration: root.transitionDuration; easing.type: Easing.InOutCubic }
+    }
   }
   Column {
     anchors.top: parent.top
@@ -39,6 +52,10 @@ WlSessionLockSurface {
     anchors.topMargin: 48
     anchors.rightMargin: 48
     spacing: 6
+    opacity: root.contentOpacity
+    Behavior on opacity {
+      NumberAnimation { duration: root.transitionDuration; easing.type: Easing.InOutCubic }
+    }
     Text {
       width: 260
       horizontalAlignment: Text.AlignRight
@@ -66,11 +83,11 @@ WlSessionLockSurface {
     border.color: Colors.border
     border.width: Tokens.surfaceBorderWidth
     anchors.centerIn: parent
-    opacity: root.transitionOut ? 0 : 1
+    opacity: root.contentOpacity
 
 
     Behavior on opacity {
-      NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
+      NumberAnimation { duration: root.transitionDuration; easing.type: Easing.InOutCubic }
     }
 
     Column {
@@ -136,7 +153,7 @@ WlSessionLockSurface {
             height: parent.height
             anchors.verticalCenter: parent.verticalCenter
             focus: root.lock.secure
-            enabled: root.lock.secure && !root.shell.lockAuthenticating
+            enabled: root.lock.secure && !root.shell.lockAuthenticating && !root.transitionOut
             color: Colors.text
 
             font.family: root.fontName
@@ -173,7 +190,7 @@ WlSessionLockSurface {
         opacity: root.shell.lockAuthenticating ? 0.55 : 1
         Text {
           anchors.centerIn: parent
-          text: root.shell.lockAuthenticating ? "Unlocking…" : "Unlock"
+          text: root.shell.lockAuthenticating || root.transitionOut ? "Unlocking…" : "Unlock"
           color: Colors.on_button
           font.family: root.fontName
           font.pixelSize: 14
@@ -181,7 +198,7 @@ WlSessionLockSurface {
         }
         MouseArea {
           anchors.fill: parent
-          enabled: root.lock.secure && !root.shell.lockAuthenticating
+          enabled: root.lock.secure && !root.shell.lockAuthenticating && !root.transitionOut
           cursorShape: Qt.PointingHandCursor
           onClicked: root.shell.submitLockPassword()
         }
@@ -203,11 +220,7 @@ WlSessionLockSurface {
     anchors.bottom: parent.bottom
     anchors.bottomMargin: 64
     spacing: 64
-    opacity: root.transitionOut ? 0 : 1
-
-    Behavior on opacity {
-      NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
-    }
+    opacity: root.contentOpacity
 
     Repeater {
       model: [
@@ -239,6 +252,7 @@ WlSessionLockSurface {
         MouseArea {
           id: actionMouse
           anchors.fill: parent
+          enabled: !root.transitionOut
           cursorShape: Qt.PointingHandCursor
           onClicked: Quickshell.execDetached(modelData.command)
         }

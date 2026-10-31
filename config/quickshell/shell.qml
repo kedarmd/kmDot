@@ -16,6 +16,9 @@ Scope {
   property var openingSurface: null
   property bool hasNotifications: false
   property bool lockRequested: false
+  property bool lockRevealVisible: false
+  property bool lockRevealCovered: false
+  readonly property int lockTransitionDuration: Tokens.reducedMotion ? 0 : 320
   property KmdotLauncher kmdotLauncher: KmdotLauncher { scope: shellRoot }
   property SystemLauncher systemLauncher: SystemLauncher { scope: shellRoot }
   property ThemeLauncher themeLauncher: ThemeLauncher { scope: shellRoot }
@@ -126,9 +129,13 @@ Scope {
       lockState.password = ""
       if (result === PamResult.Success) {
         lockState.unlocking = true
+        shellRoot.lockRevealVisible = true
+        shellRoot.lockRevealCovered = true
         unlockTransitionTimer.restart()
       } else {
         lockState.unlocking = false
+        shellRoot.lockRevealCovered = false
+        shellRoot.lockRevealVisible = false
         shellRoot.lockRequested = false
         lockError = true
       }
@@ -139,6 +146,10 @@ Scope {
     target: "lockscreen"
     function lock(): void {
       if (sessionLock.locked || shellRoot.lockRequested) return
+      unlockTransitionTimer.stop()
+      unlockRevealCleanupTimer.stop()
+      shellRoot.lockRevealVisible = false
+      shellRoot.lockRevealCovered = false
       shellRoot.lockRequested = true
       lockError = false
       lockState.password = ""
@@ -170,11 +181,61 @@ Scope {
 
   Timer {
     id: unlockTransitionTimer
-    interval: Tokens.motionStandard
+    // Let the one shell-wide cover finish covering the lockscreen before
+    // releasing the native lock surface.
+    interval: shellRoot.lockTransitionDuration + 50
     onTriggered: {
       sessionLock.locked = false
       shellRoot.lockRequested = false
       lockState.unlocking = false
+      unlockRevealHoldTimer.restart()
+    }
+  }
+
+  Timer {
+    id: unlockRevealHoldTimer
+    // Keep the cover fully opaque while Wayland tears down the lock surface.
+    interval: 60
+    onTriggered: {
+      shellRoot.lockRevealCovered = false
+      unlockRevealCleanupTimer.restart()
+    }
+  }
+
+  Timer {
+    id: unlockRevealCleanupTimer
+    // Let the opacity animation finish before the overlay is unmapped.
+    interval: shellRoot.lockTransitionDuration + 50
+    onTriggered: shellRoot.lockRevealVisible = false
+  }
+
+  // The native session-lock surface is destroyed at unlock, so it cannot
+  // animate the desktop reveal itself. One full-screen cover fades over the
+  // unchanged lockscreen, holds across lock teardown, then fades off the
+  // desktop. This keeps the whole handoff on a single opacity animation.
+  Variants {
+    model: Quickshell.screens
+    PanelWindow {
+      required property var modelData
+      screen: modelData
+      visible: shellRoot.lockRevealVisible
+      color: "transparent"
+      focusable: false
+      WlrLayershell.layer: WlrLayer.Overlay
+      WlrLayershell.exclusionMode: ExclusionMode.Ignore
+      anchors { top: true; bottom: true; left: true; right: true }
+
+      Rectangle {
+        anchors.fill: parent
+        color: Colors.base
+        opacity: shellRoot.lockRevealCovered ? 1 : 0
+        Behavior on opacity {
+          NumberAnimation {
+            duration: shellRoot.lockTransitionDuration
+            easing.type: Easing.InOutCubic
+          }
+        }
+      }
     }
   }
 
