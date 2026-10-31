@@ -18,14 +18,13 @@ Item {
     hovered: mouse.containsMouse
     pressed: mouse.pressed
 
-    R1Icon {
+    KmdotMark {
       id: label
       anchors.centerIn: parent
-      iconName: "kmdot"
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 24
-      color: Colors.primary
-      accentColor: Colors.primary_alt
+      width: 24
+      height: 24
+      primary: Colors.primary
+      accent: Colors.primary_alt
     }
   }
 

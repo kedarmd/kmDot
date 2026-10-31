@@ -1,4 +1,5 @@
-// kmDot mark: exact vector from kmDot/config/quickshell/components/r1icons.js.
+// kmDot's branded launcher mark remains artwork; symbolic shell icons use
+// Nerd Font glyphs through R1Icon.qml.
 // Canonical component: 354ba062-72fc-8008-8008-c87ee54dd13e.
 var SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M2 5V19M2 12L7.5 5M7.5 19V5L11 10L14.5 5V19M2 12L7.5 19M14.5 5H17L19 8V16L17 19H14.5\" fill=\"none\" stroke=\"#c0caf5\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"22\" cy=\"18\" r=\"1.5\" fill=\"#7aa2f7\"/></svg>"
 

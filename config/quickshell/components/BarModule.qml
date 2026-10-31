@@ -86,7 +86,6 @@ Item {
         iconName: root.busy ? "" : root.iconName
         font.family: "JetBrainsMono Nerd Font Propo"
         font.pixelSize: root.iconSize
-        tintVector: root.smoothIconColor
         color: root.busy ? Tokens.primary : (root.active ? root.on_color : root.iconForeground)
         opacity: root.dimmed ? 0.4 : 1.0
         rotation: root.busy ? root.spinAngle : 0

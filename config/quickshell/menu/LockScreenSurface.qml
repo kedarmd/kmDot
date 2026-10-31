@@ -78,13 +78,11 @@ WlSessionLockSurface {
       anchors.margins: 24
       spacing: 0
 
-      R1Icon {
+      KmdotMark {
         anchors.horizontalCenter: parent.horizontalCenter
         width: 64; height: 64
-        iconName: "kmdot"
-        font.pixelSize: 64
-        color: Colors.text
-        accentColor: Colors.primary
+        primary: Colors.text
+        accent: Colors.primary
       }
       Item { width: 1; height: 16 }
       Text {
