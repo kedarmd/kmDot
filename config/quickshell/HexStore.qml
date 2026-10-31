@@ -1,0 +1,209 @@
+pragma Singleton
+pragma ComponentBehavior: Bound
+import QtQuick
+import Quickshell
+import Quickshell.Io
+
+// Single read/action boundary for the Hex launcher, popup, and HUD.
+Singleton {
+  id: root
+
+  property var models: []
+  property var history: []
+  property string selectedModel: ""
+  property string activityState: "unknown"
+  property string deviceName: ""
+  property string errorText: ""
+  property string modelNote: ""
+  property int copiedHistoryId: -1
+  property string copyFeedback: ""
+  property int pendingCopyId: -1
+  property bool commandBusy: false
+  property bool loading: false
+  property bool modelSelectionAvailable: false
+  property string lastAction: ""
+  readonly property bool active: /record|transcrib|dictat|processing/i.test(root.activityState)
+  readonly property string stateLabel: {
+    const state = root.activityState.toLowerCase()
+    if (/transcrib|processing/.test(state)) return "Transcribing"
+    if (/record|dictat/.test(state)) return "Recording"
+    if (/error|fail/.test(state)) return "Needs attention"
+    if (/listen|ready|idle/.test(state)) return "Ready"
+    return "Connecting to Hex"
+  }
+
+  function refresh() {
+    root.loading = true
+    if (!statusProc.running) statusProc.exec(["hex", "status"])
+    if (!modelProc.running) modelProc.exec(["node", root.modelScript()])
+    root.refreshHistory()
+  }
+
+  function refreshHistory() {
+    if (!historyProc.running) historyProc.exec(["node", root.historyScript()])
+  }
+
+  function historyScript() {
+    return Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/hex-history.mjs"
+  }
+  function modelScript() {
+    return Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/hex-models.mjs"
+  }
+
+  function applyStatus(text) {
+    try {
+      const value = JSON.parse(String(text || ""))
+      const activity = value && value.desktop ? value.desktop.activity : null
+      if (!activity) throw new Error("Hex status did not include desktop activity")
+      root.activityState = String(activity.state || "unknown")
+      root.deviceName = String(activity.device || "")
+      root.errorText = activity.error ? String(activity.error) : ""
+    } catch (e) {
+      root.activityState = "unavailable"
+      root.errorText = "Hex status is unavailable"
+    }
+  }
+
+  function applyModels(text) {
+    try {
+      const value = JSON.parse(String(text || ""))
+      const entries = Array.isArray(value) ? value : value.models
+      if (!Array.isArray(entries)) throw new Error("No model list")
+      root.models = entries.map(model => ({
+        id: String(model.id || ""),
+        name: String(model.name || model.id || "Model"),
+        description: String(model.size || (model.languages || []).join(" · ") || "Local speech model"),
+        installed: !!model.installed,
+        selected: !!model.selected
+      }))
+      const selected = root.models.find(model => model.selected)
+      if (selected) root.selectedModel = selected.id
+      root.modelSelectionAvailable = !!value.can_select
+      root.modelNote = String(value.note || "")
+    } catch (e) {
+      root.models = []
+      root.modelSelectionAvailable = false
+      root.modelNote = "Open Hex to manage transcription models"
+    }
+  }
+
+  function applyHistory(text) {
+    try {
+      const value = JSON.parse(String(text || ""))
+      if (value.version !== 1 || !Array.isArray(value.entries)) throw new Error("Unsupported Hex history format")
+      root.selectedModel = String(value.selected_model || root.selectedModel)
+      root.history = value.entries.filter(entry => typeof entry.final_text === "string")
+        .map(entry => ({
+          id: Number(entry.id), timestamp: Number(entry.timestamp_ms),
+          kind: String(entry.kind || "dictation"), text: String(entry.final_text)
+        }))
+        .sort((a, b) => b.timestamp - a.timestamp)
+    } catch (e) {
+      root.history = []
+      root.errorText = "Could not read Hex history"
+    }
+    root.loading = false
+  }
+
+  function run(args, action) {
+    if (root.commandBusy) return
+    root.commandBusy = true
+    root.lastAction = action
+    root.errorText = ""
+    actionProc.exec(["hex"].concat(args))
+  }
+
+  function toggleDictation() { root.run(["dictation", "toggle"], "dictation") }
+  function cancelDictation() { root.run(["dictation", "cancel"], "cancel") }
+  function pasteLast() { root.run(["paste-last"], "paste") }
+  function openApp() { root.run(["app"], "open") }
+
+  function selectModel(id) {
+    if (String(id) === root.selectedModel) return
+    if (root.modelSelectionAvailable) root.run(["model", "use", String(id)], "model")
+    else root.openApp()
+  }
+
+  function copyText(value, id) {
+    root.pendingCopyId = Number(id ?? -1)
+    root.copyFeedback = ""
+    copyProc.exec(["sh", "-c", "printf '%s' \"$1\" | wl-copy", "kmdot", String(value || "")])
+  }
+
+  Component.onCompleted: root.refresh()
+
+  Timer {
+    interval: 900
+    repeat: true
+    running: true
+    onTriggered: {
+      if (!statusProc.running) statusProc.exec(["hex", "status"])
+    }
+  }
+
+  Process {
+    id: statusProc
+    stdout: StdioCollector { onStreamFinished: root.applyStatus(text) }
+    onExited: function(code) {
+      if (code !== 0) {
+        root.activityState = "unavailable"
+        root.errorText = "Hex is not responding"
+      }
+    }
+  }
+  Process {
+    id: modelProc
+    stdout: StdioCollector { onStreamFinished: root.applyModels(text) }
+    onExited: function(code) {
+      if (code !== 0) {
+        root.models = []
+        root.modelSelectionAvailable = false
+        root.modelNote = "Open Hex to manage transcription models"
+      }
+    }
+  }
+  Process {
+    id: historyProc
+    stdout: StdioCollector { onStreamFinished: root.applyHistory(text) }
+    onExited: function(code) {
+      if (code !== 0) {
+        root.history = []
+        root.errorText = "Could not read Hex history"
+        root.loading = false
+      }
+    }
+  }
+  Process {
+    id: actionProc
+    stderr: StdioCollector {}
+    onExited: function(code) {
+      root.commandBusy = false
+      if (code !== 0) root.errorText = root.lastAction === "dictation" ? "Hex could not change dictation state"
+        : root.lastAction === "cancel" ? "Hex could not cancel dictation"
+        : root.lastAction === "paste" ? "Hex could not paste the last dictation"
+        : root.lastAction === "model" ? "Hex could not switch models"
+        : "Could not open Hex"
+      root.refresh()
+    }
+  }
+  Timer {
+    id: copyFeedbackTimer
+    interval: 1800
+    onTriggered: {
+      root.copiedHistoryId = -1
+      root.copyFeedback = ""
+    }
+  }
+  Process {
+    id: copyProc
+    onExited: function(code) {
+      if (code === 0) {
+        root.copiedHistoryId = root.pendingCopyId
+        root.copyFeedback = "Copied to clipboard"
+        copyFeedbackTimer.restart()
+      } else {
+        root.errorText = "Could not copy this dictation"
+      }
+    }
+  }
+}

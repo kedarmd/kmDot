@@ -36,6 +36,7 @@ Scope {
   property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
   property ClipboardLauncher clipboardLauncher: ClipboardLauncher { scope: shellRoot }
   property HandyLauncher handyLauncher: HandyLauncher { scope: shellRoot }
+  property HexLauncher hexLauncher: HexLauncher { scope: shellRoot }
   property WallpaperLauncher wallpaperLauncher: WallpaperLauncher { scope: shellRoot }
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }
   property VolumePopup volumePopup: VolumePopup { scope: shellRoot }
@@ -43,6 +44,8 @@ Scope {
   property ServerModeDropdown serverModeDropdown: ServerModeDropdown { scope: shellRoot }
   property OpenCodeUsagePopup openCodeUsagePopup: OpenCodeUsagePopup { scope: shellRoot }
   property HandyPopup handyPopup: HandyPopup { scope: shellRoot }
+  property HexPopup hexPopup: HexPopup { scope: shellRoot }
+  property HexHud hexHud: HexHud {}
   property DisplayPopup displayPopup: DisplayPopup { scope: shellRoot }
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
   property NotificationPopup notificationPopup: NotificationPopup { scope: shellRoot }
@@ -67,13 +70,13 @@ Scope {
     shellRoot.openingSurface = except
     const launchers = [shellRoot.kmdotLauncher, shellRoot.systemLauncher,
       shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.keybindsLauncher,
-      shellRoot.clipboardLauncher, shellRoot.handyLauncher, shellRoot.wallpaperLauncher]
+      shellRoot.clipboardLauncher, shellRoot.handyLauncher, shellRoot.hexLauncher, shellRoot.wallpaperLauncher]
     for (const l of launchers) {
       if (l && l !== except) l.closeLauncher()
     }
     const popups = [shellRoot.confirmPopup, shellRoot.batteryPopup,
       shellRoot.volumePopup, shellRoot.calendarPopup, shellRoot.serverModeDropdown,
-      shellRoot.openCodeUsagePopup, shellRoot.handyPopup, shellRoot.displayPopup,
+      shellRoot.openCodeUsagePopup, shellRoot.handyPopup, shellRoot.hexPopup, shellRoot.displayPopup,
       shellRoot.notificationCenter, shellRoot.notificationReplyPopup]
     for (const p of popups) {
       if (p && p !== except) p.close()
@@ -455,7 +458,7 @@ PanelWindow {
 
         HiddenModules {
           id: hiddenTray
-          stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened
+          stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened || hexPopup.opened
           AttentionMode {}
           ServerMode {
             popupRef: serverModeDropdown
@@ -463,8 +466,8 @@ PanelWindow {
           OpenCodeUsage {
             popupRef: openCodeUsagePopup
           }
-          Handy {
-            popupRef: handyPopup
+          Hex {
+            popupRef: hexPopup
           }
         }
         Display {
