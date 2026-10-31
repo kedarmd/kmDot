@@ -64,25 +64,6 @@ fi
 
 mv "$TMP_FILE" "$CONFIG_FILE"
 
-# Herdr's terminal UI reads its palette from config.toml. Herdr-GPUI has its
-# own saved theme selection and applies it live through its CLI. Keep both in
-# sync when the GPUI app is installed.
-GPUI_THEME=""
-case "$THEME" in
-  catppuccin) GPUI_THEME="Catppuccin Mocha" ;;
-  everforest) GPUI_THEME="Everforest Dark Hard" ;;
-  nord) GPUI_THEME="Nord" ;;
-  tokyonight) GPUI_THEME="TokyoNight Night" ;;
-esac
-
-if [ -n "$GPUI_THEME" ] && command -v herdr-gpui >/dev/null 2>&1; then
-  if herdr-gpui theme set "$GPUI_THEME" >/dev/null; then
-    GPUI_MSG="; herdr-gpui set to $GPUI_THEME"
-  else
-    echo "WARNING: herdr-gpui could not select '$GPUI_THEME'." >&2
-  fi
-fi
-
 # Restart-free reload: not file-watched, so poke the running server. No
 # server/binary present is not an error — next launch reads the file.
 RELOAD_MSG="applies on next herdr launch"
@@ -92,4 +73,4 @@ fi
 
 THEME_VALUE="$(grep -m1 '^name[ \t]*=' "$COLORSCHEME_FILE" | sed 's/^name[ \t]*=[ \t]*//' | tr -d '"')"
 
-echo "✓ Herdr theme updated to: ${THEME_VALUE:-$THEME} ($RELOAD_MSG${GPUI_MSG:-})"
+echo "✓ Herdr theme updated to: ${THEME_VALUE:-$THEME} ($RELOAD_MSG)"
