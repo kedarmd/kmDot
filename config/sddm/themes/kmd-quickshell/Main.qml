@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQuick.Shapes 1.12
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15 as Controls
 import SddmComponents 2.0
@@ -59,6 +60,74 @@ Rectangle {
       font.family: root.fontName
       font.pixelSize: 16
     }
+  }
+
+  // Match the lockscreen's moving glare while keeping the login card still.
+  // Both gradients use the theme's semantic colors.
+  Shape {
+    id: cardHalo
+    width: card.width + 16
+    height: card.height + 16
+    anchors.centerIn: card
+    ShapePath {
+      fillRule: ShapePath.OddEvenFill
+      fillColor: "white"
+      strokeColor: "transparent"
+      strokeWidth: 0
+      fillGradient: ConicalGradient {
+        id: cardHaloGradient
+        angle: cardShineGradient.angle
+        centerX: cardHalo.width / 2
+        centerY: cardHalo.height / 2
+        GradientStop { position: 0.0; color: "transparent" }
+        GradientStop { position: 0.39; color: "transparent" }
+        GradientStop { position: 0.46; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.08) }
+        GradientStop { position: 0.5; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.2) }
+        GradientStop { position: 0.54; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.08) }
+        GradientStop { position: 0.61; color: "transparent" }
+        GradientStop { position: 1.0; color: "transparent" }
+      }
+      PathSvg { path: root.roundedRectPath(0, 0, cardHalo.width, cardHalo.height, card.radius + 8) }
+      PathSvg { path: root.roundedRectPath(8, 8, cardHalo.width - 16, cardHalo.height - 16, card.radius) }
+    }
+  }
+
+  Shape {
+    id: cardShine
+    width: card.width + 6
+    height: card.height + 6
+    anchors.centerIn: card
+    ShapePath {
+      fillRule: ShapePath.OddEvenFill
+      fillColor: "white"
+      strokeColor: "transparent"
+      strokeWidth: 0
+      fillGradient: ConicalGradient {
+        id: cardShineGradient
+        centerX: cardShine.width / 2
+        centerY: cardShine.height / 2
+        GradientStop { position: 0.0; color: "transparent" }
+        GradientStop { position: 0.475; color: "transparent" }
+        GradientStop { position: 0.493; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.55) }
+        GradientStop { position: 0.5; color: Qt.rgba(root.textColor.r, root.textColor.g, root.textColor.b, 0.92) }
+        GradientStop { position: 0.507; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.55) }
+        GradientStop { position: 0.525; color: "transparent" }
+        GradientStop { position: 1.0; color: "transparent" }
+      }
+      PathSvg { path: root.roundedRectPath(0, 0, cardShine.width, cardShine.height, card.radius + 3) }
+      PathSvg { path: root.roundedRectPath(3, 3, cardShine.width - 6, cardShine.height - 6, card.radius) }
+    }
+  }
+
+  NumberAnimation {
+    target: cardShineGradient
+    property: "angle"
+    from: 360
+    to: 0
+    duration: 12000
+    loops: Animation.Infinite
+    easing.type: Easing.Linear
+    running: !root.signingOut
   }
 
   Rectangle {
@@ -424,6 +493,16 @@ Rectangle {
 
   function userNameAt(index) {
     return userCombo.textAt(index)
+  }
+  function roundedRectPath(x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2)
+    const right = x + width
+    const bottom = y + height
+    return "M " + (x + r) + " " + y +
+      " H " + (right - r) + " A " + r + " " + r + " 0 0 1 " + right + " " + (y + r) +
+      " V " + (bottom - r) + " A " + r + " " + r + " 0 0 1 " + (right - r) + " " + bottom +
+      " H " + (x + r) + " A " + r + " " + r + " 0 0 1 " + x + " " + (bottom - r) +
+      " V " + (y + r) + " A " + r + " " + r + " 0 0 1 " + (x + r) + " " + y + " Z"
   }
   function login() {
     if (authenticating || !selectedUser || !password.text) return
