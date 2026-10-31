@@ -26,6 +26,7 @@ var glyphs = {
   "battery-50": codePoint(0xF007E), "battery-60": codePoint(0xF007F),
   "battery-70": codePoint(0xF0080), "battery-80": codePoint(0xF0081),
   "battery-90": codePoint(0xF0082), "battery-empty": codePoint(0xF008E),
+  "battery-charging": codePoint(0xF0084),
   lock: codePoint(0xF033E), moon: codePoint(0xF0594),
   logout: codePoint(0xF0343), refresh: codePoint(0xF0450),
   keyboard: codePoint(0xF030C), mic: codePoint(0xF036C),
