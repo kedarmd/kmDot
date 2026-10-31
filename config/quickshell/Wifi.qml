@@ -61,8 +61,14 @@ Singleton {
     scanProc.exec(["sh", "-c",
       "nmcli -t -f ACTIVE,SSID,SIGNAL,SECURITY device wifi list 2>/dev/null; " +
       "printf 'STATE:%s\\n' \"$(nmcli -t -f WIFI general 2>/dev/null)\"; " +
-      "printf 'SAVED\\n'; nmcli -t -f NAME,TYPE connection show 2>/dev/null; " +
-      "printf 'ACTIVE_CONN\\n'; nmcli -t -f NAME,TYPE connection show --active 2>/dev/null"])
+      "wifi_ssids() { nmcli -t -f UUID,TYPE connection show \"$@\" 2>/dev/null | " +
+      "while IFS=: read -r uuid type; do " +
+      "[ \"$type\" = '802-11-wireless' ] || continue; " +
+      "ssid=$(nmcli -g 802-11-wireless.ssid connection show uuid \"$uuid\" 2>/dev/null); " +
+      "[ -n \"$ssid\" ] && printf '802-11-wireless:%s\\n' \"$ssid\"; " +
+      "done; }; " +
+      "printf 'SAVED\\n'; wifi_ssids; " +
+      "printf 'ACTIVE_CONN\\n'; wifi_ssids --active"])
   }
 
   function _buildNetworks() {

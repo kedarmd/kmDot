@@ -23,7 +23,7 @@ Item {
     "": "terminal", "": "terminal", "󰆍": "terminal", "": "display", "": "display",
     "": "apps", "": "apps", "󰀻": "apps", "󰕰": "apps", "": "apps", "": "apps",
     "": "clipboard", "": "clipboard", "": "copy", "": "music", "": "power",
-    "": "wifi", "󰤨": "wifi", "": "bluetooth", "󰂯": "bluetooth", "󰁹": "battery",
+    "": "wifi", "󰤨": "wifi", "󰤥": "wifi-high", "󰤢": "wifi-medium", "󰤟": "wifi-low", "": "bluetooth", "󰂯": "bluetooth", "󰁹": "battery",
     "": "power", "": "lock", "": "moon", "󰖔": "moon", "": "logout", "": "logout",
     "": "refresh", "": "refresh", "": "keyboard", "": "mic", "󰍬": "mic",
     "": "bell", "": "bell", "󰂚": "bell", "": "server", "": "globe", "": "folder",

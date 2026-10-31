@@ -18,7 +18,8 @@ LauncherBase {
   footerHint: "↑↓ navigate · ⏎ connect/disconnect · tab toggle"
   countShown: false
   footerActionVisible: false
-  listStatusActionText: root.footerActionText
+  listStatusActionText: "Refresh networks"
+  listStatusActionGlyph: ""
   listStatusActionWidth: 160
   loadingText: "Scanning for networks..."
   // Items decide whether to close themselves — the password flow keeps the launcher open.
@@ -31,16 +32,19 @@ LauncherBase {
   // across submits and re-prompts (survives startPrompt resets).
   property string promptSsid: ""
   property string forgetSsid: ""
-  itemActions: !root.promptMode && root.selectedItem && root.selectedItem.saved
-    ? [{ key: Qt.Key_Delete, ctrl: true, hint: "Ctrl+Del forget" }] : []
+  itemActions: !root.promptMode
+    ? [{ key: Qt.Key_R, ctrl: true, hint: "Ctrl+R refresh" }].concat(
+        root.selectedItem && root.selectedItem.saved
+          ? [{ key: Qt.Key_Delete, ctrl: true, hint: "Ctrl+Del forget" }]
+          : [])
+    : []
 
-  function sigGlyph(sig) { return WifiJs.signalGlyph(sig) }
-
-  function signalLabel(signal) {
-    if (signal >= 75) return "Excellent signal"
-    if (signal >= 50) return "Good signal"
-    if (signal >= 25) return "Fair signal"
-    return "Weak signal"
+  function sigGlyph(sig) {
+    const strength = Number(sig) || 0
+    if (strength <= 25) return "󰤟"
+    if (strength <= 50) return "󰤢"
+    if (strength <= 75) return "󰤥"
+    return "󰤨"
   }
 
   function refreshItems() {
@@ -60,14 +64,14 @@ LauncherBase {
     const items = []
     for (const n of Wifi.networks) {
       const descriptor = n.active ? "Connected · Secured"
-        : n.open ? "Open network · " + root.signalLabel(n.signal)
-        : n.saved ? "Saved · " + root.signalLabel(n.signal)
-        : "Secured · " + root.signalLabel(n.signal)
+        : n.open ? "Open network"
+        : n.saved ? "Saved"
+        : "Secured"
       items.push({
         label: n.ssid,
         subtitle: descriptor,
         meta: n.active ? "Disconnect" : "Connect",
-        glyph: "",
+        glyph: root.sigGlyph(n.signal),
         ssid: n.ssid,
         active: !!n.active,
         saved: !!(n.saved || Wifi.isSaved(n.ssid)),
@@ -110,12 +114,18 @@ LauncherBase {
   }
 
   onItemAction: function(action, item) {
+    if (action.key === Qt.Key_R && action.ctrl) {
+      Wifi.scan()
+      return
+    }
     if (action.key !== Qt.Key_Delete || !item || !item.saved || !root.scope || !root.scope.confirmPopup) return
     root.forgetSsid = item.ssid
     root.closeLauncher()
     root.scope.confirmPopup.anchorX = -1
     root.scope.confirmPopup.ask("Forget Wi-Fi network", "Forget '" + item.ssid + "'? You will need to re-enter the password to connect again.")
   }
+
+  onListStatusActionClicked: Wifi.scan()
 
   onFooterActionClicked: {
     // Keep the surface open across the toggle; the store rescans and the

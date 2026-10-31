@@ -40,7 +40,9 @@ BarModule {
 
   glyph: ""
   iconName: {
-    if (disabled || wiredConnected() || !net) return "wifi"
+    if (disabled) return "wifi-disabled"
+    if (wiredConnected()) return "wifi"
+    if (!net) return "wifi-off"
     // Quickshell exposes this as a percentage on current releases, while
     // older versions returned a 0..1 fraction. Normalize both forms before
     // applying the icon thresholds.

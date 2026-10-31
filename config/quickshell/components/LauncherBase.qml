@@ -111,6 +111,7 @@ Item {
 
   signal activated(var item)
   signal footerActionClicked()
+  signal listStatusActionClicked()
   signal headerActionSelected(string value)
   signal itemAction(var action, var item)
   // Optional per-item modifier chords (e.g. Ctrl+R retry): each entry is
@@ -880,6 +881,8 @@ Item {
 
               R1Icon {
                 anchors.centerIn: parent
+                width: 28
+                height: 28
                 visible: root.itemGlyph(modelData.item) !== ""
                 glyph: root.itemGlyph(modelData.item)
                 font.family: "JetBrainsMono Nerd Font Propo"
@@ -1079,7 +1082,7 @@ Item {
         MouseArea {
           anchors.fill: parent
           cursorShape: Qt.PointingHandCursor
-          onClicked: root.footerActionClicked()
+          onClicked: root.listStatusActionClicked()
         }
       }
 

@@ -3,8 +3,10 @@ import QtQuick
 Canvas {
   id: root
   property color color: "white"
+  property real signalStrength: 100
 
   onColorChanged: requestPaint()
+  onSignalStrengthChanged: requestPaint()
   onWidthChanged: requestPaint()
   onHeightChanged: requestPaint()
 
@@ -22,14 +24,21 @@ Canvas {
     ctx.translate(offsetX, offsetY)
     ctx.scale(scale, scale)
 
+    const strength = Math.max(0, Math.min(100, Number(root.signalStrength) || 0))
     ctx.beginPath()
-    ctx.moveTo(2, 8)
-    ctx.bezierCurveTo(7.845, 3.32, 16.155, 3.32, 22, 8)
-    ctx.moveTo(5, 12)
-    ctx.bezierCurveTo(9.064, 8.647, 14.936, 8.647, 19, 12)
-    ctx.moveTo(8, 16)
-    ctx.bezierCurveTo(10.278, 13.963, 13.722, 13.963, 16, 16)
-    ctx.stroke()
+    if (strength >= 75) {
+      ctx.moveTo(2, 8)
+      ctx.bezierCurveTo(7.845, 3.32, 16.155, 3.32, 22, 8)
+    }
+    if (strength >= 50) {
+      ctx.moveTo(5, 12)
+      ctx.bezierCurveTo(9.064, 8.647, 14.936, 8.647, 19, 12)
+    }
+    if (strength >= 25) {
+      ctx.moveTo(8, 16)
+      ctx.bezierCurveTo(10.278, 13.963, 13.722, 13.963, 16, 16)
+    }
+    if (strength >= 25) ctx.stroke()
 
     ctx.beginPath()
     ctx.arc(12, 20, 1, 0, Math.PI * 2)

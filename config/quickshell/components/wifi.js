@@ -51,19 +51,14 @@ function parseScanLine(line) {
   }
 }
 
-// "NAME:TYPE" lines where NAME may contain colons: the type is the last field.
-function parseTypedName(line, wantType) {
-  const parts = toStr(line).split(":")
-  if (parts.length < 2 || parts[parts.length - 1] !== wantType) return ""
-  return decodeNmcli(parts.slice(0, parts.length - 1).join(":"))
-}
-
 function parseSavedLine(line) {
-  return parseTypedName(line, "802-11-wireless")
+  const prefix = "802-11-wireless:"
+  const value = toStr(line)
+  return value.startsWith(prefix) ? decodeNmcli(value.slice(prefix.length)) : ""
 }
 
 function parseActiveLine(line) {
-  return parseTypedName(line, "802-11-wireless")
+  return parseSavedLine(line)
 }
 
 function sortNetworks(list) {
@@ -76,6 +71,6 @@ function sortNetworks(list) {
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     toStr, shellQuote, decodeNmcli, isOpen, signalGlyph,
-    parseScanLine, parseTypedName, parseSavedLine, parseActiveLine, sortNetworks
+    parseScanLine, parseSavedLine, parseActiveLine, sortNetworks
   }
 }

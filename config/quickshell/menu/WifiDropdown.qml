@@ -31,14 +31,6 @@ PopupBase {
   readonly property var connectedNetworks: root.networks.filter(n => n.active)
   readonly property var availableNetworks: root.networks.filter(n => !n.active)
 
-  function signalLabel(signal) {
-    const strength = Number(signal) || 0
-    if (strength >= 75) return "Excellent signal"
-    if (strength >= 50) return "Good signal"
-    if (strength >= 25) return "Fair signal"
-    return "Weak signal"
-  }
-
   function refreshItems() {
     Wifi.errorText = ""
     Wifi.scan()
@@ -104,10 +96,10 @@ PopupBase {
       opacity: root.radioEnabled ? 1 : 0.55
       color: modelData.active || root.busySsid === modelData.ssid ? Colors.primary_container : Colors.surface_alt
       Row { anchors.fill: parent; anchors.margins: 16; spacing: 16
-        WifiIcon { width: 24; height: 24; color: modelData.active || root.busySsid === modelData.ssid ? Tokens.on_primary_container : Colors.text_alt; anchors.verticalCenter: parent.verticalCenter }
+        WifiIcon { width: 24; height: 24; signalStrength: modelData.signal; color: modelData.active || root.busySsid === modelData.ssid ? Tokens.on_primary_container : Colors.text_alt; anchors.verticalCenter: parent.verticalCenter }
         Column { width: parent.width - 80; anchors.verticalCenter: parent.verticalCenter
           Text { width: parent.width; text: modelData.ssid; color: Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
-          Text { text: root.busySsid === modelData.ssid ? (root.busyAction === "disconnect" ? "Disconnecting..." : "Connecting...") : (modelData.active ? "Connected · Secured" : (modelData.open ? "Open · " : "Saved · ") + root.signalLabel(modelData.signal)); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
+          Text { text: root.busySsid === modelData.ssid ? (root.busyAction === "disconnect" ? "Disconnecting..." : "Connecting...") : (modelData.active ? "Connected · Secured" : modelData.open ? "Open network" : modelData.saved ? "Saved" : "Secured"); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
         }
         R1Icon { id: rowSpinner; visible: root.busySsid === modelData.ssid; glyph: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: !Tokens.reducedMotion && rowSpinner.visible } }
       }
@@ -206,17 +198,32 @@ PopupBase {
     }
 
     Text { visible: root.errorText !== ""; width: parent.width; text: root.errorText; wrapMode: Text.Wrap; color: Tokens.errorText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
-      PillButton {
-        visible: root.radioEnabled && !(root.scanning && root.networks.length === 0)
+      Row {
         width: parent.width
-        filled: true
-        active: true
-        glyph: "\uf067"
-        text: "Join another network"
-        textSize: 14
-        enabled: root.radioEnabled
-        opacity: root.radioEnabled ? 1 : 0.5
-        onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.ssid = ""; root.scope.wifiAddPopup.password = ""; root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.inheritAnchor(root.scope.wifiAddPopup); root.scope.wifiAddPopup.returnPopup = root; root.scope.wifiAddPopup.open() }
+        spacing: 10
+        visible: root.radioEnabled
+
+        PillButton {
+          width: (parent.width - parent.spacing) / 2
+          filled: true
+          iconName: "refresh"
+          text: root.scanning ? "Scanning…" : "Refresh networks"
+          textSize: 14
+          enabled: !root.scanning
+          onClicked: Wifi.scan()
+        }
+
+        PillButton {
+          width: (parent.width - parent.spacing) / 2
+          filled: true
+          active: true
+          glyph: "\uf067"
+          text: "Join network"
+          textSize: 14
+          enabled: root.radioEnabled && !root.scanning
+          opacity: root.radioEnabled && !root.scanning ? 1 : 0.5
+          onClicked: if (root.scope && root.scope.wifiAddPopup) { root.close(); root.scope.wifiAddPopup.ssid = ""; root.scope.wifiAddPopup.password = ""; root.scope.wifiAddPopup.editingExisting = false; root.scope.wifiAddPopup.failed = false; root.scope.wifiAddPopup.resultText = ""; root.inheritAnchor(root.scope.wifiAddPopup); root.scope.wifiAddPopup.returnPopup = root; root.scope.wifiAddPopup.open() }
+        }
     }
   }
 
