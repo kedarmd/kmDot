@@ -103,7 +103,7 @@ PopupBase {
     height: 528 + (root.errorText ? errorCard.height + 16 : 0)
     Row {
       spacing: 16
-      R1Icon { glyph: "\uf233"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+      R1Icon { width: 28; height: 28; glyph: "\uf233"; font.pixelSize: 22; color: Colors.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; anchors.verticalCenter: parent.verticalCenter }
       Text { text: "Server mode"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
     }
     Text {
@@ -139,13 +139,13 @@ PopupBase {
     Column {
       y: 240; width: parent.width; spacing: 8
       Repeater {
-        model: [{name: "Tailscale", service: "tailscale", state: root.tailscale, detail: root.tailscaleIp || "Private network", glyph: "\uf0ac"},
-                {name: "Jellyfin", service: "jellyfin", state: root.jellyfin, detail: "Media server", glyph: "\uf04b"}]
+        model: [{name: "Tailscale", service: "tailscale", state: root.tailscale, detail: root.tailscaleIp || "Private network", icon: "globe"},
+                {name: "Jellyfin", service: "jellyfin", state: root.jellyfin, detail: "Media server", icon: "play-circle-outline"}]
         Rectangle {
           required property var modelData
           width: parent.width; height: 72; radius: 16
           color: modelData.state === "active" ? Colors.primary_container : Colors.surface_alt
-          R1Icon { x: 16; y: 24; glyph: modelData.glyph; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.text }
+          R1Icon { x: 16; width: 24; height: 24; anchors.verticalCenter: parent.verticalCenter; iconName: modelData.icon; font.pixelSize: 20; color: Colors.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
           Text { x: 56; y: 12; width: parent.width - 144; text: modelData.name; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold; color: Colors.text }
           Text {
             x: 56; y: 38; width: parent.width - 144
@@ -163,7 +163,7 @@ PopupBase {
     }
     Rectangle {
       y: 424; width: parent.width; height: 104; radius: 16; color: Colors.surface_alt
-      R1Icon { x: 16; y: 16; glyph: root.inhibitor === "active" ? "\uf023" : "\uf09c"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.text }
+      R1Icon { x: 16; y: 12; width: 24; height: 24; glyph: root.inhibitor === "active" ? "\uf023" : "\uf09c"; font.pixelSize: 20; color: Colors.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
       Text { x: 56; y: 16; text: "Sleep is " + (root.inhibitor === "active" ? "blocked" : "allowed"); font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; color: Colors.text }
       Text {
         x: 16; y: 48; width: parent.width - 32
@@ -186,7 +186,7 @@ PopupBase {
     width: parent.width; height: 376
     Row {
       spacing: 16
-      R1Icon { iconName: "server"; font.pixelSize: 24; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+      R1Icon { width: 28; height: 28; iconName: "server"; font.pixelSize: 22; color: Colors.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; anchors.verticalCenter: parent.verticalCenter }
       Text { text: "Server mode"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
     }
     Text {
@@ -201,7 +201,7 @@ PopupBase {
     }
     Rectangle {
       y: 192; width: parent.width; height: 72; radius: 16; color: Colors.primary_container
-      R1Icon { x: 16; y: 24; iconName: root.failedService === "jellyfin" ? "globe" : "play"; font.pixelSize: 24; color: Colors.text }
+      R1Icon { x: 16; width: 24; height: 24; anchors.verticalCenter: parent.verticalCenter; iconName: root.failedService === "jellyfin" ? "globe" : "play-circle-outline"; font.pixelSize: 20; color: Colors.text; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
       Text { x: 56; y: 12; text: root.failedService === "jellyfin" ? "Tailscale" : "Jellyfin"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; color: Colors.text }
       Text { x: 56; y: 38; text: (root.failedService === "jellyfin" ? root.tailscale : root.jellyfin) === "active" ? "Running · Unaffected" : "Stopped · Unaffected"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
     }

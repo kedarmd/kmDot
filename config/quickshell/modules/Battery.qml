@@ -7,7 +7,6 @@ import "../components"
 BarModule {
   id: root
   sock: "kmdot-battery"
-  labelSpacing: 8
   smoothIconColor: true
 
   readonly property var battery: UPower.displayDevice

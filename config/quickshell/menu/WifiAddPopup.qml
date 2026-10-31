@@ -85,7 +85,7 @@ PopupBase {
   Column {
     width: parent.width; spacing: 12
     Row { width: parent.width; spacing: 10
-      R1Icon { id: wifiIcon; glyph: "󰤨"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.primary }
+      R1Icon { id: wifiIcon; iconName: "wifi"; font.pixelSize: 20; color: Colors.primary }
       Text { id: titleText; text: root.failed ? "Try again" : "Join a network"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: Math.max(1, parent.width - wifiIcon.implicitWidth - titleText.implicitWidth - 30); height: 1 }
     }

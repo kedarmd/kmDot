@@ -109,7 +109,7 @@ PopupBase {
     width: parent.width; spacing: 12
     Row {
       width: parent.width; spacing: 10
-      R1Icon { id: bluetoothIcon; glyph: "󰂯"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 24; color: Colors.primary }
+      R1Icon { id: bluetoothIcon; iconName: !root.radioEnabled ? "bluetooth-off" : root.connectedDevices.length > 0 ? "bluetooth-connected" : "bluetooth-on"; font.pixelSize: 24; color: Colors.primary }
       Text { id: titleText; text: "Bluetooth"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
     }
     Row {

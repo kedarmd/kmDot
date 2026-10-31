@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import qs
@@ -300,29 +299,12 @@ PopupBase {
                 id: playButton
                 anchors { left: parent.left; verticalCenter: retryButton.verticalCenter }
                 width: 24; height: 24
-                Shape {
-                  anchors.fill: parent
-                  visible: historyRow.isPlaying
-                  ShapePath {
-                    strokeColor: Colors.text; strokeWidth: 1.8; fillColor: "transparent"
-                    capStyle: ShapePath.RoundCap
-                    startX: 8; startY: 4
-                    PathLine { x: 8; y: 20 }
-                    PathMove { x: 16; y: 4 }
-                    PathLine { x: 16; y: 20 }
-                  }
-                }
-                Shape {
-                  anchors.fill: parent
-                  visible: !historyRow.isPlaying
-                  ShapePath {
-                    strokeColor: Colors.text; strokeWidth: 1.8; fillColor: "transparent"
-                    capStyle: ShapePath.RoundCap; joinStyle: ShapePath.RoundJoin
-                    startX: 8; startY: 5
-                    PathLine { x: 18; y: 12 }
-                    PathLine { x: 8; y: 19 }
-                    PathLine { x: 8; y: 5 }
-                  }
+                R1Icon {
+                  anchors.centerIn: parent
+                  width: 24; height: 24
+                  iconName: historyRow.isPlaying ? "pause" : "play"
+                  font.pixelSize: 20
+                  color: Colors.text
                 }
                 MouseArea { anchors.fill: parent; enabled: !root.busy && modelData.audioAvailable; cursorShape: Qt.PointingHandCursor; onClicked: root.togglePlay(modelData) }
               }

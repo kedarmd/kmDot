@@ -1,4 +1,5 @@
 import QtQuick 2.15
+import QtQuick.Shapes 1.12
 import QtQuick.Window 2.15
 import QtQuick.Controls 2.15 as Controls
 import SddmComponents 2.0
@@ -23,6 +24,7 @@ Rectangle {
   property bool showError: false
   property bool authenticating: false
   property bool signingOut: false
+  readonly property int loginTransitionDuration: 320
   property string selectedUser: userModel.lastUser || ""
   property int rememberedSession: sessionModel.lastIndex
   property date now: new Date()
@@ -46,13 +48,6 @@ Rectangle {
     width: Math.min(520, parent.width * 0.42)
     spacing: 16
     Text {
-      text: "WELCOME BACK"
-      color: primaryColor
-      font.family: root.fontName
-      font.pixelSize: 12
-      font.weight: Font.DemiBold
-    }
-    Text {
       text: Qt.formatDateTime(root.now, "hh:mm AP")
       color: textColor
       font.family: root.fontName
@@ -65,13 +60,74 @@ Rectangle {
       font.family: root.fontName
       font.pixelSize: 16
     }
-    Text {
-      text: "Your workspace awaits."
-      color: secondaryColor
-      font.family: root.fontName
-      font.pixelSize: 13
-      topPadding: 4
+  }
+
+  // Match the lockscreen's moving glare while keeping the login card still.
+  // Both gradients use the theme's semantic colors.
+  Shape {
+    id: cardHalo
+    width: card.width + 16
+    height: card.height + 16
+    anchors.centerIn: card
+    ShapePath {
+      fillRule: ShapePath.OddEvenFill
+      fillColor: "white"
+      strokeColor: "transparent"
+      strokeWidth: 0
+      fillGradient: ConicalGradient {
+        id: cardHaloGradient
+        angle: cardShineGradient.angle
+        centerX: cardHalo.width / 2
+        centerY: cardHalo.height / 2
+        GradientStop { position: 0.0; color: "transparent" }
+        GradientStop { position: 0.39; color: "transparent" }
+        GradientStop { position: 0.46; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.08) }
+        GradientStop { position: 0.5; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.2) }
+        GradientStop { position: 0.54; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.08) }
+        GradientStop { position: 0.61; color: "transparent" }
+        GradientStop { position: 1.0; color: "transparent" }
+      }
+      PathSvg { path: root.roundedRectPath(0, 0, cardHalo.width, cardHalo.height, card.radius + 8) }
+      PathSvg { path: root.roundedRectPath(8, 8, cardHalo.width - 16, cardHalo.height - 16, card.radius) }
     }
+  }
+
+  Shape {
+    id: cardShine
+    width: card.width + 6
+    height: card.height + 6
+    anchors.centerIn: card
+    ShapePath {
+      fillRule: ShapePath.OddEvenFill
+      fillColor: "white"
+      strokeColor: "transparent"
+      strokeWidth: 0
+      fillGradient: ConicalGradient {
+        id: cardShineGradient
+        centerX: cardShine.width / 2
+        centerY: cardShine.height / 2
+        GradientStop { position: 0.0; color: "transparent" }
+        GradientStop { position: 0.475; color: "transparent" }
+        GradientStop { position: 0.493; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.55) }
+        GradientStop { position: 0.5; color: Qt.rgba(root.textColor.r, root.textColor.g, root.textColor.b, 0.92) }
+        GradientStop { position: 0.507; color: Qt.rgba(root.primaryColor.r, root.primaryColor.g, root.primaryColor.b, 0.55) }
+        GradientStop { position: 0.525; color: "transparent" }
+        GradientStop { position: 1.0; color: "transparent" }
+      }
+      PathSvg { path: root.roundedRectPath(0, 0, cardShine.width, cardShine.height, card.radius + 3) }
+      PathSvg { path: root.roundedRectPath(3, 3, cardShine.width - 6, cardShine.height - 6, card.radius) }
+    }
+  }
+
+  NumberAnimation {
+    target: cardShineGradient
+    property: "angle"
+    from: 360
+    to: 0
+    duration: 12000
+    loops: Animation.Infinite
+    easing.type: Easing.Linear
+    running: !root.signingOut
   }
 
   Rectangle {
@@ -84,15 +140,6 @@ Rectangle {
     border.width: 1
     x: Math.max(16, Math.min(root.width - width - 16, root.width * 0.694 - width / 2))
     anchors.verticalCenter: parent.verticalCenter
-    opacity: root.signingOut ? 0 : 1
-    scale: root.signingOut ? 0.98 : 1
-
-    Behavior on opacity {
-      NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-    }
-    Behavior on scale {
-      NumberAnimation { duration: 240; easing.type: Easing.InCubic }
-    }
 
     Column {
       anchors.fill: parent
@@ -421,21 +468,55 @@ Rectangle {
     onTriggered: root.now = new Date()
   }
 
+  // SDDM closes the greeter as soon as login succeeds, so begin the cover
+  // before submitting credentials. On failure it reverses cleanly; on success
+  // the desktop's startup cover continues the handoff from the same base.
+  Timer {
+    id: loginSubmitTimer
+    interval: root.loginTransitionDuration
+    onTriggered: sddm.login(root.selectedUser, password.text, root.rememberedSession)
+  }
+
+  Rectangle {
+    z: 100
+    anchors.fill: parent
+    color: root.baseColor
+    opacity: root.signingOut ? 1 : 0
+    Behavior on opacity {
+      NumberAnimation { duration: root.loginTransitionDuration; easing.type: Easing.InOutCubic }
+    }
+    MouseArea {
+      anchors.fill: parent
+      enabled: root.signingOut
+    }
+  }
+
   function userNameAt(index) {
     return userCombo.textAt(index)
+  }
+  function roundedRectPath(x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2)
+    const right = x + width
+    const bottom = y + height
+    return "M " + (x + r) + " " + y +
+      " H " + (right - r) + " A " + r + " " + r + " 0 0 1 " + right + " " + (y + r) +
+      " V " + (bottom - r) + " A " + r + " " + r + " 0 0 1 " + (right - r) + " " + bottom +
+      " H " + (x + r) + " A " + r + " " + r + " 0 0 1 " + x + " " + (bottom - r) +
+      " V " + (y + r) + " A " + r + " " + r + " 0 0 1 " + (x + r) + " " + y + " Z"
   }
   function login() {
     if (authenticating || !selectedUser || !password.text) return
     authenticating = true
     showError = false
-    sddm.login(selectedUser, password.text, rememberedSession)
+    signingOut = true
+    loginSubmitTimer.start()
   }
   function iconData(name, color) {
     const paths = {
       lock: "M7 10V7a5 5 0 0 1 10 0v3 M5 10h14v11H5z M12 14v3",
       power: "M12 2v10 M7 4.8a9 9 0 1 0 10 0",
       refresh: "M20 8a8 8 0 0 0-13.7-3L4 7 M4 2v5h5 M4 16a8 8 0 0 0 13.7 3L20 17 M20 22v-5h-5",
-      moon: "M20.5 15A8 8 0 0 1 9 3.5 8 8 0 1 0 20.5 15",
+      moon: "M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6.5 6.5 0 0 0 8.268 8.268c.344-.215.825-.003.803.401",
       chevron: "M9 5l7 7-7 7"
     }
     const key = name.startsWith("chevron") ? "chevron" : name
@@ -452,6 +533,7 @@ Rectangle {
       root.signingOut = true
     }
     function onLoginFailed() {
+      loginSubmitTimer.stop()
       root.authenticating = false
       root.signingOut = false
       password.text = ""

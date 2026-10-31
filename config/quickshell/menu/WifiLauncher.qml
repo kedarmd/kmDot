@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import "../components"
 import "../components/wifi.js" as WifiJs
+import "../components/nerdicons.js" as NerdIcons
 import qs
 
 LauncherBase {
@@ -39,12 +40,8 @@ LauncherBase {
           : [])
     : []
 
-  function sigGlyph(sig) {
-    const strength = Number(sig) || 0
-    if (strength <= 25) return "󰤟"
-    if (strength <= 50) return "󰤢"
-    if (strength <= 75) return "󰤥"
-    return "󰤨"
+  function networkGlyph(active) {
+    return NerdIcons.glyph(!Wifi.enabled ? "wifi-off" : active ? "wifi-connected" : "wifi")
   }
 
   function refreshItems() {
@@ -71,7 +68,7 @@ LauncherBase {
         label: n.ssid,
         subtitle: descriptor,
         meta: n.active ? "Disconnect" : "Connect",
-        glyph: root.sigGlyph(n.signal),
+        glyph: root.networkGlyph(!!n.active),
         ssid: n.ssid,
         active: !!n.active,
         saved: !!(n.saved || Wifi.isSaved(n.ssid)),

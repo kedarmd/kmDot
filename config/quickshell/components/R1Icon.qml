@@ -9,7 +9,7 @@ Text {
   id: root
   property string glyph: ""
   property string iconName: ""
-  text: root.glyph || NerdIcons.glyph(root.iconName)
+  text: NerdIcons.normalizeGlyph(root.glyph || NerdIcons.glyph(root.iconName))
   font.family: "JetBrainsMono Nerd Font Propo"
   font.pixelSize: 16
   color: Colors.text

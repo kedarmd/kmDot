@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import "../components"
+import "../components/nerdicons.js" as NerdIcons
 import qs
 
 LauncherBase {
@@ -19,9 +20,9 @@ LauncherBase {
   Component.onCompleted: root.refreshItems()
 
   function refreshItems() {
-    const wifiSubtitle = Wifi.connectedSsid
-      ? Wifi.connectedSsid + " · Connected"
-      : (Wifi.scanning ? "Scanning for networks…" : (Wifi.enabled ? "Not connected" : "Wi-Fi off"))
+    const wifiSubtitle = !Wifi.enabled ? "Wi-Fi off"
+      : Wifi.connectedSsid ? Wifi.connectedSsid + " · Connected"
+      : (Wifi.scanning ? "Scanning for networks…" : "Not connected")
     let bluetoothDevice = ""
     for (const d of BluetoothStore.devices) {
       if (d.connected) { bluetoothDevice = d.name; break }
@@ -33,8 +34,8 @@ LauncherBase {
         : BluetoothStore.discovering ? "Scanning for devices…" : "Not connected")
 
     root.items = [
-      { label: "Wi-Fi", subtitle: wifiSubtitle, glyph: "\uf1eb", action: "wifi" },
-      { label: "Bluetooth", subtitle: bluetoothSubtitle, glyph: "\uf293", action: "bluetooth" }
+      { label: "Wi-Fi", subtitle: wifiSubtitle, glyph: NerdIcons.glyph(!Wifi.enabled ? "wifi-off" : Wifi.connectedSsid ? "wifi-connected" : "wifi"), action: "wifi" },
+      { label: "Bluetooth", subtitle: bluetoothSubtitle, glyph: NerdIcons.glyph(!BluetoothStore.enabled ? "bluetooth-off" : bluetoothDevice ? "bluetooth-connected" : "bluetooth-on"), action: "bluetooth" }
     ]
     root.pool = root.items
   }

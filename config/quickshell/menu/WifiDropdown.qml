@@ -96,7 +96,7 @@ PopupBase {
       opacity: root.radioEnabled ? 1 : 0.55
       color: modelData.active || root.busySsid === modelData.ssid ? Colors.primary_container : Colors.surface_alt
       Row { anchors.fill: parent; anchors.margins: 16; spacing: 16
-        WifiIcon { width: 24; height: 24; signalStrength: modelData.signal; color: modelData.active || root.busySsid === modelData.ssid ? Tokens.on_primary_container : Colors.text_alt; anchors.verticalCenter: parent.verticalCenter }
+        WifiIcon { width: 24; height: 24; radioEnabled: root.radioEnabled; connected: modelData.active; color: modelData.active || root.busySsid === modelData.ssid ? Tokens.on_primary_container : Colors.text_alt; anchors.verticalCenter: parent.verticalCenter }
         Column { width: parent.width - 80; anchors.verticalCenter: parent.verticalCenter
           Text { width: parent.width; text: modelData.ssid; color: Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
           Text { text: root.busySsid === modelData.ssid ? (root.busyAction === "disconnect" ? "Disconnecting..." : "Connecting...") : (modelData.active ? "Connected · Secured" : modelData.open ? "Open network" : modelData.saved ? "Saved" : "Secured"); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
@@ -114,7 +114,7 @@ PopupBase {
 
     Row {
       width: parent.width; spacing: 10
-      WifiIcon { id: wifiIcon; width: 24; height: 24; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
+      WifiIcon { id: wifiIcon; width: 24; height: 24; radioEnabled: root.radioEnabled; connected: root.connectedSsid !== ""; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Text { id: titleText; text: "Wi-Fi"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
       Item { width: 1; height: 1 }
     }
@@ -142,7 +142,7 @@ PopupBase {
 
     Item {
       width: parent.width; height: 200; visible: !root.radioEnabled
-      R1Icon { y: 40; anchors.horizontalCenter: parent.horizontalCenter; iconName: "wifi"; font.pixelSize: 24; color: Colors.text }
+      WifiIcon { y: 40; width: 24; height: 24; anchors.horizontalCenter: parent.horizontalCenter; radioEnabled: false; color: Colors.text }
       Text { y: 84; width: parent.width; text: "A moment offline."; horizontalAlignment: Text.AlignHCenter; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 24; font.weight: Font.DemiBold; color: Colors.text }
       Text { y: 140; width: parent.width; text: "Saved networks will be here when you reconnect."; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Colors.text_alt }
     }
