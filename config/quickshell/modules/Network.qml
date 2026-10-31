@@ -40,17 +40,17 @@ BarModule {
 
   glyph: ""
   iconName: {
+    // A wired link remains the active network path even when the Wi-Fi radio
+    // is disabled; don't show the Wi-Fi-off marker for an Ethernet connection.
+    if (wiredConnected()) return "ethernet"
     if (disabled) return "wifi-off"
     if (net) {
       // Quickshell exposes this as a percentage on current releases, while
       // older versions returned a 0..1 fraction. Normalize both forms first.
       var s = Number(net.signalStrength)
       if (s > 1) s /= 100
-      if (s <= 0.25) return "wifi-connected-low"
-      if (s <= 0.5) return "wifi-connected-medium"
-      return "wifi-connected-high"
+      return "wifi-connected"
     }
-    if (wiredConnected()) return "ethernet"
     return "wifi-on"
   }
   active: false

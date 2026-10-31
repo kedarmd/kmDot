@@ -133,7 +133,7 @@ PopupBase {
       spacing: 12
       R1Icon {
         width: 24; height: 24; anchors.verticalCenter: parent.verticalCenter
-        glyph: "\uf26c"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 22; color: Colors.text
+        iconName: "display"; font.pixelSize: 22; color: Colors.text
       }
       Text {
         id: displayTitle

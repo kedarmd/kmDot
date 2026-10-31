@@ -2,11 +2,12 @@ import QtQuick
 import Quickshell.Io
 import qs
 import "../components"
+import "../components/nerdicons.js" as NerdIcons
 
 Item {
   id: root
   implicitHeight: 32
-  width: 36
+  width: 44
 
   property bool attentionOn: false
 
@@ -26,10 +27,10 @@ Item {
     hovered: mouse.containsMouse
     pressed: mouse.pressed
 
-    Text {
+    R1Icon {
       id: label
       anchors.centerIn: parent
-      text: root.attentionOn ? "\uf06e" : "\uf070"
+      glyph: NerdIcons.glyph(root.attentionOn ? "eye" : "eye-off")
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 20
       color: root.attentionOn ? Tokens.on_primary_container : Colors.text

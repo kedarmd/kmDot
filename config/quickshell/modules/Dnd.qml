@@ -6,7 +6,7 @@ import "../components"
 Item {
   id: root
   implicitHeight: 32
-  width: 36
+  width: 44
   required property bool hasNotifications
 
   readonly property bool dndOn: DnDState.dndEnabled

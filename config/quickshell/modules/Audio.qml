@@ -6,7 +6,6 @@ import "../components"
 BarModule {
   id: root
   sock: "kmdot-volume"
-  labelSpacing: 0
   smoothIconColor: true
 
   PwObjectTracker {

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../../components/nerdicons.js" as NerdIcons
 import "../compat"
 
 Rectangle {
@@ -88,7 +89,7 @@ Rectangle {
           width: panel.px(18)
           horizontalAlignment: Text.AlignHCenter
           textFormat: Text.PlainText
-          text: modelData.icon || ""
+          text: NerdIcons.normalizeGlyph(modelData.icon || "")
           color: panel.look.foreground
           opacity: 0.75
           font.family: Style.iconFamily

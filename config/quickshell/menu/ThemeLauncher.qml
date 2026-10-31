@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../components"
+import "../components/nerdicons.js" as NerdIcons
 import qs
 
 LauncherBase {
@@ -27,11 +28,7 @@ LauncherBase {
   }
 
   function themeGlyph(name) {
-    if (name === "tokyonight") return "\ueee6" // torii gate
-    if (name === "catppuccin") return "󰄛" // cat
-    if (name === "everforest") return "\uf06c" // leaf
-    if (name === "nord") return "󰜗" // snowflake
-    return "\uf1fc" // paint brush for an unrecognized future theme
+    return NerdIcons.glyph("palette")
   }
 
   function readThemeRow(line) {

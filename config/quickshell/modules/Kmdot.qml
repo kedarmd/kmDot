@@ -6,12 +6,12 @@ import "../components"
 Item {
   id: root
   implicitHeight: 32
-  width: 40
+  width: 44
 
   ModulePill {
     id: pill
     anchors.centerIn: parent
-    width: 40
+    width: 44
     height: 32
     active: true
     fill: Colors.base

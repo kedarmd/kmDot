@@ -12,7 +12,8 @@ import qs
 Item {
   id: root
   implicitHeight: 32
-  width: Math.max(40, moduleLabel.implicitWidth + 16)
+  property int horizontalPadding: 10
+  width: Math.max(44, moduleLabel.implicitWidth + root.horizontalPadding * 2)
 
   Behavior on width {
     NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
@@ -26,7 +27,9 @@ Item {
   property color trailingColor: Colors.warning
   property int textSize: 12
   property int labelSpacing: 5
-  property int iconSize: 24
+  // Nerd Font glyphs have less visible ink than the old 16 px vector paths.
+  // A 20 px glyph in the existing 24 px cell restores their optical size.
+  property int iconSize: 20
   property color foreground: Colors.text
   property color iconForeground: root.foreground
   property bool smoothIconColor: false
@@ -81,6 +84,8 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         width: 24
         height: 24
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
         visible: root.busy || root.glyph !== "" || root.iconName !== ""
         glyph: root.busy ? "" : root.glyph
         iconName: root.busy ? "" : root.iconName
@@ -134,7 +139,7 @@ Item {
         glyph: root.trailingGlyph
         iconName: root.trailingIconName
         font.family: "JetBrainsMono Nerd Font Propo"
-        font.pixelSize: 15
+        font.pixelSize: 16
         color: root.trailingColor
       }
 

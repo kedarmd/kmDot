@@ -67,7 +67,7 @@ Rectangle {
             iconName: root.iconName
             font.family: "JetBrainsMono Nerd Font Propo"
             font.pixelSize: root.glyphSize
-            font.weight: root.active ? Font.Bold : Font.Normal
+            font.weight: Font.Normal
             color: root.fg
             anchors.verticalCenter: parent.verticalCenter
         }

@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import "../../../components/nerdicons.js" as NerdIcons
 import "../compat"
 
 Item {
@@ -116,11 +117,11 @@ Item {
       Text {
         anchors.centerIn: parent
         textFormat: Text.PlainText
-        text: "→"
+        text: NerdIcons.glyph("arrow-right")
         color: row.selected ? row.look.selectedForeground : row.look.foreground
         opacity: 0.7
-        font.family: row.look.fontFamily
-        font.pixelSize: Math.round(Style.font.body * row.zoom)
+        font.family: Style.iconFamily
+        font.pixelSize: Math.round(16 * row.zoom)
       }
     }
   }
@@ -175,9 +176,9 @@ Item {
         anchors.centerIn: parent
         visible: row.glyph.length > 0
         textFormat: Text.PlainText
-        text: row.glyph
+        text: NerdIcons.normalizeGlyph(row.glyph)
         color: row.selected ? row.look.accent : row.look.foreground
-        font.family: row.glyphFont || Style.iconFamily
+        font.family: Style.iconFamily
         font.pixelSize: row.px(19)
       }
     }
@@ -214,7 +215,7 @@ Item {
         visible: row.favorite
         anchors.verticalCenter: parent.verticalCenter
         textFormat: Text.PlainText
-        text: ""
+        text: NerdIcons.glyph("star")
         color: row.look.accent
         opacity: 0.8
         font.family: Style.iconFamily
@@ -225,10 +226,10 @@ Item {
         visible: row.checked
         anchors.verticalCenter: parent.verticalCenter
         textFormat: Text.PlainText
-        text: "✓"
+        text: NerdIcons.glyph("check")
         color: row.look.accent
-        font.family: row.look.fontFamily
-        font.pixelSize: Math.round(Style.font.body * row.zoom)
+        font.family: Style.iconFamily
+        font.pixelSize: Math.round(16 * row.zoom)
       }
 
       Text {

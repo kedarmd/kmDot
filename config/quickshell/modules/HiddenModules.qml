@@ -21,7 +21,7 @@ Item {
 
   default property alias modules: modulesRow.data
 
-  readonly property real chevronWidth: 36
+  readonly property real chevronWidth: 44
   readonly property real modulesWidth: modulesRow.implicitWidth
 
   width: root.open ? chevronWidth + modulesWidth + 8 : chevronWidth
@@ -47,7 +47,7 @@ Item {
       glyph: "\uf105"
       rotation: root.open ? 0 : 180
       font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 24
+      font.pixelSize: 20
       color: root.open ? Tokens.on_primary_container : Colors.text
     }
 

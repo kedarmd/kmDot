@@ -3,6 +3,7 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
+import "../../../components/nerdicons.js" as NerdIcons
 import "../compat"
 import "../compat" as Commons
 import "../core/Agent.js" as Agent
@@ -616,7 +617,7 @@ PanelWindow {
           anchors.centerIn: parent
           visible: !window.atRoot
           textFormat: Text.PlainText
-          text: ""
+          text: NerdIcons.normalizeGlyph("")
           font.family: Style.iconFamily
           font.pixelSize: window.px(15)
           color: window.atRoot ? window.look.accent : window.look.foreground
@@ -812,9 +813,9 @@ PanelWindow {
         Text {
           anchors.horizontalCenter: parent.horizontalCenter
           textFormat: Text.PlainText
-          text: window.view.kind === "alias" ? "" : "\uf002"
+          text: NerdIcons.normalizeGlyph(window.view.kind === "alias" ? "" : "\uf002")
           color: window.look.accent
-          font.family: window.look.fontFamily
+          font.family: Style.iconFamily
           font.pixelSize: window.px(28)
         }
         Text {
@@ -877,7 +878,7 @@ PanelWindow {
           visible: !!window.toast
           anchors.verticalCenter: parent.verticalCenter
           textFormat: Text.PlainText
-          text: window.toast ? (window.toast.style === "failure" ? "" : "") : "\uf002"
+          text: NerdIcons.normalizeGlyph(window.toast ? (window.toast.style === "failure" ? "" : "") : "\uf002")
           font.family: Style.iconFamily
           font.pixelSize: window.toast ? window.px(12) : window.px(11)
           color: window.toast && window.toast.style === "failure" ? window.look.error : window.look.accent

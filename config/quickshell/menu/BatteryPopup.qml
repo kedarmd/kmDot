@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Services.UPower
 import qs
 import "../components"
+import "../components/nerdicons.js" as NerdIcons
 
 PopupBase {
   id: root
@@ -54,11 +55,9 @@ PopupBase {
 
   function batteryGlyph() {
     const cap = root.percent
-    if (cap <= 20) return "\uf244"
-    if (cap <= 40) return "\uf243"
-    if (cap <= 60) return "\uf242"
-    if (cap <= 80) return "\uf241"
-    return "\uf240"
+    if (cap <= 0) return NerdIcons.glyph("battery-empty")
+    const level = Math.min(100, Math.max(10, Math.round(cap / 10) * 10))
+    return NerdIcons.glyph("battery-" + level)
   }
 
   function formatTime(s) {
@@ -176,7 +175,7 @@ PopupBase {
     Row {
       width: parent.width
       spacing: 12
-      R1Icon { glyph: "󰁹"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.primary; anchors.verticalCenter: parent.verticalCenter }
+      R1Icon { glyph: root.batteryGlyph(); font.pixelSize: 20; color: Colors.primary; anchors.verticalCenter: parent.verticalCenter }
       Text { text: "Battery"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.text; anchors.verticalCenter: parent.verticalCenter }
     }
 
