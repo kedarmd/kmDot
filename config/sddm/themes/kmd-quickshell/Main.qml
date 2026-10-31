@@ -23,6 +23,7 @@ Rectangle {
   property bool showError: false
   property bool authenticating: false
   property bool signingOut: false
+  readonly property int loginTransitionDuration: 320
   property string selectedUser: userModel.lastUser || ""
   property int rememberedSession: sessionModel.lastIndex
   property date now: new Date()
@@ -46,13 +47,6 @@ Rectangle {
     width: Math.min(520, parent.width * 0.42)
     spacing: 16
     Text {
-      text: "WELCOME BACK"
-      color: primaryColor
-      font.family: root.fontName
-      font.pixelSize: 12
-      font.weight: Font.DemiBold
-    }
-    Text {
       text: Qt.formatDateTime(root.now, "hh:mm AP")
       color: textColor
       font.family: root.fontName
@@ -64,13 +58,6 @@ Rectangle {
       color: secondaryColor
       font.family: root.fontName
       font.pixelSize: 16
-    }
-    Text {
-      text: "Your workspace awaits."
-      color: secondaryColor
-      font.family: root.fontName
-      font.pixelSize: 13
-      topPadding: 4
     }
   }
 
@@ -84,15 +71,6 @@ Rectangle {
     border.width: 1
     x: Math.max(16, Math.min(root.width - width - 16, root.width * 0.694 - width / 2))
     anchors.verticalCenter: parent.verticalCenter
-    opacity: root.signingOut ? 0 : 1
-    scale: root.signingOut ? 0.98 : 1
-
-    Behavior on opacity {
-      NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
-    }
-    Behavior on scale {
-      NumberAnimation { duration: 240; easing.type: Easing.InCubic }
-    }
 
     Column {
       anchors.fill: parent
@@ -421,6 +399,29 @@ Rectangle {
     onTriggered: root.now = new Date()
   }
 
+  // SDDM closes the greeter as soon as login succeeds, so begin the cover
+  // before submitting credentials. On failure it reverses cleanly; on success
+  // the desktop's startup cover continues the handoff from the same base.
+  Timer {
+    id: loginSubmitTimer
+    interval: root.loginTransitionDuration
+    onTriggered: sddm.login(root.selectedUser, password.text, root.rememberedSession)
+  }
+
+  Rectangle {
+    z: 100
+    anchors.fill: parent
+    color: root.baseColor
+    opacity: root.signingOut ? 1 : 0
+    Behavior on opacity {
+      NumberAnimation { duration: root.loginTransitionDuration; easing.type: Easing.InOutCubic }
+    }
+    MouseArea {
+      anchors.fill: parent
+      enabled: root.signingOut
+    }
+  }
+
   function userNameAt(index) {
     return userCombo.textAt(index)
   }
@@ -428,14 +429,15 @@ Rectangle {
     if (authenticating || !selectedUser || !password.text) return
     authenticating = true
     showError = false
-    sddm.login(selectedUser, password.text, rememberedSession)
+    signingOut = true
+    loginSubmitTimer.start()
   }
   function iconData(name, color) {
     const paths = {
       lock: "M7 10V7a5 5 0 0 1 10 0v3 M5 10h14v11H5z M12 14v3",
       power: "M12 2v10 M7 4.8a9 9 0 1 0 10 0",
       refresh: "M20 8a8 8 0 0 0-13.7-3L4 7 M4 2v5h5 M4 16a8 8 0 0 0 13.7 3L20 17 M20 22v-5h-5",
-      moon: "M20.5 15A8 8 0 0 1 9 3.5 8 8 0 1 0 20.5 15",
+      moon: "M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6.5 6.5 0 0 0 8.268 8.268c.344-.215.825-.003.803.401",
       chevron: "M9 5l7 7-7 7"
     }
     const key = name.startsWith("chevron") ? "chevron" : name
@@ -452,6 +454,7 @@ Rectangle {
       root.signingOut = true
     }
     function onLoginFailed() {
+      loginSubmitTimer.stop()
       root.authenticating = false
       root.signingOut = false
       password.text = ""

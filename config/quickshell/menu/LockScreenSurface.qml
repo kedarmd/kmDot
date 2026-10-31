@@ -1,4 +1,6 @@
 import QtQuick
+import QtQuick.Controls as Controls
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import qs
@@ -74,6 +76,76 @@ WlSessionLockSurface {
     }
   }
 
+  // A soft halo and sharp highlight sweep around the outside of the card.
+  // Both colors stay bound to the active theme; the card itself stays still.
+  Shape {
+    id: cardHalo
+    width: card.width + 16
+    height: card.height + 16
+    anchors.centerIn: card
+    opacity: root.contentOpacity
+    ShapePath {
+      fillRule: ShapePath.OddEvenFill
+      fillColor: "white"
+      strokeColor: "transparent"
+      strokeWidth: 0
+      fillGradient: ConicalGradient {
+        id: cardHaloGradient
+        angle: cardShineGradient.angle
+        centerX: cardHalo.width / 2
+        centerY: cardHalo.height / 2
+        GradientStop { position: 0.0; color: "transparent" }
+        GradientStop { position: 0.39; color: "transparent" }
+        GradientStop { position: 0.46; color: Qt.rgba(Colors.primary.r, Colors.primary.g, Colors.primary.b, 0.08) }
+        GradientStop { position: 0.5; color: Qt.rgba(Colors.primary.r, Colors.primary.g, Colors.primary.b, 0.2) }
+        GradientStop { position: 0.54; color: Qt.rgba(Colors.primary.r, Colors.primary.g, Colors.primary.b, 0.08) }
+        GradientStop { position: 0.61; color: "transparent" }
+        GradientStop { position: 1.0; color: "transparent" }
+      }
+      PathRectangle { x: 0; y: 0; width: cardHalo.width; height: cardHalo.height; radius: card.radius + 8 }
+      PathRectangle { x: 8; y: 8; width: cardHalo.width - 16; height: cardHalo.height - 16; radius: card.radius }
+    }
+  }
+
+  Shape {
+    id: cardShine
+    width: card.width + 6
+    height: card.height + 6
+    anchors.centerIn: card
+    opacity: root.contentOpacity
+    ShapePath {
+      fillRule: ShapePath.OddEvenFill
+      fillColor: "white"
+      strokeColor: "transparent"
+      strokeWidth: 0
+      fillGradient: ConicalGradient {
+        id: cardShineGradient
+        centerX: cardShine.width / 2
+        centerY: cardShine.height / 2
+        GradientStop { position: 0.0; color: "transparent" }
+        GradientStop { position: 0.475; color: "transparent" }
+        GradientStop { position: 0.493; color: Qt.rgba(Colors.primary.r, Colors.primary.g, Colors.primary.b, 0.55) }
+        GradientStop { position: 0.5; color: Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.92) }
+        GradientStop { position: 0.507; color: Qt.rgba(Colors.primary.r, Colors.primary.g, Colors.primary.b, 0.55) }
+        GradientStop { position: 0.525; color: "transparent" }
+        GradientStop { position: 1.0; color: "transparent" }
+      }
+      PathRectangle { x: 0; y: 0; width: cardShine.width; height: cardShine.height; radius: card.radius + 3 }
+      PathRectangle { x: 3; y: 3; width: cardShine.width - 6; height: cardShine.height - 6; radius: card.radius }
+    }
+  }
+
+  NumberAnimation {
+    target: cardShineGradient
+    property: "angle"
+    from: 360
+    to: 0
+    duration: 12000
+    loops: Animation.Infinite
+    easing.type: Easing.Linear
+    running: root.lock.secure && !root.transitionOut && !Tokens.reducedMotion
+  }
+
   Rectangle {
     id: card
     width: Math.min(424, parent.width - 32)
@@ -142,19 +214,27 @@ WlSessionLockSurface {
             anchors.verticalCenter: parent.verticalCenter
             iconName: "lock"
             font.pixelSize: 24
+            verticalAlignment: Text.AlignVCenter
             color: root.shell.lockError ? Colors.error : Colors.text
           }
-          TextInput {
+          Controls.TextField {
             selectionColor: Colors.text_selection
             selectedTextColor: Colors.on_text_selection
             cursorDelegate: Rectangle { width: 2; height: password.cursorRectangle.height; color: Colors.cursor }
-              id: password
+            id: password
             width: parent.width - 56
             height: parent.height
             anchors.verticalCenter: parent.verticalCenter
             focus: root.lock.secure
             enabled: root.lock.secure && !root.shell.lockAuthenticating && !root.transitionOut
             color: Colors.text
+            placeholderText: "Password"
+            placeholderTextColor: Colors.text_alt
+            leftPadding: 0
+            rightPadding: 0
+            topPadding: 0
+            bottomPadding: 0
+            background: Item { }
 
             font.family: root.fontName
             font.pixelSize: 16
