@@ -15,6 +15,8 @@ PanelWindow {
   property int elapsedSeconds: 0
   property string meterTarget: ""
   property string transientError: ""
+  property bool escapeCancelBound: false
+  property bool escapeBindingPending: false
   readonly property var waveformProfile: [
     0.18, 0.27, 0.39, 0.56, 0.72, 0.48, 0.31, 0.61,
     0.86, 0.68, 0.42, 0.55, 0.94, 0.74, 0.38, 0.52,
@@ -52,6 +54,21 @@ PanelWindow {
     root.micSamples = Array(32).fill(0)
   }
 
+  function syncEscapeBinding() {
+    if (escapeBindingProc.running) {
+      root.escapeBindingPending = true
+      return
+    }
+    const shouldBind = HexStore.active
+    if (shouldBind === root.escapeCancelBound) return
+    root.escapeCancelBound = shouldBind
+    escapeBindingProc.exec([
+      "bash",
+      Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/hex-escape.sh",
+      shouldBind ? "bind" : "unbind"
+    ])
+  }
+
   function refreshState() {
     if (root.recording) {
       if (!recordingTimer.running) {
@@ -69,7 +86,10 @@ PanelWindow {
 
   Connections {
     target: HexStore
-    function onActivityStateChanged() { root.refreshState() }
+    function onActivityStateChanged() {
+      root.refreshState()
+      root.syncEscapeBinding()
+    }
     function onErrorTextChanged() {
       if (HexStore.errorText !== "") {
         root.transientError = HexStore.errorText
@@ -110,9 +130,31 @@ PanelWindow {
     }
     onExited: root.micSamples = Array(32).fill(0)
   }
+  Process {
+    id: escapeBindingProc
+    onExited: {
+      if (root.escapeBindingPending) {
+        root.escapeBindingPending = false
+        root.syncEscapeBinding()
+      }
+    }
+  }
 
-  Component.onCompleted: root.refreshState()
-  Component.onDestruction: root.stopMeter()
+  Component.onCompleted: {
+    // Clear a stale compositor binding from a previous shell instance first.
+    root.escapeCancelBound = !HexStore.active
+    root.syncEscapeBinding()
+    root.refreshState()
+  }
+  Component.onDestruction: {
+    root.stopMeter()
+    escapeBindingProc.running = false
+    escapeBindingProc.exec([
+      "bash",
+      Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/hex-escape.sh",
+      "unbind"
+    ])
+  }
 
   Rectangle {
     anchors.horizontalCenter: parent.horizontalCenter
