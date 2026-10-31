@@ -105,5 +105,5 @@ hl.bind("SUPER + CTRL + SPACE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/qu
 
 hl.bind(
 	mod .. " + I",
-	hl.dsp.exec_cmd("~/.config/kmdot/hyprland/scripts/toggle_handy.sh")
-) -- Toggle Handy transcription: start; while recording Enter submits, Escape cancels
+	hl.dsp.global("hex:dictation")
+) -- Toggle Hex dictation
