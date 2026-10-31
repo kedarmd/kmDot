@@ -49,11 +49,13 @@ BarModule {
       // older versions returned a 0..1 fraction. Normalize both forms first.
       var s = Number(net.signalStrength)
       if (s > 1) s /= 100
-      return "wifi-connected"
+      // Keep one consistent Wi-Fi glyph; the success color signals connection.
+      return "wifi"
     }
     return "wifi-on"
   }
   active: false
+  iconForeground: root.connected ? Colors.success : Colors.primary_alt
   fill: Tokens.primaryContainer
   on_color: Tokens.on_primary_container
   dimmed: disabled

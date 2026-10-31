@@ -20,6 +20,7 @@ BarModule {
   active: root.mode === "on"
   fill: Tokens.primaryContainer
   on_color: Colors.success
+  iconForeground: root.mode === "on" ? Colors.success : Colors.text_alt
   dimmed: !root.busy && root.mode !== "on"
   tooltipText: "Server mode: " + (root.mode === "on" ? "On" : "Off")
 

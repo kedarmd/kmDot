@@ -41,7 +41,7 @@ LauncherBase {
     : []
 
   function networkGlyph(active) {
-    return NerdIcons.glyph(!Wifi.enabled ? "wifi-off" : active ? "wifi-connected" : "wifi")
+    return NerdIcons.glyph(!Wifi.enabled ? "wifi-off" : "wifi")
   }
 
   function refreshItems() {

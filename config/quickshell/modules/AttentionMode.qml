@@ -33,7 +33,7 @@ Item {
       glyph: NerdIcons.glyph(root.attentionOn ? "eye" : "eye-off")
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 20
-      color: root.attentionOn ? Tokens.on_primary_container : Colors.text
+      color: root.attentionOn ? Colors.success : Colors.text_alt
     }
   }
 

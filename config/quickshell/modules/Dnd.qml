@@ -28,7 +28,7 @@ Item {
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 20
       color: dndOn ? Tokens.on_primary_container
-           : Colors.text
+           : root.hasNotifications ? Colors.warning : Colors.primary_alt
     }
 
     Rectangle {

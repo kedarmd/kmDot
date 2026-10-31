@@ -34,7 +34,7 @@ LauncherBase {
         : BluetoothStore.discovering ? "Scanning for devices…" : "Not connected")
 
     root.items = [
-      { label: "Wi-Fi", subtitle: wifiSubtitle, glyph: NerdIcons.glyph(!Wifi.enabled ? "wifi-off" : Wifi.connectedSsid ? "wifi-connected" : "wifi"), action: "wifi" },
+      { label: "Wi-Fi", subtitle: wifiSubtitle, glyph: NerdIcons.glyph(!Wifi.enabled ? "wifi-off" : "wifi"), action: "wifi" },
       { label: "Bluetooth", subtitle: bluetoothSubtitle, glyph: NerdIcons.glyph(!BluetoothStore.enabled ? "bluetooth-off" : bluetoothDevice ? "bluetooth-connected" : "bluetooth-on"), action: "bluetooth" }
     ]
     root.pool = root.items

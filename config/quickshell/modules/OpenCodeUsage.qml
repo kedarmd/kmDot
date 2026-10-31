@@ -7,5 +7,6 @@ BarModule {
   sock: "kmdot-opencode-usage"
 
   glyph: "\uf121"
+  iconForeground: Colors.primary_alt
   tooltipText: "AI agent usage"
 }

@@ -37,7 +37,8 @@ BarModule {
     if (volume <= 0.666) return "audio-medium"
     return "audio"
   }
-  iconForeground: root.muted ? Colors.warning : root.foreground
+  iconForeground: root.muted ? Colors.warning : Colors.accent
+  foreground: root.muted ? Colors.warning : Colors.accent
 
   onWheeled: wheel => {
     if (!root.audio) return

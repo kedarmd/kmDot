@@ -47,6 +47,7 @@ BarModule {
   active: false
   iconName: !root.btEnabled ? "bluetooth-off"
     : root.connectedCount > 0 ? "bluetooth-connected" : "bluetooth-on"
+  iconForeground: root.connectedCount > 0 ? Colors.accent : Colors.text_alt
   fill: Tokens.primaryContainer
   on_color: Tokens.on_primary_container
   dimmed: !root.btEnabled

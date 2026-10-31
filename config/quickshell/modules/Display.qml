@@ -9,6 +9,7 @@ BarModule {
   sock: "kmdot-display"
 
   iconName: "display"
+  iconForeground: Colors.primary_alt
   clickable: DisplayState.barHasBacklight
   dimmed: !DisplayState.barHasBacklight
 
