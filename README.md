@@ -6,6 +6,18 @@ Dotfiles for CachyOS + Hyprland. Source of truth is this repo; sync copies confi
 
 fish · ghostty · herdr · hyprland · nvim · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
 
+## Hex Dictation
+
+Hex is the current dictation integration. Install and configure the Hex app separately; kmDot provides the Hyprland shortcut, Quickshell launcher and top-bar panel, and recording HUD.
+
+- **Super+I** toggles Hex dictation.
+- **Super+H** opens the kmDot Hex launcher. Its Models and History tabs follow the Handy launcher design. History entries can be copied; model changes that the installed Hex CLI cannot perform are handed off to the Hex app.
+- The Hex item in the top bar's hidden tray opens a two-tab panel for model selection and transcript history. Selecting a transcript copies it to the clipboard.
+- The themed HUD shows the live microphone waveform while recording and an animated waveform while Hex transcribes. Press **Escape** during recording or transcription to cancel that Hex operation. The temporary compositor binding consumes Escape so it does not reach the focused application; it is removed when Hex returns to idle. It calls `hex dictation cancel`, not a command to stop the Hex service.
+- Hex's installed Linux interface does not provide Handy-equivalent audio playback, retry, transcript editing, or per-entry deletion. The kmDot Hex history view is read-only apart from copying text.
+
+Handy's integration has **not** been removed. Its launcher, popup, store, module, and control scripts remain under `config/quickshell/`, and this migration does not delete Handy's local recordings. The current shell and launcher entries point to Hex; if Hex becomes unreliable, restore the Handy references in `config/quickshell/shell.qml`, `config/quickshell/launcher/plugin/core/Desktop.js`, and `config/hyprland/keybinds.lua`, and put `Handy` back in the hidden tray in `shell.qml`. The Handy UI and data bridge are still available for that rollback.
+
 ## Screenshots
 
 The screenshots below were captured on an empty Hyprland workspace with no application window behind the Quickshell interface. They document the current R1 redesign, including the shared launcher/popup shell, inline utility tray, responsive controls, and themed wallpaper surface.
