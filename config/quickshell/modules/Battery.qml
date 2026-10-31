@@ -77,10 +77,10 @@ BarModule {
   glyph: ""
   text: capacity + "%"
   iconName: {
-    if (capacity <= 20) return "battery-empty"
-    if (capacity <= 40) return "battery-low"
-    if (capacity <= 60) return "battery-medium"
-    return "battery"
+    if (capacity <= 0) return "battery-empty"
+    // The Nerd Font battery family has decile glyphs; use the nearest level.
+    var level = Math.min(100, Math.max(10, Math.round(capacity / 10) * 10))
+    return "battery-" + level
   }
   // Power status colors the icon; the percentage keeps its level color.
   iconForeground: root.charging ? Colors.success : root.foreground

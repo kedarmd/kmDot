@@ -36,21 +36,22 @@ BarModule {
 
   tooltipText: connected
     ? ("Connected to: " + (net ? net.name : "Wired Connection"))
-    : (disabled ? "Wi-Fi disabled" : "Disconnected")
+    : (disabled ? "Wi-Fi disabled" : "Wi-Fi on · Not connected")
 
   glyph: ""
   iconName: {
-    if (disabled) return "wifi-disabled"
-    if (wiredConnected()) return "wifi"
-    if (!net) return "wifi-off"
-    // Quickshell exposes this as a percentage on current releases, while
-    // older versions returned a 0..1 fraction. Normalize both forms before
-    // applying the icon thresholds.
-    var s = Number(net.signalStrength)
-    if (s > 1) s /= 100
-    if (s <= 0.25) return "wifi-low"
-    if (s <= 0.5) return "wifi-medium"
-    return "wifi"
+    if (disabled) return "wifi-off"
+    if (net) {
+      // Quickshell exposes this as a percentage on current releases, while
+      // older versions returned a 0..1 fraction. Normalize both forms first.
+      var s = Number(net.signalStrength)
+      if (s > 1) s /= 100
+      if (s <= 0.25) return "wifi-connected-low"
+      if (s <= 0.5) return "wifi-connected-medium"
+      return "wifi-connected-high"
+    }
+    if (wiredConnected()) return "ethernet"
+    return "wifi-on"
   }
   active: false
   fill: Tokens.primaryContainer

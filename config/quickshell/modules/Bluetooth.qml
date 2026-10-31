@@ -43,9 +43,10 @@ BarModule {
     return "Bluetooth: " + (btEnabled ? "on" : "off")
   }
 
-  glyph: root.btEnabled ? "󰂯" : "󰂲"
+  glyph: ""
   active: false
-  iconName: "bluetooth"
+  iconName: !root.btEnabled ? "bluetooth-off"
+    : root.connectedCount > 0 ? "bluetooth-connected" : "bluetooth-on"
   fill: Tokens.primaryContainer
   on_color: Tokens.on_primary_container
   dimmed: !root.btEnabled
