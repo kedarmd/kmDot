@@ -41,9 +41,12 @@ Singleton {
   }
 
   function requestStatus() {
-    if (statusProc.running || statusFallbackProc.running) return
+    if (statusProc.running) return
     statusProc.outputText = ""
-    statusProc.exec(["hex", "status", "--json"])
+    statusProc.exec([
+      "bash",
+      Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/hex-status.sh"
+    ])
   }
 
   function refreshHistory() {
@@ -181,25 +184,7 @@ Singleton {
         statusProc.outputText = ""
       } else {
         statusProc.outputText = ""
-        statusFallbackProc.outputText = ""
-        statusFallbackProc.exec([
-          "bash",
-          Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/hex-service-status.sh"
-        ])
-      }
-    }
-  }
-  Process {
-    id: statusFallbackProc
-    property string outputText: ""
-    stdout: StdioCollector { onStreamFinished: statusFallbackProc.outputText = text }
-    onExited: function(code) {
-      if (code === 0) {
-        root.applyStatus(statusFallbackProc.outputText)
-        statusFallbackProc.outputText = ""
-      } else {
         root.noteStatusFailure()
-        statusFallbackProc.outputText = ""
       }
     }
   }
