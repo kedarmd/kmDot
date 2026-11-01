@@ -22,6 +22,7 @@ Singleton {
   property bool loading: false
   property bool modelSelectionAvailable: false
   property string lastAction: ""
+  property int statusFailureCount: 0
   readonly property bool active: /record|transcrib|dictat|processing/i.test(root.activityState)
   readonly property string stateLabel: {
     const state = root.activityState.toLowerCase()
@@ -62,6 +63,7 @@ Singleton {
       const activity = value && value.desktop ? value.desktop.activity : null
       if (activity) {
         // Hex 3.0 status JSON exposes the older desktop.activity shape.
+        root.statusFailureCount = 0
         root.activityState = String(activity.state || "unknown")
         root.deviceName = String(activity.device || "")
         root.errorText = activity.error ? String(activity.error) : ""
@@ -71,6 +73,7 @@ Singleton {
       // Hex 3.1+ uses a versioned JSON reply with capture/listener at the root.
       const capture = value && value.capture ? value.capture : null
       if (!capture) throw new Error("Hex status did not include capture state")
+      root.statusFailureCount = 0
       const captureState = String(capture.state || "unknown")
       root.activityState = captureState === "idle"
         ? (value.listener && value.listener.running ? "listening" : "idle")
@@ -79,9 +82,16 @@ Singleton {
       root.errorText = capture.error ? String(capture.error)
         : value.model && value.model.error ? String(value.model.error) : ""
     } catch (e) {
-      root.activityState = "unavailable"
-      root.errorText = "Hex status is unavailable"
+      root.noteStatusFailure()
     }
+  }
+
+  function noteStatusFailure() {
+    root.statusFailureCount++
+    // Allow startup and self-update version handoffs a few polls to settle.
+    if (root.statusFailureCount < 5) return
+    root.activityState = "unavailable"
+    root.errorText = "Hex status is unavailable"
   }
 
   function applyModels(text) {
@@ -172,7 +182,10 @@ Singleton {
       } else {
         statusProc.outputText = ""
         statusFallbackProc.outputText = ""
-        statusFallbackProc.exec(["hex", "status"])
+        statusFallbackProc.exec([
+          "bash",
+          Quickshell.env("HOME") + "/.config/kmdot/quickshell/scripts/hex-service-status.sh"
+        ])
       }
     }
   }
@@ -185,8 +198,7 @@ Singleton {
         root.applyStatus(statusFallbackProc.outputText)
         statusFallbackProc.outputText = ""
       } else {
-        root.activityState = "unavailable"
-        root.errorText = "Hex is not responding"
+        root.noteStatusFailure()
         statusFallbackProc.outputText = ""
       }
     }
