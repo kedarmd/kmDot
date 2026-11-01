@@ -34,9 +34,15 @@ Singleton {
 
   function refresh() {
     root.loading = true
-    if (!statusProc.running) statusProc.exec(["hex", "status"])
+    root.requestStatus()
     if (!modelProc.running) modelProc.exec(["node", root.modelScript()])
     root.refreshHistory()
+  }
+
+  function requestStatus() {
+    if (statusProc.running || statusFallbackProc.running) return
+    statusProc.outputText = ""
+    statusProc.exec(["hex", "status", "--json"])
   }
 
   function refreshHistory() {
@@ -54,10 +60,24 @@ Singleton {
     try {
       const value = JSON.parse(String(text || ""))
       const activity = value && value.desktop ? value.desktop.activity : null
-      if (!activity) throw new Error("Hex status did not include desktop activity")
-      root.activityState = String(activity.state || "unknown")
-      root.deviceName = String(activity.device || "")
-      root.errorText = activity.error ? String(activity.error) : ""
+      if (activity) {
+        // Hex 3.0 status JSON exposes the older desktop.activity shape.
+        root.activityState = String(activity.state || "unknown")
+        root.deviceName = String(activity.device || "")
+        root.errorText = activity.error ? String(activity.error) : ""
+        return
+      }
+
+      // Hex 3.1+ uses a versioned JSON reply with capture/listener at the root.
+      const capture = value && value.capture ? value.capture : null
+      if (!capture) throw new Error("Hex status did not include capture state")
+      const captureState = String(capture.state || "unknown")
+      root.activityState = captureState === "idle"
+        ? (value.listener && value.listener.running ? "listening" : "idle")
+        : captureState
+      root.deviceName = ""
+      root.errorText = capture.error ? String(capture.error)
+        : value.model && value.model.error ? String(value.model.error) : ""
     } catch (e) {
       root.activityState = "unavailable"
       root.errorText = "Hex status is unavailable"
@@ -137,17 +157,37 @@ Singleton {
     repeat: true
     running: true
     onTriggered: {
-      if (!statusProc.running) statusProc.exec(["hex", "status"])
+      root.requestStatus()
     }
   }
 
   Process {
     id: statusProc
-    stdout: StdioCollector { onStreamFinished: root.applyStatus(text) }
+    property string outputText: ""
+    stdout: StdioCollector { onStreamFinished: statusProc.outputText = text }
     onExited: function(code) {
-      if (code !== 0) {
+      if (code === 0) {
+        root.applyStatus(statusProc.outputText)
+        statusProc.outputText = ""
+      } else {
+        statusProc.outputText = ""
+        statusFallbackProc.outputText = ""
+        statusFallbackProc.exec(["hex", "status"])
+      }
+    }
+  }
+  Process {
+    id: statusFallbackProc
+    property string outputText: ""
+    stdout: StdioCollector { onStreamFinished: statusFallbackProc.outputText = text }
+    onExited: function(code) {
+      if (code === 0) {
+        root.applyStatus(statusFallbackProc.outputText)
+        statusFallbackProc.outputText = ""
+      } else {
         root.activityState = "unavailable"
         root.errorText = "Hex is not responding"
+        statusFallbackProc.outputText = ""
       }
     }
   }
