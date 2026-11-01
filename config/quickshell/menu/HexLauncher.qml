@@ -24,11 +24,14 @@ LauncherBase {
   primaryActionText: root.mode === 0 ? "Select model" : "Copy"
   listErrorText: HexStore.errorText
   listStatusText: root.mode === 0 && HexStore.modelNote !== "" ? HexStore.modelNote : ""
-  footerHint: root.mode === 0 ? "↑↓ navigate · ↵ select · Tab switch" : "↑↓ navigate · ↵ copy · Tab switch"
+  footerHint: DictationConfig.errorText !== "" ? DictationConfig.errorText
+    : DictationConfig.switching ? "Switching dictation app…"
+    : root.mode === 0 ? "↑↓ navigate · ↵ select · Tab switch" : "↑↓ navigate · ↵ copy · Tab switch"
   footerActionText: root.mode === 0 ? "Models" : "History"
   footerActionActive: true
-  headerActionOptions: [{ id: "models", title: "Models" }, { id: "history", title: "History" }]
-  headerActionValue: root.mode === 0 ? "models" : "history"
+  headerActionOptions: [{ id: "handy", title: "Handy" }, { id: "hex", title: "Hex" }]
+  headerActionValue: DictationConfig.provider
+  headerMenuLabel: DictationConfig.provider === "hex" ? "Hex" : "Handy"
   property int mode: 0
   property var models: HexStore.models
   property var history: HexStore.history
@@ -125,7 +128,7 @@ LauncherBase {
     else if (item.kind === "manage") HexStore.openApp()
   }
   onFooterActionClicked: root.setMode(root.mode === 0 ? 1 : 0)
-  onHeaderActionSelected: function(value) { root.setMode(value === "history" ? 1 : 0) }
+  onHeaderActionSelected: function(value) { DictationConfig.setProvider(value, true) }
 
   Component {
     id: modeTabs

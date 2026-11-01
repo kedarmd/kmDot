@@ -1,0 +1,12 @@
+[Unit]
+Description=Start the selected kmDot dictation provider
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=%h/.config/kmdot/quickshell/scripts/dictation-provider.sh start
+
+[Install]
+WantedBy=graphical-session.target

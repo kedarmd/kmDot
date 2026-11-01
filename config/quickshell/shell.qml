@@ -466,7 +466,12 @@ PanelWindow {
           OpenCodeUsage {
             popupRef: openCodeUsagePopup
           }
+          Handy {
+            visible: DictationConfig.provider === "handy"
+            popupRef: handyPopup
+          }
           Hex {
+            visible: DictationConfig.provider === "hex"
             popupRef: hexPopup
           }
         }

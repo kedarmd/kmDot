@@ -56,7 +56,7 @@ PopupBase {
   readonly property real progress: HandyStore.progress
   readonly property real positionMs: HandyStore.positionMs
   readonly property real durationMs: HandyStore.durationMs
-  readonly property string effectiveError: HandyStore.errorText
+  readonly property string effectiveError: DictationConfig.errorText || HandyStore.errorText
   property int selectedHistoryId: history.length > 0 ? history[0].id : -1
   readonly property real modelListHeight: Math.max(72, Math.min(440, models.length * 72 + Math.max(0, models.length - 1) * 8))
   readonly property real historyListHeight: history.length === 0 ? 72 : 408
@@ -185,11 +185,19 @@ PopupBase {
   }
   Process { id: copyProc }
 
+  Connections {
+    target: DictationConfig
+    function onProviderChanged() {
+      if (DictationConfig.provider !== "handy") root.close()
+    }
+  }
+
         Item {
           width: parent.width; height: 28
           R1Icon { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; anchors.verticalCenterOffset: 2; width: 24; height: 24; glyph: "\uf130"; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 20; color: Colors.primary; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
           Text { anchors.left: parent.left; anchors.leftMargin: 40; anchors.verticalCenter: parent.verticalCenter; text: "Handy"; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 20; font.weight: Font.DemiBold; color: Colors.text }
-          Text { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: root.busy ? "Working" : ""; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Tokens.mutedText }
+          DictationProviderDropdown { id: providerDropdown; anchors.right: parent.right; anchors.rightMargin: 32; anchors.verticalCenter: parent.verticalCenter }
+          Text { anchors.right: providerDropdown.left; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; text: root.busy ? "Working" : ""; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; color: Tokens.mutedText }
         }
 
         Item { width: parent.width; height: 4 }

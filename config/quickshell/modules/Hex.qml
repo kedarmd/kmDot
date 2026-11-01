@@ -9,5 +9,5 @@ BarModule {
   iconForeground: Colors.accent
   active: root.popupRef ? root.popupRef.opened : false
   busy: HexStore.commandBusy
-  tooltipText: "Hex dictation · Super+H"
+  tooltipText: "Selected dictation app · Super+H"
 }

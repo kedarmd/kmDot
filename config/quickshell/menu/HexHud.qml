@@ -23,8 +23,8 @@ PanelWindow {
     0.79, 0.62, 0.34, 0.47, 0.88, 0.69, 0.41, 0.57,
     0.76, 0.51, 0.29, 0.44, 0.67, 0.48, 0.31, 0.20
   ]
-  readonly property bool recording: HexStore.active && /record|dictat/i.test(HexStore.activityState)
-  readonly property bool transcribing: HexStore.active && !root.recording
+  readonly property bool recording: DictationConfig.provider === "hex" && HexStore.active && /record|dictat/i.test(HexStore.activityState)
+  readonly property bool transcribing: DictationConfig.provider === "hex" && HexStore.active && !root.recording
   readonly property bool hudVisible: root.recording || root.transcribing || root.transientError !== ""
   readonly property string stateText: root.transientError !== "" ? "Dictation error"
     : root.transcribing ? "Transcribing" : "Recording"

@@ -60,6 +60,15 @@ chmod +x "$KMDOT_QUICKSHELL_CONFIG_DIR/launcher/bin/"*
 
 ln -sf "$KMDOT_QUICKSHELL_CONFIG_DIR" "$QUICKSHELL_CONFIG_DIR"
 
+# One provider supervisor owns Handy/Hex startup. The app-managed login routes
+# are disabled before the selected provider is started.
+install -Dm644 "$REPO_DIR/config/systemd/user/dictation-provider.service" \
+  "$HOME/.config/systemd/user/dictation-provider.service"
+systemctl --user daemon-reload
+"$KMDOT_QUICKSHELL_CONFIG_DIR/scripts/dictation-provider.sh" configure-autostart
+systemctl --user enable dictation-provider.service
+systemctl --user restart dictation-provider.service
+
 if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-paste >/dev/null 2>&1; then
   "$KMDOT_QUICKSHELL_CONFIG_DIR/scripts/clipboard-daemon.sh" >/dev/null 2>&1 &
 fi

@@ -41,6 +41,12 @@ PopupBase {
     HexStore.refresh()
   }
   function openedChange() { if (root.opened) HexStore.refresh() }
+  Connections {
+    target: DictationConfig
+    function onProviderChanged() {
+      if (DictationConfig.provider !== "hex") root.close()
+    }
+  }
   Timer {
     interval: 3000
     repeat: true
@@ -69,6 +75,7 @@ PopupBase {
     Item {
       width: parent.width
       height: 32
+      DictationProviderDropdown { anchors.right: parent.right; anchors.rightMargin: 32; anchors.verticalCenter: parent.verticalCenter }
       R1Icon {
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
@@ -83,12 +90,15 @@ PopupBase {
       Text {
         anchors.left: parent.left
         anchors.leftMargin: 40
+        anchors.right: parent.right
+        anchors.rightMargin: 104
         anchors.verticalCenter: parent.verticalCenter
         text: HexStore.copyFeedback || "Hex"
         font.family: "JetBrainsMono Nerd Font"
         font.pixelSize: 20
         font.weight: Font.DemiBold
         color: Colors.text
+        elide: Text.ElideRight
       }
     }
 
@@ -111,9 +121,9 @@ PopupBase {
     }
 
     Text {
-      visible: HexStore.errorText !== ""
+      visible: HexStore.errorText !== "" || DictationConfig.errorText !== ""
       width: parent.width
-      text: HexStore.errorText
+      text: DictationConfig.errorText || HexStore.errorText
       color: Tokens.errorText
       font.family: "JetBrainsMono Nerd Font"
       font.pixelSize: 12

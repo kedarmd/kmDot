@@ -6,17 +6,19 @@ Dotfiles for CachyOS + Hyprland. Source of truth is this repo; sync copies confi
 
 fish · ghostty · herdr · hyprland · nvim · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
 
-## Hex Dictation
+## Dictation: Handy and Hex
 
-Hex is the current dictation integration. Install and configure the Hex app separately; kmDot provides the Hyprland shortcut, Quickshell launcher and top-bar panel, and recording HUD.
+Handy and Hex are available through one provider choice in the Quickshell launcher and top-bar panel. The selected provider is stored in `~/.config/kmdot/dictation-provider`; the same setting routes dictation and controls which app is started at login.
 
-- **Super+I** toggles Hex dictation.
-- **Super+H** opens the kmDot Hex launcher. Its Models and History tabs follow the Handy launcher design. History entries can be copied; model changes that the installed Hex CLI cannot perform are handed off to the Hex app.
-- The Hex item in the top bar's hidden tray opens a two-tab panel for model selection and transcript history. Selecting a transcript copies it to the clipboard.
+- **Super+I** toggles dictation in the selected app.
+- **Super+H** opens the selected app's launcher. Both launchers provide Models and History tabs and a provider dropdown. Hex history entries copy to the clipboard; Handy keeps its playback, retry, and delete actions.
+- The selected app's top-bar item opens its Models/History panel. Selecting a Hex transcript copies it to the clipboard.
+- `dictation-provider.service` starts only the selected app. Quickshell sync disables the apps' independent login startup routes so changing providers stops the old app rather than leaving it running in the background.
 - The themed HUD shows the live microphone waveform while recording and an animated waveform while Hex transcribes. Press **Escape** during recording or transcription to cancel that Hex operation. The temporary compositor binding consumes Escape so it does not reach the focused application; it is removed when Hex returns to idle. It calls `hex dictation cancel`, not a command to stop the Hex service.
+- Handy does not currently expose a recording/transcription state through the CLI used by kmDot, so the custom waveform HUD remains Hex-only. Handy's own recording feedback remains in use.
 - Hex's installed Linux interface does not provide Handy-equivalent audio playback, retry, transcript editing, or per-entry deletion. The kmDot Hex history view is read-only apart from copying text.
 
-Handy's integration has **not** been removed. Its launcher, popup, store, module, and control scripts remain under `config/quickshell/`, and this migration does not delete Handy's local recordings. The current shell and launcher entries point to Hex; if Hex becomes unreliable, restore the Handy references in `config/quickshell/shell.qml`, `config/quickshell/launcher/plugin/core/Desktop.js`, and `config/hyprland/keybinds.lua`, and put `Handy` back in the hidden tray in `shell.qml`. The Handy UI and data bridge are still available for that rollback.
+Handy's integration and local recordings remain intact. The shared selector makes switching providers reversible without changing either app's stored models or history. Run `~/.config/kmdot/quickshell/scripts/dictation-provider.sh set handy` or use the dropdown to switch back.
 
 ## Screenshots
 

@@ -9,5 +9,5 @@ BarModule {
   glyph: ""
   iconForeground: Colors.accent
   active: root.popupRef ? root.popupRef.opened : false
-  tooltipText: "Handy transcription · Super+H"
+  tooltipText: "Selected dictation app · Super+H"
 }

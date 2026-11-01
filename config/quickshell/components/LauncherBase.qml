@@ -31,6 +31,7 @@ Item {
   property real listStatusActionWidth: 0
   property var headerActionOptions: []
   property string headerActionValue: ""
+  property string headerMenuLabel: ""
   property bool headerMenuOpen: false
   property Component listToolbar: null
   property bool toolbarBeforeSearch: false

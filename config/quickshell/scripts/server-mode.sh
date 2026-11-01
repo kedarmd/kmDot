@@ -39,7 +39,7 @@ conf_val() {
   printf '%s' "$val"
 }
 
-USER_SERVICES="$(conf_val user_services 'app-Handy@autostart.service app-blueman@autostart.service')"
+USER_SERVICES="$(conf_val user_services 'app-blueman@autostart.service')"
 SYSTEM_SERVICES="$(conf_val system_services 'docker.service containerd.service')"
 PROCESSES="$(conf_val processes 'kmdot-music uvicorn')"
 
@@ -61,15 +61,11 @@ stop_inhibitor() {
 
 stop_background_apps() {
   for s in $USER_SERVICES; do
+    # The provider manager exclusively owns Handy and Hex.
+    [[ "$s" == "app-Handy@autostart.service" ]] && continue
     systemctl --user stop "$s" >/dev/null 2>&1 || true
-    if [[ "$s" == "app-Handy@autostart.service" ]]; then
-      # Handy usually runs detached from its (inactive) autostart unit, so
-      # stopping the unit doesn't kill it. A leftover instance pops its window
-      # on the next `off` (single-instance handoff ignores --start-hidden), so
-      # kill it here to make `off` start a fresh hidden instance.
-      pkill -x handy >/dev/null 2>&1 || true
-    fi
   done
+  "$HOME/.config/kmdot/quickshell/scripts/dictation-provider.sh" stop >/dev/null 2>&1 || true
   for s in $SYSTEM_SERVICES; do
     systemctl stop "$s" >/dev/null 2>&1 || true
   done
@@ -78,30 +74,12 @@ stop_background_apps() {
   done
 }
 
-# Ensure Handy's systemd unit starts it hidden (tray only, no GUI window).
-# The unit is auto-generated from the Handy autostart .desktop file, so the
-# ExecStart has no flags; a drop-in override appends --start-hidden. Applied
-# to the unit globally (login autostart included) — Handy is a tray app and
-# should never pop its window on its own.
-ensure_handy_hidden() {
-  local drop="$HOME/.config/systemd/user/app-Handy@autostart.service.d"
-  local conf="$drop/start-hidden.conf"
-  if [[ ! -f "$conf" ]]; then
-    mkdir -p "$drop"
-    cat > "$conf" <<'EOF'
-[Service]
-ExecStart=
-ExecStart=%h/.local/bin/handy --start-hidden
-EOF
-    systemctl --user daemon-reload >/dev/null 2>&1 || true
-  fi
-}
-
 start_background_apps() {
-  ensure_handy_hidden
   for s in $USER_SERVICES; do
+    [[ "$s" == "app-Handy@autostart.service" ]] && continue
     systemctl --user start "$s" >/dev/null 2>&1 || true
   done
+  "$HOME/.config/kmdot/quickshell/scripts/dictation-provider.sh" start >/dev/null 2>&1 || true
   for s in $SYSTEM_SERVICES; do
     systemctl start "$s" >/dev/null 2>&1 || true
   done

@@ -31,14 +31,14 @@ LauncherBase {
   footerActionActive: true
   footerActionText: root.mode === 0 ? "Models" : "History"
   footerActionVisible: true
-  headerActionOptions: [
-    { id: "models", title: "Models" },
-    { id: "history", title: "History" }
-  ]
-  headerActionValue: root.mode === 0 ? "models" : "history"
+  headerActionOptions: [ { id: "handy", title: "Handy" }, { id: "hex", title: "Hex" } ]
+  headerActionValue: DictationConfig.provider
+  headerMenuLabel: DictationConfig.provider === "hex" ? "Hex" : "Handy"
   // Store mutation/fetch errors surface here (the launcher has no error
   // line; the footer hint is its plain-language error surface).
-  footerHint: root.mode === 0
+  footerHint: DictationConfig.errorText !== "" ? DictationConfig.errorText
+    : DictationConfig.switching ? "Switching dictation app…"
+    : root.mode === 0
     ? "↑↓ navigate · ↵ select · Tab switch"
     : (root.confirmId >= 0
       ? "Del again to confirm · Tab switch"
@@ -261,7 +261,7 @@ LauncherBase {
   }
 
   onHeaderActionSelected: function(value) {
-    root.setMode(value === "history" ? 1 : 0)
+    DictationConfig.setProvider(value, true)
   }
 
   Timer {

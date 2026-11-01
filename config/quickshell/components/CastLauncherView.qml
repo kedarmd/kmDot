@@ -235,7 +235,7 @@ PanelWindow {
         Text {
           id: menuButtonLabel
           anchors.centerIn: parent
-          text: (view.controller.listStatusActionText || view.controller.footerActionText) + "  ▾"
+          text: (view.controller.headerMenuLabel || view.controller.listStatusActionText || view.controller.footerActionText) + "  ▾"
           textFormat: Text.PlainText
           font.family: view.uiFont
           font.pixelSize: 12

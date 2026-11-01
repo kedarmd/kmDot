@@ -163,12 +163,23 @@ Singleton {
     copyProc.exec(["sh", "-c", "printf '%s' \"$1\" | wl-copy", "kmdot", String(value || "")])
   }
 
-  Component.onCompleted: root.refresh()
+  Component.onCompleted: if (DictationConfig.provider === "hex") root.refresh()
+
+  Connections {
+    target: DictationConfig
+    function onProviderChanged() {
+      if (DictationConfig.provider === "hex") root.refresh()
+      else {
+        root.activityState = "idle"
+        root.errorText = ""
+      }
+    }
+  }
 
   Timer {
     interval: 900
     repeat: true
-    running: true
+    running: DictationConfig.provider === "hex"
     onTriggered: {
       root.requestStatus()
     }
