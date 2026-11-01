@@ -105,5 +105,5 @@ hl.bind("SUPER + CTRL + SPACE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/qu
 
 hl.bind(
 	mod .. " + I",
-	hl.dsp.global("hex:dictation")
+	hl.dsp.global("anomaly.hex:dictation-CTRL-space")
 ) -- Toggle Hex dictation
