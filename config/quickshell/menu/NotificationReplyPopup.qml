@@ -15,13 +15,20 @@ PopupBase {
   cardBorderWidth: 1
   cardBorderColor: Colors.outline_variant
   socketEnabled: false
-  property var notification: null
+  property var notificationId: null
+  property string notificationAppName: ""
   property var messages: []
   focusItem: replyInput
 
+  function liveNotification() {
+    return root.scope && root.scope.notificationById && root.notificationId !== null
+      ? root.scope.notificationById(root.notificationId) : null
+  }
+
   function present(notif, thread) {
     if (!notif || !notif.hasInlineReply) return
-    root.notification = notif
+    root.notificationId = notif.id
+    root.notificationAppName = String(notif.appName || "")
     root.messages = thread || []
     replyInput.text = ""
     root.open()
@@ -29,9 +36,15 @@ PopupBase {
   }
   function sendReply() {
     const value = replyInput.text.trim()
-    if (!value || !root.notification || !root.notification.hasInlineReply) return
-    root.notification.sendInlineReply(value)
+    const notif = root.liveNotification()
+    if (!value || !notif || !notif.hasInlineReply) return
+    notif.sendInlineReply(value)
     root.close()
+  }
+
+  Connections {
+    target: root.liveNotification()
+    function onClosed() { root.close() }
   }
 
   Item {
@@ -43,7 +56,7 @@ PopupBase {
     }
     Text {
       y: 64; width: parent.width
-      text: root.notification ? root.notification.appName : "Conversation"
+      text: root.notificationAppName || "Conversation"
       font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 16; font.weight: Font.DemiBold; color: Colors.text; elide: Text.ElideRight
     }
     Text {
@@ -77,7 +90,8 @@ PopupBase {
         clip: true; wrapMode: TextEdit.Wrap; selectByMouse: true
         Text {
           anchors.fill: parent; visible: replyInput.text.length === 0
-          text: root.notification && root.notification.inlineReplyPlaceholder ? root.notification.inlineReplyPlaceholder : "Write a reply…"
+          text: root.liveNotification() && root.liveNotification().inlineReplyPlaceholder
+            ? root.liveNotification().inlineReplyPlaceholder : "Write a reply…"
           font: replyInput.font; color: Tokens.mutedText; wrapMode: Text.WordWrap
         }
         Keys.onReturnPressed: event => {
@@ -102,7 +116,8 @@ PopupBase {
       width: (parent.width - 8) / 2; anchors.top: parent.top; anchors.bottom: parent.bottom
       text: "Send reply"; textSize: 13
       active: true; fillColor: Colors.button; activeTextColor: Colors.on_button
-      enabled: replyInput.text.trim().length > 0 && !!root.notification && root.notification.hasInlineReply
+      enabled: replyInput.text.trim().length > 0 && !!root.liveNotification()
+        && root.liveNotification().hasInlineReply
       onClicked: root.sendReply()
     }
   }

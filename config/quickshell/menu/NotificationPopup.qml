@@ -60,9 +60,16 @@ PanelWindow {
         Hyprland.monitorFor, Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.monitor : Hyprland.focusedMonitor)
     }
     root.removeNotification(notif.id)
+    popupModel.insert(0, root.notificationEntry(notif))
+    while (popupModel.count > root.maxVisible)
+      popupModel.remove(popupModel.count - 1)
+    root.opened = true
+  }
+
+  function notificationEntry(notif) {
     const isScreenshot = root.isScreenshotApp(notif)
     const duration = notif.urgency === 2 ? 0 : (isScreenshot ? 10000 : 5000)
-    popupModel.insert(0, {
+    return {
       notifId: notif.id,
       appName: notif.appName || "",
       appIcon: Identity.sourceIcon(notif),
@@ -70,18 +77,28 @@ PanelWindow {
       summary: notif.summary || "",
       body: notif.body || "",
       urgency: notif.urgency,
-      image: notif.image || "",
       timestamp: Date.now(),
       remaining: duration,
       duration: duration,
       paused: false,
-      hasActions: notif.actions && notif.actions.length > 0,
-      actions: notif.actions || [],
-      _ref: notif
-    })
-    while (popupModel.count > root.maxVisible)
-      popupModel.remove(popupModel.count - 1)
-    root.opened = true
+      hasInlineReply: !!notif.hasInlineReply,
+      actionCount: root.actionCountForNotification(notif)
+    }
+  }
+
+  function updateNotification(notif) {
+    // A replacement is still a notification arrival for toast policy. Do not
+    // re-surface an existing toast while DND or the notification center is
+    // suppressing arrivals; the center's live row is refreshed independently.
+    if (DnDState.dndEnabled || (root.scope && root.scope.notificationCenter && root.scope.notificationCenter.opened)) return
+    for (let i = popupModel.count - 1; i >= 0; i--) {
+      if (popupModel.get(i).notifId !== notif.id) continue
+      popupModel.remove(i)
+      popupModel.insert(0, root.notificationEntry(notif))
+      root.opened = true
+      return
+    }
+    root.addNotification(notif)
   }
 
   function isScreenshotApp(notif) {
@@ -119,12 +136,23 @@ PanelWindow {
     return Math.floor(diff / 86400) + "d"
   }
 
-  function actionCount(actions) {
-    if (!actions) return 0
-    return actions.count !== undefined ? actions.count : (actions.length || 0)
+  function liveNotification(id) {
+    return root.scope && root.scope.notificationById
+      ? root.scope.notificationById(id) : null
   }
-  function actionAt(actions, index) {
+  function actionCountForNotification(notif) {
+    if (!notif || !notif.actions) return 0
+    return notif.actions.count !== undefined ? notif.actions.count : (notif.actions.length || 0)
+  }
+  function actionAt(id, index) {
+    const notif = root.liveNotification(id)
+    const actions = notif ? notif.actions : null
+    if (!actions) return null
     return actions && actions.get ? actions.get(index) : actions[index]
+  }
+  function actionText(id, index) {
+    const action = root.actionAt(id, index)
+    return action ? String(action.text || "") : ""
   }
 
   ListModel {
@@ -226,7 +254,7 @@ PanelWindow {
             popupModel.setProperty(card.index, "paused", hovered)
         }
         Connections {
-          target: card.modelData._ref
+          target: root.liveNotification(card.modelData.notifId)
           function onClosed() { root.removeNotification(card.modelData.notifId) }
         }
 
@@ -343,35 +371,35 @@ PanelWindow {
           }
 
           Flow {
-            visible: modelData.hasActions || (modelData._ref && modelData._ref.hasInlineReply)
+            visible: modelData.actionCount > 0 || modelData.hasInlineReply
             width: parent.width
             spacing: 6
 
             Repeater {
-              model: root.actionCount(card.modelData.actions)
-                + (card.modelData._ref && card.modelData._ref.hasInlineReply ? 1 : 0)
+              model: card.modelData.actionCount + (card.modelData.hasInlineReply ? 1 : 0)
 
               PillButton {
                 required property int index
                 height: 34
-                readonly property bool replyAction: card.modelData._ref
-                  && card.modelData._ref.hasInlineReply
-                  && index === root.actionCount(card.modelData.actions)
-                text: replyAction ? "Reply" : (root.actionAt(card.modelData.actions, index).text || "")
+                readonly property bool replyAction: card.modelData.hasInlineReply
+                  && index === card.modelData.actionCount
+                text: replyAction ? "Reply" : root.actionText(card.modelData.notifId, index)
                 textSize: 14
                 horizontalPadding: 16
                 filled: true
                 active: true
                 onClicked: {
+                  const live = root.liveNotification(card.modelData.notifId)
+                  if (!live) return
                   if (replyAction) {
                     if (root.scope && root.scope.notificationReplyPopup)
-                      root.scope.notificationReplyPopup.present(card.modelData._ref, [{
+                      root.scope.notificationReplyPopup.present(live, [{
                         text: [card.modelData.summary, card.modelData.body].filter(Boolean).join("\n"),
                         when: "now"
                       }])
                   } else {
-                    const action = root.actionAt(card.modelData.actions, index)
-                    if (action.invoke) action.invoke()
+                    const liveAction = root.actionAt(card.modelData.notifId, index)
+                    if (liveAction && liveAction.invoke) liveAction.invoke()
                     root.dismissIndex(card.index)
                   }
                 }

@@ -15,6 +15,7 @@ Scope {
   property var activeLauncher: null
   property var openingSurface: null
   property bool hasNotifications: false
+  property var pendingNotificationRefreshes: ({})
   property bool lockRequested: false
   property bool lockRevealVisible: false
   property bool lockRevealCovered: false
@@ -64,6 +65,40 @@ Scope {
     shellRoot.wifiAddPopup, shellRoot.bluetoothAddPopup
   ]
 
+  // Resolve native notification objects by ID at the point of use. UI models
+  // keep scalar IDs only; storing QObject wrappers in ListModel roles can leave
+  // delegates holding stale references after replacement or dismissal.
+  function notificationById(id) {
+    const tracked = notifServer.trackedNotifications.values || []
+    for (let i = 0; i < tracked.length; i++) {
+      if (tracked[i].id === id) return tracked[i]
+    }
+    return null
+  }
+
+  // Quickshell 0.3.1 updates a replaced notification object in place without
+  // emitting NotificationServer.notification again. Coalesce its property
+  // change signals so the scalar UI models receive one fresh snapshot.
+  function scheduleNotificationRefresh(id) {
+    const key = String(id)
+    if (shellRoot.pendingNotificationRefreshes[key]) return
+
+    const pending = Object.assign({}, shellRoot.pendingNotificationRefreshes)
+    pending[key] = true
+    shellRoot.pendingNotificationRefreshes = pending
+
+    Qt.callLater(() => {
+      const next = Object.assign({}, shellRoot.pendingNotificationRefreshes)
+      delete next[key]
+      shellRoot.pendingNotificationRefreshes = next
+
+      const notification = shellRoot.notificationById(id)
+      if (!notification) return
+      shellRoot.notificationPopup.updateNotification(notification)
+      shellRoot.notificationCenter.addToHistory(notification)
+    })
+  }
+
   // Overlay coordinator: every PopupBase routes open() through here. The toast
   // (notificationPopup) is excluded — it stacks above cards and never closes them.
   function closeAllExcept(except) {
@@ -112,6 +147,27 @@ Scope {
       shellRoot.notificationPopup.addNotification(notification)
       if (shellRoot.notificationCenter)
         shellRoot.notificationCenter.addToHistory(notification)
+    }
+  }
+
+  // Replacements mutate the tracked Notification QObject in place. Keep the
+  // toast/history models as scalar snapshots and refresh them when those
+  // native properties change; the Connections target follows model lifetime.
+  Instantiator {
+    model: notifServer.trackedNotifications
+
+    delegate: Connections {
+      required property var modelData
+      target: modelData
+      function onAppNameChanged() { shellRoot.scheduleNotificationRefresh(modelData.id) }
+      function onAppIconChanged() { shellRoot.scheduleNotificationRefresh(modelData.id) }
+      function onDesktopEntryChanged() { shellRoot.scheduleNotificationRefresh(modelData.id) }
+      function onSummaryChanged() { shellRoot.scheduleNotificationRefresh(modelData.id) }
+      function onBodyChanged() { shellRoot.scheduleNotificationRefresh(modelData.id) }
+      function onUrgencyChanged() { shellRoot.scheduleNotificationRefresh(modelData.id) }
+      function onActionsChanged() { shellRoot.scheduleNotificationRefresh(modelData.id) }
+      function onHasInlineReplyChanged() { shellRoot.scheduleNotificationRefresh(modelData.id) }
+      function onHintsChanged() { shellRoot.scheduleNotificationRefresh(modelData.id) }
     }
   }
 
