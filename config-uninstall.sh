@@ -39,6 +39,7 @@ APPS=(
   "nvim"
   "quickshell"
   "starship"
+  "system-health-monitor"
   "theme-switcher"
   "tmux"
   "xdg-desktop-portal"
@@ -53,6 +54,7 @@ TARGETS["hyprland"]="$HOME/.config/hypr"
 TARGETS["nvim"]="$HOME/.config/nvim"
 TARGETS["quickshell"]="$HOME/.config/quickshell"
 TARGETS["starship"]="$HOME/.config/starship.toml"
+TARGETS["system-health-monitor"]="$HOME/.local/bin/kmdot-system-health-monitor.sh $HOME/.config/systemd/user/system-health-monitor.service"
 TARGETS["theme-switcher"]="$HOME/.config/kmdot/theme-switcher $HOME/.config/kmdot/themes"
 TARGETS["tmux"]="$HOME/.config/tmux $HOME/.tmux.conf"
 TARGETS["xdg-desktop-portal"]="$HOME/.config/xdg-desktop-portal"
@@ -94,6 +96,9 @@ echo ""
 
 for app in "${SELECTED[@]}"; do
   echo "Uninstalling $app..."
+  if [[ "$app" == "system-health-monitor" ]]; then
+    systemctl --user disable --now system-health-monitor.service 2>/dev/null || true
+  fi
   target="${TARGETS[$app]:-}"
   source="${SOURCES[$app]:-}"
 
@@ -106,6 +111,9 @@ for app in "${SELECTED[@]}"; do
   for p in $source; do
     rm -rf "$p"
   done
+  if [[ "$app" == "system-health-monitor" ]]; then
+    systemctl --user daemon-reload 2>/dev/null || true
+  fi
 done
 
 echo ""

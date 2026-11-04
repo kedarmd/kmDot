@@ -34,6 +34,7 @@ APPS=(
   "quickshell"
   "sddm"
   "starship"
+  "system-health-monitor"
   "tmux"
   "xdg-desktop-portal"
   "system"
