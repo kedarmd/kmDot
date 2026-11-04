@@ -37,6 +37,7 @@ PopupBase {
   }
   function openedChange() {
     DisplayState.monitorsActive = root.opened
+    DisplayColorState.monitoring = root.opened
     if (!root.opened) { root.resolutionOpen = false; root.colorOpen = false }
   }
 

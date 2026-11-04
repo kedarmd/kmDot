@@ -12,6 +12,7 @@ Item {
   visible: root.player !== null
 
   property var player: null
+  property bool active: false
 
   readonly property string title: root.player ? root.player.trackTitle : ""
   readonly property string artist: root.player ? root.player.trackArtist : ""
@@ -107,7 +108,7 @@ Item {
   Timer {
     interval: 1000
     repeat: true
-    running: true
+    running: root.active
     onTriggered: {
       const selected = root.pickPlayer()
       if (selected !== root.player) root.player = selected

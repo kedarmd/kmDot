@@ -202,7 +202,7 @@ PopupBase {
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 20
       anchors.verticalCenter: parent.verticalCenter
-      RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: !Tokens.reducedMotion }
+      RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: root.opened && root.loading && !Tokens.reducedMotion }
     }
     Text { text: "Loading " + root.agentName(root.selectedAgent) + " usage…"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
   }

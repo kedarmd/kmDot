@@ -9,6 +9,7 @@ Singleton {
   property bool available: false
   property string reason: "Checking color controls…"
   property string error: ""
+  property bool monitoring: false
   property var pending: null
   property var inFlight: null
   readonly property string script: Quickshell.shellDir + "/scripts/display-color.sh"
@@ -51,7 +52,7 @@ Singleton {
   Component.onCompleted: refresh()
   Timer { id: debounce; interval: 150; onTriggered: root.applyPending() }
   // Rebuild ID routing on hotplug and restore after a compositor config reload.
-  Timer { interval: 4000; repeat: true; running: true; onTriggered: root.refresh() }
+  Timer { interval: 4000; repeat: true; running: root.monitoring; onTriggered: root.refresh() }
   Process {
     id: worker
     property string output: ""

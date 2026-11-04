@@ -134,12 +134,14 @@ PopupBase {
   }
 
   function syncNow() {
+    if (syncProc.running) return
     root.loading = true
     root.syncText = "Syncing\u2026"
     syncProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/calendar-sync.sh --force"])
   }
 
   function refreshNow() {
+    if (syncProc.running) return
     root.loading = true
     root.syncText = "Syncing\u2026"
     syncProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/calendar-sync.sh"])
@@ -169,6 +171,7 @@ PopupBase {
   // Periodic resync while logged in.
   Timer {
     interval: 1800000
+    running: true
     repeat: true
     onTriggered: root.syncNow()
   }

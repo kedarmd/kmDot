@@ -220,7 +220,7 @@ Column {
     height: 176
     radius: 16
     color: Colors.surface_alt
-    NowPlaying { id: nowPlaying; anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 } }
+    NowPlaying { id: nowPlaying; active: root.opened; anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 } }
   }
 
   Item { width: 1; height: 24; visible: nowPlaying.player !== null }
