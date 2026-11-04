@@ -25,6 +25,8 @@ Item {
   property string trailingGlyph: "" // optional status glyph, hidden when empty
   property string trailingIconName: "" // optional R1 vector status icon
   property color trailingColor: Colors.warning
+  readonly property bool hovered: mouse.containsMouse
+  property bool opticalTextCenter: false
   property int textSize: 12
   property int labelSpacing: 5
   // Nerd Font glyphs have less visible ink than the old 16 px vector paths.
@@ -108,7 +110,14 @@ Item {
       }
 
       Text {
+        id: textLabel
         anchors.verticalCenter: parent.verticalCenter
+        // Font line boxes include unequal ascent/descent space. Center the
+        // visible ink for standalone labels such as the clock.
+        readonly property rect inkBounds: labelMetrics.tightBoundingRect(root.text.replace(/<[^>]*>/g, ""))
+        anchors.verticalCenterOffset: root.opticalTextCenter
+          ? height / 2 - baselineOffset - inkBounds.y - inkBounds.height / 2 : 0
+        FontMetrics { id: labelMetrics; font: textLabel.font }
         visible: !root.busy && root.text !== ""
         text: root.text
         font.family: "JetBrainsMono Nerd Font"

@@ -115,3 +115,7 @@ Five canonical triage roles kept under their default names (`needs-triage`, `nee
 ### Domain docs
 
 Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+### Quickshell UI skill
+
+For Quickshell UI implementation or review in this repository, use [the kmDot Quickshell UI skill](.agents/skills/kmdot-quickshell-ui/SKILL.md). It treats the embedded Kcast launcher as the visual and interaction reference while preserving kmDot's integration boundaries.

@@ -47,7 +47,7 @@ Item {
         iconName: "cpu"
         font.family: "JetBrainsMono Nerd Font Propo"
         font.pixelSize: 16
-        color: SystemStatsState.cpuHot ? Colors.warning : Colors.primary_alt
+        color: SystemStatsState.cpuHot ? Colors.warning : Colors.text_alt
       }
 
       Text {
@@ -70,7 +70,7 @@ Item {
         iconName: "memory"
         font.family: "JetBrainsMono Nerd Font Propo"
         font.pixelSize: 16
-        color: SystemStatsState.memHot ? Colors.warning : Colors.primary_alt
+        color: SystemStatsState.memHot ? Colors.warning : Colors.text_alt
       }
 
       Text {

@@ -82,8 +82,8 @@ BarModule {
     var level = Math.min(100, Math.max(10, Math.round(capacity / 10) * 10))
     return "battery-" + level
   }
-  // Charging uses one icon and color for both the icon and percentage.
-  iconForeground: root.charging ? Colors.success : root.foreground
-  foreground: root.charging ? Colors.success
-    : root.capacity <= 15 ? Colors.error : root.capacity <= 30 ? Colors.warning : Colors.text
+  // The charging glyph carries routine state; reserve color for low battery.
+  iconForeground: root.foreground
+  foreground: !root.charging && root.capacity <= 15 ? Colors.error
+    : !root.charging && root.capacity <= 30 ? Colors.warning : Colors.text
 }

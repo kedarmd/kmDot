@@ -14,7 +14,7 @@ Item {
     width: 44
     height: 32
     active: true
-    fill: Colors.base
+    fill: Colors.surface_alt
     hovered: mouse.containsMouse
     pressed: mouse.pressed
 

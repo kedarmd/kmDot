@@ -446,7 +446,7 @@ PanelWindow {
         }
 
         color: Colors.surface
-        implicitHeight: 48
+        implicitHeight: 44
         exclusionMode: ExclusionMode.Auto
 
       IpcHandler {
@@ -513,9 +513,7 @@ PanelWindow {
         }
         spacing: 8
 
-        SystemStats {
-          popupRef: systemMonitorPopup
-        }
+        SystemStats { popupRef: systemMonitorPopup }
         HiddenModules {
           id: hiddenTray
           stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened || hexPopup.opened
@@ -535,24 +533,23 @@ PanelWindow {
             popupRef: hexPopup
           }
         }
-        Display {
-          popupRef: displayPopup
+        Row {
+          spacing: 0
+          Display { popupRef: displayPopup }
+          Audio { popupRef: volumePopup }
         }
-        Audio {
-          popupRef: volumePopup
+        Row {
+          spacing: 0
+          Network { popupRef: wifiDropdown }
+          Bluetooth { popupRef: bluetoothDropdown }
         }
-        Network {
-          popupRef: wifiDropdown
-        }
-        Bluetooth {
-          popupRef: bluetoothDropdown
-        }
-        Battery {
-          popupRef: batteryPopup
-        }
-        Dnd {
-          id: dndModule
-          hasNotifications: shellRoot.hasNotifications
+        Row {
+          spacing: 0
+          Battery { popupRef: batteryPopup }
+          Dnd {
+            id: dndModule
+            hasNotifications: shellRoot.hasNotifications
+          }
         }
       }
     }

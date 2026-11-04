@@ -45,17 +45,13 @@ BarModule {
     if (wiredConnected()) return "ethernet"
     if (disabled) return "wifi-off"
     if (net) {
-      // Quickshell exposes this as a percentage on current releases, while
-      // older versions returned a 0..1 fraction. Normalize both forms first.
-      var s = Number(net.signalStrength)
-      if (s > 1) s /= 100
-      // Keep one consistent Wi-Fi glyph; the success color signals connection.
+      // Connection detail lives in the tooltip; keep the bar glyph stable.
       return "wifi"
     }
     return "wifi-on"
   }
   active: false
-  iconForeground: root.connected ? Colors.success : Colors.primary_alt
+  iconForeground: root.connected ? Colors.text : Colors.text_alt
   fill: Tokens.primaryContainer
   on_color: Tokens.on_primary_container
   dimmed: disabled

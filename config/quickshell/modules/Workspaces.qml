@@ -45,7 +45,7 @@ Item {
   Rectangle {
     anchors.fill: parent
     radius: 16
-    color: Colors.base
+    color: Colors.surface_alt
   }
 
   function workspace(id) {

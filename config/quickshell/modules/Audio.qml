@@ -30,15 +30,18 @@ BarModule {
   glyph: ""
   trailingIconName: micMuted ? "mic-off" : ""
   trailingColor: Colors.warning
-  text: muted ? "Mute" : Math.round(volume * 100) + "%"
+  text: root.hovered || volumeReveal.running
+    ? (muted ? "Mute" : Math.round(volume * 100) + "%") : ""
+  Timer { id: volumeReveal; interval: 1600 }
+  onVolumeChanged: volumeReveal.restart()
   iconName: {
     if (muted || volume <= 0.01) return "audio-off"
     if (volume <= 0.333) return "audio-low"
     if (volume <= 0.666) return "audio-medium"
     return "audio"
   }
-  iconForeground: root.muted ? Colors.warning : Colors.accent
-  foreground: root.muted ? Colors.warning : Colors.accent
+  iconForeground: root.muted ? Colors.warning : Colors.text
+  foreground: root.muted ? Colors.warning : Colors.text
 
   onWheeled: wheel => {
     if (!root.audio) return
