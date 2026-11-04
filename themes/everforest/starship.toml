@@ -5,7 +5,6 @@ $directory\
 [](bg:#83C092 fg:#7FBBB3)\
 $git_branch$git_status\
 [](bg:#D699B6 fg:#83C092)\
-$deno\
 $golang\
 $lua\
 $nodejs\
@@ -36,11 +35,6 @@ style = "fg:#1E2326 bg:#D699B6"
 
 [golang]
 symbol = '󰟓 '
-format = '[ $symbol($version )]($style)'
-style = "fg:#1E2326 bg:#D699B6"
-
-[deno]
-symbol = 'Deno '
 format = '[ $symbol($version )]($style)'
 style = "fg:#1E2326 bg:#D699B6"
 
