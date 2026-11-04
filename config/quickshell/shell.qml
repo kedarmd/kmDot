@@ -45,6 +45,7 @@ Scope {
   property OpenCodeUsagePopup openCodeUsagePopup: OpenCodeUsagePopup { scope: shellRoot }
   property HandyPopup handyPopup: HandyPopup { scope: shellRoot }
   property HexPopup hexPopup: HexPopup { scope: shellRoot }
+  property SystemMonitorPopup systemMonitorPopup: SystemMonitorPopup { scope: shellRoot }
   property HexHud hexHud: HexHud {}
   property DisplayPopup displayPopup: DisplayPopup { scope: shellRoot }
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
@@ -77,7 +78,7 @@ Scope {
     const popups = [shellRoot.confirmPopup, shellRoot.batteryPopup,
       shellRoot.volumePopup, shellRoot.calendarPopup, shellRoot.serverModeDropdown,
       shellRoot.openCodeUsagePopup, shellRoot.handyPopup, shellRoot.hexPopup, shellRoot.displayPopup,
-      shellRoot.notificationCenter, shellRoot.notificationReplyPopup]
+      shellRoot.systemMonitorPopup, shellRoot.notificationCenter, shellRoot.notificationReplyPopup]
     for (const p of popups) {
       if (p && p !== except) p.close()
     }
@@ -456,6 +457,9 @@ PanelWindow {
         }
         spacing: 8
 
+        SystemStats {
+          popupRef: systemMonitorPopup
+        }
         HiddenModules {
           id: hiddenTray
           stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened || hexPopup.opened

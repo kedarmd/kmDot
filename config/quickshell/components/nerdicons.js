@@ -37,6 +37,7 @@ var glyphs = {
   plus: codePoint(0xF0415), trash: codePoint(0xF01B4),
   check: codePoint(0xF012C), calendar: codePoint(0xF00ED),
   chart: codePoint(0xF012A), palette: codePoint(0xF03D8),
+  cpu: codePoint(0xF061A), memory: codePoint(0xF035B),
   headphones: codePoint(0xF02CB), audio: codePoint(0xF057E),
   "audio-medium": codePoint(0xF0580), "audio-low": codePoint(0xF057F),
   "audio-off": codePoint(0xF0581), sun: codePoint(0xF0599),
