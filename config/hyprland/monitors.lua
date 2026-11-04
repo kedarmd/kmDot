@@ -21,13 +21,12 @@ else
     })
 end
 
--- Keep the numbered workspace slots available to the bar and place them on
--- their intended displays whenever Hyprland creates or restores them.
-for workspace = 1, 4 do
+-- Create slots in order on the available output, starting with workspace 1.
+-- Binding only 5 to eDP-1 makes it the laptop's initial workspace even when
+-- HDMI is absent. The hotplug manager owns placement once outputs are ready.
+for workspace = 1, 5 do
     hl.workspace_rule({
         workspace = tostring(workspace),
-        monitor = "HDMI-A-1",
         persistent = true,
     })
 end
-hl.workspace_rule({ workspace = "5", monitor = "eDP-1", persistent = true })

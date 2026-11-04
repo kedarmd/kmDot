@@ -4,9 +4,8 @@ LAPTOP="eDP-1"
 EXTERNAL="HDMI-A-1"
 
 assign_workspace() {
-  # Workspace move is a no-op until the workspace exists. Focus creates it;
-  # the persistent rules in monitors.lua keep it alive after it is moved.
-  hyprctl eval "hl.dispatch(hl.dsp.focus({ workspace = \"$1\" }))" >/dev/null
+  # Persistent rules create the slots. Move without focusing each workspace:
+  # cycling focus here races user input and leaves each output on the last slot.
   hyprctl dispatch "hl.dsp.workspace.move({ workspace = \"$1\", monitor = \"$2\" })" >/dev/null
 }
 
