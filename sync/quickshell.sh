@@ -4,6 +4,7 @@ set -e
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 QUICKSHELL_CONFIG_DIR="$HOME/.config/quickshell"
 KMDOT_QUICKSHELL_CONFIG_DIR="$HOME/.config/kmdot/quickshell"
+KMDOT_CONFIG_DIR="$HOME/.config/kmdot"
 
 # Resolve an explicitly selected theme before touching the deployed configuration.
 THEME="${1:-$(cat "$HOME/.cache/kmdot_theme" 2>/dev/null || true)}"
@@ -44,21 +45,77 @@ for BASE in "${XDG_CONFIG_HOME:-$HOME/.config}" "${XDG_DATA_HOME:-$HOME/.local/s
 done
 mkdir -p "$HOME/.config/kmdot"
 
-rm -rf "$KMDOT_QUICKSHELL_CONFIG_DIR"
-rm -rf "$QUICKSHELL_CONFIG_DIR"
+# Build and validate the complete payload beside the deployed tree. Renaming
+# within ~/.config/kmdot keeps promotion on one filesystem. The previous tree
+# is retained as a timestamped rollback copy; a failed promotion restores it.
+if [[ -e "$QUICKSHELL_CONFIG_DIR" && ! -L "$QUICKSHELL_CONFIG_DIR" ]]; then
+  echo "ERROR: $QUICKSHELL_CONFIG_DIR is a real directory; refusing to replace it." >&2
+  exit 1
+fi
+if [[ -L "$QUICKSHELL_CONFIG_DIR" ]] \
+  && [[ "$(readlink -f "$QUICKSHELL_CONFIG_DIR" 2>/dev/null || true)" != "$KMDOT_QUICKSHELL_CONFIG_DIR" ]]; then
+  echo "ERROR: $QUICKSHELL_CONFIG_DIR points somewhere unexpected; refusing to replace it." >&2
+  exit 1
+fi
 
-cp -r "$REPO_DIR/config/quickshell" "$KMDOT_QUICKSHELL_CONFIG_DIR"
-install -m644 "$PALETTE_TEMP" "$KMDOT_QUICKSHELL_CONFIG_DIR/Colors.qml"
+exec 9>"$KMDOT_CONFIG_DIR/.quickshell-sync.lock"
+if ! flock -n 9; then
+  echo "ERROR: another Quickshell sync is already running." >&2
+  exit 1
+fi
+
+DEPLOY_ID="$(date +%Y%m%dT%H%M%S)"
+STAGE="$(mktemp -d "$KMDOT_CONFIG_DIR/.quickshell-stage.XXXXXX")"
+BACKUP="$KMDOT_CONFIG_DIR/quickshell.backup.$DEPLOY_ID"
+BACKUP_MOVED=0
+DEPLOYED=0
+cleanup_deploy() {
+  result=$?
+  if (( result != 0 && BACKUP_MOVED == 1 )); then
+    rollback_ok=1
+    if (( DEPLOYED == 1 )); then
+      if ! mv -T -- "$KMDOT_QUICKSHELL_CONFIG_DIR" "$KMDOT_CONFIG_DIR/quickshell.failed.$DEPLOY_ID" 2>/dev/null; then
+        rollback_ok=0
+      fi
+    fi
+    if (( rollback_ok == 1 )) && mv -T -- "$BACKUP" "$KMDOT_QUICKSHELL_CONFIG_DIR" 2>/dev/null; then
+      echo "Quickshell sync failed; previous configuration restored from $BACKUP." >&2
+    else
+      echo "ERROR: Quickshell sync failed and automatic rollback could not restore the previous configuration. Backup remains at $BACKUP; inspect $KMDOT_QUICKSHELL_CONFIG_DIR and the backup before recovery." >&2
+    fi
+  fi
+  if [[ -n "${STAGE:-}" && -d "$STAGE" ]]; then rm -rf -- "$STAGE"; fi
+  rm -f -- "$PALETTE_TEMP"
+}
+trap cleanup_deploy EXIT
+
+cp -a "$REPO_DIR/config/quickshell/." "$STAGE/"
+install -m644 "$PALETTE_TEMP" "$STAGE/Colors.qml"
+[[ -s "$STAGE/shell.qml" && -s "$STAGE/Colors.qml" && -d "$STAGE/scripts" ]] || {
+  echo "ERROR: staged Quickshell configuration is incomplete." >&2
+  exit 1
+}
 
 # Repo files written by the editor default to 0644; scripts must be executable
 # or systemd units / cron / etc. fail to spawn them (systemd-inhibit once
 # exited status=1 because a spawned script wasn't +x).
-chmod +x "$KMDOT_QUICKSHELL_CONFIG_DIR/scripts/"*.sh
+chmod +x "$STAGE/scripts/"*.sh
 # Glob-safe for .mjs (set -e would abort if the literal pattern never matches).
-find "$KMDOT_QUICKSHELL_CONFIG_DIR/scripts" -maxdepth 1 -name '*.mjs' -exec chmod +x {} +
-chmod +x "$KMDOT_QUICKSHELL_CONFIG_DIR/launcher/bin/"*
+find "$STAGE/scripts" -maxdepth 1 -name '*.mjs' -exec chmod +x {} +
+chmod +x "$STAGE/launcher/bin/"*
 
-ln -sf "$KMDOT_QUICKSHELL_CONFIG_DIR" "$QUICKSHELL_CONFIG_DIR"
+if [[ -e "$KMDOT_QUICKSHELL_CONFIG_DIR" || -L "$KMDOT_QUICKSHELL_CONFIG_DIR" ]]; then
+  mv -T -- "$KMDOT_QUICKSHELL_CONFIG_DIR" "$BACKUP"
+  BACKUP_MOVED=1
+fi
+mv -T -- "$STAGE" "$KMDOT_QUICKSHELL_CONFIG_DIR"
+STAGE=""
+DEPLOYED=1
+if [[ ! -L "$QUICKSHELL_CONFIG_DIR" ]]; then
+  link_tmp="$HOME/.config/.quickshell-link.$DEPLOY_ID"
+  ln -s "$KMDOT_QUICKSHELL_CONFIG_DIR" "$link_tmp"
+  mv -Tf -- "$link_tmp" "$QUICKSHELL_CONFIG_DIR"
+fi
 
 # One provider supervisor owns Handy/Hex startup. The app-managed login routes
 # are disabled before the selected provider is started.
@@ -73,4 +130,6 @@ if [ -n "${WAYLAND_DISPLAY:-}" ] && command -v wl-paste >/dev/null 2>&1; then
   "$KMDOT_QUICKSHELL_CONFIG_DIR/scripts/clipboard-daemon.sh" >/dev/null 2>&1 &
 fi
 
-echo "kmDot quickshell config synced!!!"
+trap - EXIT
+rm -f -- "$PALETTE_TEMP"
+echo "kmDot quickshell config synced. Previous config: ${BACKUP:-none}"

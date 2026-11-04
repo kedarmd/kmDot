@@ -10,8 +10,13 @@ CAPTURE="$SCRIPT_DIR/clipboard-capture.sh"
 
 mkdir -p "$CACHE/text" "$CACHE/img" "$CACHE/thumb"
 
-# Check first: re-syncing must not spawn duplicate daemons stuck waiting for
-# the history lock before discovering the existing watcher set.
+# Serialize startup before checking the child watchers. The process check alone
+# has a check-then-start race when two session startup paths run together.
+exec 9>"$CACHE/.daemon.lock"
+flock -n 9 || exit 0
+
+# Re-syncing must not spawn duplicate daemons stuck waiting for the history
+# lock before discovering the existing watcher set.
 if pgrep -f "wl-paste .*--watch.*clipboard-capture" >/dev/null 2>&1; then
   exit 0
 fi
