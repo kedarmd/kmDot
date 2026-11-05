@@ -1100,22 +1100,11 @@ Item {
           color: Tokens.errorText
         }
 
-        R1Icon {
-          id: loadingSpinner
+        LoadingSpinner {
           anchors.horizontalCenter: parent.horizontalCenter
           visible: root.loading
-          glyph: "\uf110"
-          font.pixelSize: 24
-          font.family: "JetBrainsMono Nerd Font Propo"
           color: Colors.primary
-
-          RotationAnimation on rotation {
-            from: 0
-            to: 360
-            duration: Tokens.busyRotation; easing.type: Easing.Linear
-            loops: Animation.Infinite
-            running: !Tokens.reducedMotion && root.loading
-          }
+          size: 24
         }
 
         Text {

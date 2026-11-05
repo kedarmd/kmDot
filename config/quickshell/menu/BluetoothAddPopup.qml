@@ -102,16 +102,11 @@ PopupBase {
                 Text { width: parent.width; text: modelData.name || "Unknown device"; color: Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
                 Text { width: parent.width; text: root.busyPath === modelData.path ? root.statusText : "Ready to pair"; color: Colors.text_alt; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
               }
-              R1Icon {
+              LoadingSpinner {
                 visible: root.busyPath === modelData.path
                 anchors.verticalCenter: parent.verticalCenter
-                glyph: "\uf110"; color: Colors.text_alt
-                font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16
-                RotationAnimation on rotation {
-                  from: 0; to: 360; duration: Tokens.busyRotation
-                  easing.type: Easing.Linear; loops: Animation.Infinite
-                  running: !Tokens.reducedMotion && parent.visible
-                }
+                color: Colors.text_alt
+                size: 16
               }
             }
             MouseArea { anchors.fill: parent; enabled: root.radioAllowed && !root.busyPath; onClicked: root.activate(modelData) }

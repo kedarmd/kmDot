@@ -196,13 +196,11 @@ PopupBase {
     width: parent.width
     height: 46
     spacing: 10
-    R1Icon {
-      glyph: "\uf110"
+    LoadingSpinner {
       color: Colors.primary
-      font.family: "JetBrainsMono Nerd Font Propo"
-      font.pixelSize: 20
       anchors.verticalCenter: parent.verticalCenter
-      RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: root.opened && root.loading && !Tokens.reducedMotion }
+      size: 20
+      running: root.opened && root.loading
     }
     Text { text: "Loading " + root.agentName(root.selectedAgent) + " usage…"; color: Tokens.mutedText; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
   }
