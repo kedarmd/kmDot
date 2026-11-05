@@ -1,4 +1,5 @@
 import QtQuick
+import qs
 
 // A circular arc has a stable geometric center; rotating the spinner glyph
 // itself makes its uneven font bounds wobble around the circle.
