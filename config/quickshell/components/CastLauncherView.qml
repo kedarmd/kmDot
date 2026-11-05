@@ -549,16 +549,12 @@ PanelWindow {
             anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
             width: view.controller.itemStatusGlyph(resultRow.modelData.item) === "" ? 0 : 18
             height: 18
-            R1Icon {
-              anchors.fill: parent
+            LoadingSpinner {
+              anchors.centerIn: parent
               visible: parent.width > 0
-              glyph: view.controller.itemStatusGlyph(resultRow.modelData.item)
-              font.pixelSize: 15
               color: resultRow.selected ? Colors.on_primary_container : Colors.primary
-              RotationAnimation on rotation {
-                from: 0; to: 360; duration: Tokens.busyRotation; loops: Animation.Infinite
-                running: rowStatus.width > 0 && view.controller.itemStatusGlyph(resultRow.modelData.item) === "\uf110" && !Tokens.reducedMotion
-              }
+              size: 16
+              running: rowStatus.width > 0 && view.controller.itemStatusGlyph(resultRow.modelData.item) === "\uf110"
             }
           }
           Rectangle {
@@ -607,19 +603,11 @@ PanelWindow {
         anchors.centerIn: parent
         visible: view.controller.results.length === 0 && !view.controller.promptMode && !view.controller.detailMode
         spacing: 12
-        R1Icon {
+        LoadingSpinner {
           anchors.horizontalCenter: parent.horizontalCenter
-          iconName: view.controller.loading ? "" : view.controller.emptyIconName
-          glyph: view.controller.loading ? "\uf110" : ""
-          font.pixelSize: 24
+          visible: view.controller.loading
           color: Colors.text_alt
-          RotationAnimation on rotation {
-            from: 0
-            to: 360
-            duration: Tokens.busyRotation
-            loops: Animation.Infinite
-            running: view.controller.loading && !Tokens.reducedMotion
-          }
+          size: 24
         }
         Text {
           text: view.controller.loading ? view.controller.loadingText : view.controller.emptyText

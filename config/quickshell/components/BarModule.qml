@@ -50,16 +50,6 @@ Item {
 
   signal wheeled(var wheel) // wheel verbs survive (Audio volume)
 
-  property real spinAngle: 0
-
-  NumberAnimation on spinAngle {
-    from: 0
-    to: 360
-    duration: Tokens.busyRotation; easing.type: Easing.Linear
-    running: root.busy && !Tokens.reducedMotion
-    loops: Animation.Infinite
-  }
-
   function openPopup() {
     if (!root.clickable) return
     if (root.popupRef && root.popupRef.anchorItem !== undefined) root.popupRef.anchorItem = root
@@ -82,21 +72,26 @@ Item {
       anchors.centerIn: parent
       spacing: !root.busy ? root.labelSpacing : 0
 
+      LoadingSpinner {
+        anchors.verticalCenter: parent.verticalCenter
+        visible: root.busy
+        color: Tokens.primary
+        size: root.iconSize
+      }
+
       R1Icon {
         anchors.verticalCenter: parent.verticalCenter
         width: 24
         height: 24
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        visible: root.busy || root.glyph !== "" || root.iconName !== ""
-        glyph: root.busy ? "" : root.glyph
-        iconName: root.busy ? "" : root.iconName
+        visible: !root.busy && (root.glyph !== "" || root.iconName !== "")
+        glyph: root.glyph
+        iconName: root.iconName
         font.family: "JetBrainsMono Nerd Font Propo"
         font.pixelSize: root.iconSize
         color: root.busy ? Tokens.primary : (root.active ? root.on_color : root.iconForeground)
         opacity: root.dimmed ? 0.4 : 1.0
-        rotation: root.busy ? root.spinAngle : 0
-        transformOrigin: Item.Center
 
         Behavior on color {
           ColorAnimation {

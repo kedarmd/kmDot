@@ -101,7 +101,7 @@ PopupBase {
           Text { width: parent.width; text: modelData.ssid; color: Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
           Text { text: root.busySsid === modelData.ssid ? (root.busyAction === "disconnect" ? "Disconnecting..." : "Connecting...") : (modelData.active ? "Connected · Secured" : modelData.open ? "Open network" : modelData.saved ? "Saved" : "Secured"); color: Colors.text_alt; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
         }
-        R1Icon { id: rowSpinner; visible: root.busySsid === modelData.ssid; glyph: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: !Tokens.reducedMotion && rowSpinner.visible } }
+        LoadingSpinner { visible: root.busySsid === modelData.ssid; color: Tokens.on_primary_container; size: 16; anchors.verticalCenter: parent.verticalCenter }
       }
       MouseArea { anchors.fill: parent; enabled: root.radioEnabled && !root.busySsid; cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor; onClicked: root.activate(modelData) }
       R1Icon { anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter; visible: modelData.active; glyph: "\uf00c"; color: Colors.text; font.family: "JetBrainsMono Nerd Font Propo"; font.pixelSize: 16 }

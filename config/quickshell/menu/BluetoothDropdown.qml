@@ -89,7 +89,7 @@ PopupBase {
           Text { width: parent.width; text: modelData.name; color: busy ? Tokens.on_primary_container : Colors.text; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 14; font.weight: Font.DemiBold }
           Text { width: parent.width; text: root.deviceSubtitle(modelData); color: busy ? Tokens.on_primary_container : modelData.connected ? Colors.success : Colors.text_alt; elide: Text.ElideRight; font.family: "JetBrainsMono Nerd Font"; font.pixelSize: 12 }
         }
-        R1Icon { id: rowSpinner; visible: root.busyPath === modelData.path; glyph: "\uf110"; color: Tokens.on_primary_container; font.family: "JetBrainsMono Nerd Font Propo"; anchors.verticalCenter: parent.verticalCenter; RotationAnimation on rotation { from: 0; to: 360; duration: Tokens.busyRotation; easing.type: Easing.Linear; loops: Animation.Infinite; running: !Tokens.reducedMotion && rowSpinner.visible } }
+        LoadingSpinner { visible: root.busyPath === modelData.path; color: Tokens.on_primary_container; size: 16; anchors.verticalCenter: parent.verticalCenter }
       }
       MouseArea { anchors.fill: parent; enabled: root.radioEnabled && !root.busyPath; onClicked: root.activate(modelData) }
       R1Icon {
