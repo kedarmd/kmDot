@@ -20,6 +20,10 @@ Singleton {
 
   property int cpuPercent: -1
   property int memPercent: -1
+  // Temperatures in Celsius: package for the CPU row, per-logical-CPU for the
+  // THREADS grid (-1 = the machine exposes no sensor for that entry).
+  property int cpuTemp: -1
+  property var threadTemps: []
   property real memUsedKb: 0
   property real memTotalKb: 0
   property string load1: ""
@@ -36,9 +40,18 @@ Singleton {
   readonly property bool polling: root.anyEnabled || root.keepPolling
   readonly property bool cpuHot: root.cpuPercent >= 80
   readonly property bool memHot: root.memPercent >= 85
+  // Shared thresholds for the warning/critical temperature colors.
+  readonly property int tempWarn: 85
+  readonly property int tempCritical: 95
 
   readonly property string cpuText: root.cpuPercent < 0 ? "--" : root.cpuPercent + "%"
   readonly property string memText: root.memPercent < 0 ? "--" : root.memPercent + "%"
+  readonly property string cpuTempText: root.cpuTemp < 0 ? "--" : root.cpuTemp + "°C"
+  readonly property bool threadTempsAvailable: {
+    for (let i = 0; i < root.threadTemps.length; i++)
+      if (root.threadTemps[i] >= 0) return true
+    return false
+  }
   readonly property string memUsedGb: (root.memUsedKb / 1048576).toFixed(1)
   readonly property string memTotalGb: (root.memTotalKb / 1048576).toFixed(1)
   readonly property string memFreeGb: (Math.max(0, root.memTotalKb - root.memUsedKb) / 1048576).toFixed(1)
@@ -104,6 +117,51 @@ Singleton {
     root.threadPercents = rows.map(row => row.percent)
   }
 
+  function threadTemp(index) {
+    return index >= 0 && index < root.threadTemps.length ? root.threadTemps[index] : -1
+  }
+
+  function sameNumbers(a, b) {
+    if (a.length !== b.length) return false
+    for (let i = 0; i < a.length; i++)
+      if (a[i] !== b[i]) return false
+    return true
+  }
+
+  function applyTemps(text) {
+    const raw = String(text).trim()
+    if (raw === "") return
+    const out = {}
+    raw.split("\n").forEach(line => {
+      const eq = line.indexOf("=")
+      if (eq > 0) out[line.slice(0, eq)] = line.slice(eq + 1)
+    })
+
+    const pkg = parseInt(out.temp_package, 10)
+    const nextPackage = isFinite(pkg) && pkg > 0 ? pkg : -1
+    if (nextPackage !== root.cpuTemp) root.cpuTemp = nextPackage
+
+    const byIndex = {}
+    let maxIndex = -1
+    Object.keys(out).forEach(key => {
+      const match = /^temp_cpu(\d+)$/.exec(key)
+      if (!match) return
+      const value = parseInt(out[key], 10)
+      if (!isFinite(value) || value <= 0) return
+      const index = parseInt(match[1], 10)
+      byIndex[index] = value
+      if (index > maxIndex) maxIndex = index
+    })
+
+    const next = []
+    const count = Math.max(root.threadCount, maxIndex + 1)
+    for (let i = 0; i < count; i++)
+      next.push(i in byIndex ? byIndex[i] : -1)
+    // Only replace the array when values actually change: every binding that
+    // reads it (the temp column) would otherwise re-evaluate every poll.
+    if (!root.sameNumbers(root.threadTemps, next)) root.threadTemps = next
+  }
+
   Timer {
     interval: 2000
     repeat: true
@@ -137,6 +195,26 @@ Singleton {
     command: ["bash", root.scriptsDir + "/thread-stats.sh"]
     stdout: StdioCollector {
       onStreamFinished: root.applyThreads(String(this.text))
+    }
+  }
+
+  // Temperatures change slowly; a 2s cadence is plenty and keeps the extra
+  // sysfs reads off the thread meter's 1s path. Card-only, like the threads.
+  Timer {
+    interval: 2000
+    repeat: true
+    running: root.keepPolling
+    triggeredOnStart: true
+    onTriggered: {
+      if (!tempProc.running) tempProc.running = true
+    }
+  }
+
+  Process {
+    id: tempProc
+    command: ["bash", root.scriptsDir + "/cpu-temps.sh"]
+    stdout: StdioCollector {
+      onStreamFinished: root.applyTemps(String(this.text))
     }
   }
 

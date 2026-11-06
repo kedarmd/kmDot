@@ -124,23 +124,46 @@ PopupBase {
     width: parent.width
     spacing: 6
 
-    Row {
+    Item {
       width: parent.width
+      height: Math.max(cpuLabel.implicitHeight, cpuStats.implicitHeight)
+
       Text {
         id: cpuLabel
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
         text: "CPU"
         font.family: "JetBrainsMono Nerd Font"
         font.pixelSize: 12
         color: Colors.text_alt
       }
-      Item { width: Math.max(0, parent.width - cpuLabel.implicitWidth - 70); height: 1 }
-      Text {
-        width: 70
-        horizontalAlignment: Text.AlignRight
-        text: SystemStatsState.cpuText
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 14
-        color: SystemStatsState.cpuHot ? Colors.warning : Colors.text
+
+      // Temp and usage are laid out as a tight group and right-aligned
+      // together: fixed-width columns left a visible gap that grew/shrunk with
+      // the number of digits.
+      Row {
+        id: cpuStats
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 8
+
+        Text {
+          id: cpuTempValue
+          visible: SystemStatsState.cpuTemp >= 0
+          text: SystemStatsState.cpuTempText
+          font.family: "JetBrainsMono Nerd Font"
+          font.pixelSize: 13
+          color: SystemStatsState.cpuTemp >= SystemStatsState.tempCritical ? Colors.error
+            : SystemStatsState.cpuTemp >= SystemStatsState.tempWarn ? Colors.warning
+            : Colors.text_alt
+        }
+
+        Text {
+          text: SystemStatsState.cpuText
+          font.family: "JetBrainsMono Nerd Font"
+          font.pixelSize: 14
+          color: SystemStatsState.cpuHot ? Colors.warning : Colors.text
+        }
       }
     }
 
@@ -196,6 +219,7 @@ PopupBase {
           required property int index
           readonly property int percent: index < SystemStatsState.threadPercents.length
             ? SystemStatsState.threadPercents[index] : 0
+          readonly property int temp: SystemStatsState.threadTemp(index)
 
           width: (threadGrid.width - threadGrid.columnSpacing) / 2
           height: 18
@@ -233,7 +257,8 @@ PopupBase {
 
           Text {
             id: threadValue
-            anchors.right: parent.right
+            anchors.right: threadTempSlot.left
+            anchors.rightMargin: 4
             anchors.verticalCenter: parent.verticalCenter
             width: 30
             horizontalAlignment: Text.AlignRight
@@ -241,6 +266,27 @@ PopupBase {
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: 10
             color: percent >= 80 ? Colors.warning : Colors.text_alt
+          }
+
+          Item {
+            id: threadTempSlot
+            width: SystemStatsState.threadTempsAvailable ? 40 : 0
+            height: parent.height
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+
+            Text {
+              anchors.fill: parent
+              horizontalAlignment: Text.AlignRight
+              verticalAlignment: Text.AlignVCenter
+              visible: SystemStatsState.threadTempsAvailable && temp >= 0
+              text: temp >= 0 ? temp + "°C" : ""
+              font.family: "JetBrainsMono Nerd Font"
+              font.pixelSize: 10
+              color: temp >= SystemStatsState.tempCritical ? Colors.error
+                : temp >= SystemStatsState.tempWarn ? Colors.warning
+                : Tokens.mutedText
+            }
           }
         }
       }
