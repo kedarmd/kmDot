@@ -14,13 +14,19 @@ case "$mode" in
     ;;
 esac
 
+# top reports %CPU in Irix mode: one full logical CPU is 100%, so a
+# multithreaded process can exceed 100% (up to nproc * 100). The card's CPU
+# header is a share of the whole machine, so normalize by the logical CPU count
+# to keep the process rows on the same 0-100 scale (all 8 threads = ~100%).
+ncpu=$(nproc)
+
 # Never close the pipe early (head/exit would SIGPIPE top under pipefail);
 # print the first six rows and let both processes finish cleanly.
 top -b -n 2 -d 0.3 -o "$sort_key" -w 512 2>/dev/null \
-  | awk '/^ *PID/ { n++; next }
+  | awk -v ncpu="$ncpu" '/^ *PID/ { n++; next }
     n == 2 && NF >= 12 && shown < 6 {
       shown++
-      printf "%s\t%s\t", $9, $10
+      printf "%.1f\t%s\t", $9 / ncpu, $10
       for (i = 12; i <= NF; i++) printf "%s%s", $i, (i < NF ? " " : "")
       printf "\n"
     }'
