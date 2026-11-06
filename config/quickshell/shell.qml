@@ -378,7 +378,8 @@ Scope {
     repeat: true
     running: true
     onTriggered: {
-      if (shellRoot.hasNotifications && notifServer.trackedNotifications.count === 0)
+      if (shellRoot.hasNotifications
+          && (notifServer.trackedNotifications.values || []).length === 0)
         shellRoot.hasNotifications = false
     }
   }

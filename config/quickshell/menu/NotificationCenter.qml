@@ -5,6 +5,7 @@ import Quickshell.Services.Notifications
 import qs
 import "../components"
 import "../components/notificationidentity.js" as Identity
+import "../components/notificationlive.mjs" as Live
 
 PopupBase {
   id: root
@@ -23,8 +24,9 @@ PopupBase {
   property var groups: []
   property bool historyReady: false
   property bool animateGroups: false
-  // dismiss() updates the server's tracked model asynchronously. Keep IDs
-  // cleared by the user out of refreshItems() until the server drops them.
+  // trackedNotifications.values is a live view: dismiss() removes entries
+  // synchronously. Keep IDs cleared by the user out of refreshItems() until
+  // the server drops them, and snapshot IDs before dismissing anything.
   property var clearedLiveIds: ({})
 
   readonly property string historyPath: {
@@ -155,10 +157,13 @@ PopupBase {
   }
 
   function dismissGroup(appName) {
-    const tracked = notifServer.trackedNotifications.values || []
-    for (let i = 0; i < tracked.length; i++) {
-      if (tracked[i].appName === appName) tracked[i].dismiss()
-    }
+    // Snapshot first: dismissing mutates trackedNotifications.values in place.
+    Live.dismissWhere(notifServer.trackedNotifications.values,
+      n => n.appName === appName,
+      id => {
+        const live = root.findLiveById(id)
+        if (live) live.dismiss()
+      })
     for (let i = historyModel.count - 1; i >= 0; i--) {
       if (historyModel.get(i).appName === appName)
         historyModel.remove(i)
@@ -168,12 +173,13 @@ PopupBase {
   }
 
   function clearAll() {
-    const tracked = notifServer.trackedNotifications.values || []
+    // Snapshot first: dismissing mutates trackedNotifications.values in place.
+    const ids = Live.dismissAll(notifServer.trackedNotifications.values, id => {
+      const live = root.findLiveById(id)
+      if (live) live.dismiss()
+    })
     const cleared = Object.assign({}, root.clearedLiveIds)
-    for (let i = 0; i < tracked.length; i++) {
-      cleared[tracked[i].id] = true
-      tracked[i].dismiss()
-    }
+    for (let i = 0; i < ids.length; i++) cleared[ids[i]] = true
     root.clearedLiveIds = cleared
     historyModel.clear()
     saveHistory()
