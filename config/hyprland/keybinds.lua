@@ -51,14 +51,16 @@ hl.bind(mod .. " + M", hl.dsp.window.fullscreen({ mode = "maximized" })) -- Maxi
 hl.bind(mod .. " + SHIFT + M", hl.dsp.window.fullscreen({ mode = "fullscreen" })) -- Fullscreen window
 
 -- Switch to workspace
-for i = 1, 5 do
+for i = 1, 9 do
 	hl.bind(mod .. " + " .. i, hl.dsp.focus({ workspace = i })) -- Switch to workspace
 end
+hl.bind(mod .. " + 0", hl.dsp.focus({ workspace = 10 })) -- Switch to workspace 10
 
 -- Move focused window to workspace
-for i = 1, 5 do
+for i = 1, 9 do
 	hl.bind(mod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i })) -- Move window to workspace
 end
+hl.bind(mod .. " + SHIFT + 0", hl.dsp.window.move({ workspace = 10 })) -- Move window to workspace 10
 
 -- Toggle floating on the focused window
 hl.bind(mod .. " + G", hl.dsp.window.float({ action = "toggle" })) -- Toggle floating window
