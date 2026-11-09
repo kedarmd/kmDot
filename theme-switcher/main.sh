@@ -21,6 +21,7 @@ fi
 . "$SCRIPT_DIR/hooks/tmux.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/ghostty.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/herdr.sh" "$THEME"
+. "$SCRIPT_DIR/hooks/herdr-app.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/quickshell.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/hyprland.sh" "$THEME"
 . "$SCRIPT_DIR/hooks/wallpapers.sh" "$THEME"

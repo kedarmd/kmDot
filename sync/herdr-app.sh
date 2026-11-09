@@ -19,6 +19,16 @@ cp -r "$REPO_DIR/config/herdr-app" "$KMDOT_HERDR_APP_CONFIG_DIR"
 mkdir -p "$HERDR_APP_CONFIG_DIR"
 cp -r "$KMDOT_HERDR_APP_CONFIG_DIR/." "$HERDR_APP_CONFIG_DIR/"
 
+# The active theme file is generated, not tracked: theme-switcher/hooks/herdr-app.sh
+# rewrites it on every switch. Seed it here too so a fresh sync (or a sync before
+# the first theme switch) leaves the app themed with the selected kmDot theme.
+SELECTED_THEME="$(cat "$HOME/.cache/kmdot_theme" 2>/dev/null || true)"
+[ -n "$SELECTED_THEME" ] || SELECTED_THEME="tokyonight"
+THEME_SOURCE="$REPO_DIR/themes/$SELECTED_THEME/herdr-app.json"
+[ -f "$THEME_SOURCE" ] || THEME_SOURCE="$REPO_DIR/themes/tokyonight/herdr-app.json"
+mkdir -p "$HERDR_APP_CONFIG_DIR/themes"
+cp "$THEME_SOURCE" "$HERDR_APP_CONFIG_DIR/themes/kmdot-active.json"
+
 # shared.json holds the shown layout ("layout"), not settings.json. Point it at
 # the kmDot layout without discarding the app's other state: use the live
 # window when it is open, otherwise edit the file the next launch reads.
