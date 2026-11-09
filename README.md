@@ -4,7 +4,7 @@ Dotfiles for CachyOS + Hyprland. Source of truth is this repo; sync copies confi
 
 ## Apps
 
-fish · ghostty · herdr · hyprland · nvim · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
+fish · ghostty · herdr · herdr-app · hyprland · nvim · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
 
 ## Dictation: Handy and Hex
 
@@ -90,6 +90,14 @@ Themes: catppuccin, everforest, nord, tokyonight
 - Terminal workspace manager (workspaces / tabs / panes); config: `config/herdr/`
 - Tabs auto-name `<position>. <directory name>` (starts at 1, per workspace, follows the visible tab order): `ui.prompt_new_tab_name = false` skips the new-tab name prompt; a fish prompt hook renames a tab the moment its pane `cd`s; and the `plugins/kmdot-tab-titles` plugin (event hooks on tab create/close/move and pane close/exit) renumbers every tab when the tab topology changes — including deleting a tab by closing its last pane (prefix+x) or exiting its shell, which closes the tab without a `tab.closed` event. A tab you rename by hand is left alone; rename it back to a bare number to hand it back to the auto-namer. cd-following is fish-only (bash panes keep their name until a topology event).
 - Reload: `herdr server reload-config`
+
+## Herdr App
+
+- Official native desktop app (`herdr-app`) for the same `hc` terminals Herdr TUI drives; config: `config/herdr-app/`
+- Tracked (user-authored only): `settings.json`, `keys.json`, `layouts/kmdot.json`, `themes/kmdot-active.json`, `mods/kmdot-tab-titles/`, `mods/tmux-prefix/`
+- Not tracked (app-managed or runtime): shipped layouts/themes/mods, `shared.json`, `installed.json`, `seen.json`, `window.json`, `herdr-app.sock`, `data/`, `frame/`, and generated `*.d.ts`/`jsconfig.json`
+- `./sync/herdr-app.sh` copies into `~/.config/herdr-app` **in place** (never replaces the directory, since it doubles as the app's runtime home) and points the active layout at `kmdot`
+- Reload: config files are picked up live; no restart needed
 
 ## Troubleshooting
 

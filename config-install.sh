@@ -29,6 +29,7 @@ APPS=(
   "fish"
   "ghostty"
   "herdr"
+  "herdr-app"
   "hyprland"
   "nvim"
   "quickshell"
