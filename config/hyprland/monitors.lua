@@ -21,12 +21,3 @@ else
     })
 end
 
--- Create slots in order on the available output, starting with workspace 1.
--- Binding only 5 to eDP-1 makes it the laptop's initial workspace even when
--- HDMI is absent. The hotplug manager owns placement once outputs are ready.
-for workspace = 1, 5 do
-    hl.workspace_rule({
-        workspace = tostring(workspace),
-        persistent = true,
-    })
-end
