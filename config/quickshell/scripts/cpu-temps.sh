@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CPU temperature readings for the System Monitor card, in Celsius, one
+# CPU temperature readings for the System Monitor launcher, in Celsius, one
 # "key=value" per line:
 #
 #   temp_package=97   package / overall CPU temperature

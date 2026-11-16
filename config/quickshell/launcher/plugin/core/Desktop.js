@@ -8,6 +8,9 @@ function catalog(snapshot, configRoot) {
       glyph: glyph || "\uf013", argv: argv, rootSearch: { when: "always" } })
   }
   var scripts = configRoot + "/kmdot/quickshell/scripts/"
+  out.push({ id: "kmdot:sysmon", type: "command", kind: "system-monitor", title: "System Monitor",
+    subtitle: "kmDot › System", keywords: ["kmdot", "cpu", "memory", "processes"],
+    typeLabel: "System", glyph: "\uf080", rootSearch: { when: "always" } })
   if (available["script:toggle.sh"]) {
     var menus = [
       ["apps", "Applications", "kmdot-launcher"],
@@ -15,12 +18,11 @@ function catalog(snapshot, configRoot) {
       ["clipboard", "Clipboard History", "kmdot-clipboard"], ["connections", "Connections", "kmdot-connections"],
       ["wifi", "Wi-Fi", "kmdot-wifi"], ["bluetooth", "Bluetooth", "kmdot-bluetooth"],
       ["hex", "Hex Dictation", "kmdot-hex-launcher"], ["keybinds", "Keyboard Shortcuts", "kmdot-keybinds"],
-      ["sysmon", "System Monitor", "kmdot-sysmon"],
       ["system", "System / Power Menu", "kmdot-system"]
     ]
     var menuIcons = { menu: "\uf009", apps: "\uf00a", themes: "\uf1fc", wallpapers: "\uf03e",
       clipboard: "\uf0ea", connections: "\uf0ac", wifi: "\uf1eb", bluetooth: "\uf293",
-      hex: "\uf130", keybinds: "\uf11c", system: "\uf011", sysmon: "\uf080" }
+      hex: "\uf130", keybinds: "\uf11c", system: "\uf011" }
     menus.forEach(function(m) { add(m[0], m[1], "Desktop", [scripts + "toggle.sh", m[2]], menuIcons[m[0]]) })
   }
   if (available["script:lock-screen.sh"]) add("lock", "Lock Screen", "System", [scripts + "lock-screen.sh"], "\uf023")
@@ -68,8 +70,10 @@ function decorate(candidates, shortcutText, activeTheme, configRoot) {
   })
   return candidates.map(function(c) {
     var next = Object.assign({}, c)
-    var target = c.argv[0].slice(-9) === "toggle.sh" ? c.argv[1] : "exec:" + c.argv.join(" ")
-    var shortcut = shortcuts[target.replace(/\/usr\/bin\//g, "")]
+    var target = c.argv && c.argv.length
+      ? (c.argv[0].slice(-9) === "toggle.sh" ? c.argv[1] : "exec:" + c.argv.join(" "))
+      : ""
+    var shortcut = target ? shortcuts[target.replace(/\/usr\/bin\//g, "")] : null
     if (shortcut) { next.shortcut = shortcut; next.subtitle += " · " + shortcut }
     next.checked = c.id === "kmdot:theme-" + String(activeTheme).trim()
     return next

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Top six processes for the System Monitor card, as CPU% <tab> MEM% <tab> name.
+# Top six processes for the System Monitor launcher, as CPU% <tab> MEM% <tab> name.
 # Batch top needs two samples: the first screen has no previous delta, so its
 # %CPU is the process lifetime average instead of current load.
 set -euo pipefail

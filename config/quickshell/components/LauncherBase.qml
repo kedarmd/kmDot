@@ -34,6 +34,9 @@ Item {
   property string headerMenuLabel: ""
   property bool headerMenuOpen: false
   property Component listToolbar: null
+  // Optional full-width content surface for launcher dashboards that do not
+  // fit the picker/list interaction model.
+  property Component bodyContent: null
   property bool toolbarBeforeSearch: false
   property real cardHeight: 608
   property real listTopMargin: 16

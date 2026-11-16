@@ -18,6 +18,7 @@ PanelWindow {
   property bool shown: false
 
   signal dismissRequested()
+  signal shellLauncherRequested(string launcher)
 
 
   screen: Quickshell.screens.find(function(s) { return Hyprland.focusedMonitor && s.name === Hyprland.focusedMonitor.name }) || Quickshell.screens[0] || null
@@ -275,6 +276,7 @@ PanelWindow {
     if (outcome.filter) { window.prepare({ filter: outcome.filter }); return }
     if (outcome.confirm) { window.alert = { spec: outcome.confirm, payload: payload }; return }
     if (outcome.push) { window.push(outcome.push); return }
+    if (outcome.launcher) { window.shellLauncherRequested(String(outcome.launcher)); return }
     if (outcome.close) {
       if (outcome.hud) window.hud(outcome.hud)
       window.dismissRequested()

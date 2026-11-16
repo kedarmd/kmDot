@@ -347,7 +347,7 @@ PanelWindow {
         objectName: "castLauncherSection"
         anchors { top: parent.top; left: parent.left; leftMargin: 12 }
         height: visible ? 30 : 0
-        visible: !view.controller.promptMode && !view.controller.detailMode
+        visible: !view.controller.promptMode && !view.controller.detailMode && view.controller.bodyContent === null
         verticalAlignment: Text.AlignVCenter
         text: view.controller.headerTitle.toUpperCase()
         font.family: view.uiFont
@@ -427,7 +427,7 @@ PanelWindow {
           topMargin: view.controller.themePreview ? 8 : 0
         }
         clip: true
-        visible: !view.controller.promptMode && !view.controller.detailMode
+        visible: !view.controller.promptMode && !view.controller.detailMode && view.controller.bodyContent === null
         model: view.controller.results
         boundsBehavior: Flickable.StopAtBounds
         interactive: true
@@ -599,9 +599,16 @@ PanelWindow {
         active: view.controller.detailMode
         sourceComponent: view.controller.detailContent
       }
+      Loader {
+        objectName: "castLauncherBodyContent"
+        anchors.fill: parent
+        visible: view.controller.bodyContent !== null && !view.controller.detailMode && !view.controller.promptMode
+        active: visible
+        sourceComponent: view.controller.bodyContent
+      }
       Column {
         anchors.centerIn: parent
-        visible: view.controller.results.length === 0 && !view.controller.promptMode && !view.controller.detailMode
+        visible: view.controller.results.length === 0 && !view.controller.promptMode && !view.controller.detailMode && view.controller.bodyContent === null
         spacing: 12
         LoadingSpinner {
           anchors.horizontalCenter: parent.horizontalCenter
@@ -700,8 +707,8 @@ PanelWindow {
         objectName: "castLauncherFooterActions"
         anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
         spacing: 8
-        Text { visible: !view.controller.promptMode && !view.controller.detailMode; anchors.verticalCenter: parent.verticalCenter; text: "Navigate"; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text_alt }
-        Cast.KeyHint { visible: !view.controller.promptMode && !view.controller.detailMode; anchors.verticalCenter: parent.verticalCenter; keys: "↑ ↓"; color: Colors.text; fontFamily: view.uiFont }
+        Text { visible: !view.controller.promptMode && !view.controller.detailMode && view.controller.bodyContent === null; anchors.verticalCenter: parent.verticalCenter; text: "Navigate"; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text_alt }
+        Cast.KeyHint { visible: !view.controller.promptMode && !view.controller.detailMode && view.controller.bodyContent === null; anchors.verticalCenter: parent.verticalCenter; keys: "↑ ↓"; color: Colors.text; fontFamily: view.uiFont }
         Rectangle { visible: !view.controller.promptMode && view.controller.deactivatable; anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
         Text { visible: view.controller.deactivatable; anchors.verticalCenter: parent.verticalCenter; text: view.controller.primaryActionText; font.family: view.uiFont; font.pixelSize: 12; color: Colors.text }
         Cast.KeyHint { visible: view.controller.deactivatable; anchors.verticalCenter: parent.verticalCenter; keys: "↵"; color: Colors.text; fontFamily: view.uiFont }

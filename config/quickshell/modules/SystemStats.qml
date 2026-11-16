@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Io
 import qs
 import "../components"
 
@@ -12,15 +11,14 @@ Item {
   visible: SystemStatsState.anyEnabled
   width: root.visible ? labelRow.implicitWidth + 20 : 0
 
-  property var popupRef: null
+  property var launcherRef: null
 
   Behavior on width {
     NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing }
   }
 
-  function openPopup() {
-    if (root.popupRef && root.popupRef.anchorItem !== undefined) root.popupRef.anchorItem = root
-    toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-sysmon"])
+  function toggleLauncher() {
+    if (root.launcherRef) root.launcherRef.toggleLauncher()
   }
 
   ModulePill {
@@ -90,10 +88,6 @@ Item {
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton
     cursorShape: Qt.PointingHandCursor
-    onClicked: root.openPopup()
-  }
-
-  Process {
-    id: toggleProc
+    onClicked: root.toggleLauncher()
   }
 }

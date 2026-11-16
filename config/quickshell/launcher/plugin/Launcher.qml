@@ -53,6 +53,16 @@ Item {
     root.close()
   }
 
+  function openShellLauncher(name) {
+    if (name !== "system-monitor") {
+      backend.log("error", "launcher", "Unknown shell launcher: " + name, null)
+      return
+    }
+    var monitor = root.scope ? root.scope.systemMonitorLauncher : null
+    if (monitor) monitor.openLauncher()
+    else backend.log("error", "launcher", "System Monitor launcher is unavailable", null)
+  }
+
   function toggle() {
     root.toggleLauncher("all")
   }
@@ -67,6 +77,8 @@ Item {
       root.show()
       launcher.popToRoot()
       launcher.push(outcome.push)
+    } else if (outcome.launcher) {
+      root.openShellLauncher(outcome.launcher)
     } else if (outcome.close) {
       root.hide()
       if (outcome.hud) launcher.hud(outcome.hud)
@@ -94,6 +106,9 @@ Item {
     backend: backend
     appLibrary: backend.appLibrary
     onDismissRequested: root.hide()
+    onShellLauncherRequested: function(name) {
+      root.openShellLauncher(name)
+    }
   }
 
   SocketServer {

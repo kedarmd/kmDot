@@ -225,6 +225,9 @@ Item {
             } else Util.execArgv(entry.command, entry.workingDirectory || backend.paths.home)
           }
           return { close: true }
+        case "system-monitor":
+          backend.recordVisit(id, query)
+          return { launcher: "system-monitor" }
         case "desktop-action":
           backend.recordVisit(id, query)
           if (candidate.id === "kmdot:apps") return { filter: "applications" }

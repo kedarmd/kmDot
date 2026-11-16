@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Per-logical-CPU busy percentages for the System Monitor card, one per line
+# Per-logical-CPU busy percentages for the System Monitor launcher, one per line
 # ("cpu0=12"). Polled only while the card is open. Deltas come from a runtime
 # cache; a cache older than the guard is discarded so the first sample after
 # reopening the card describes now instead of the gap.

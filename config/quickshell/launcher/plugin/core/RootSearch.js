@@ -290,6 +290,7 @@ function actionsFor(candidate) {
   var list = []
   switch (candidate.kind) {
     case "app": primary = { id: "open", title: "Open Application", icon: "" }; break
+    case "system-monitor": primary = { id: "open", title: "Open System Monitor", icon: "\uf080" }; break
     case "desktop-action":
     case "omarchy-action": primary = { id: "open", title: "Run", icon: "" }; break
     case "omarchy-menu":

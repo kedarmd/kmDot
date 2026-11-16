@@ -39,6 +39,7 @@ Scope {
   property HandyLauncher handyLauncher: HandyLauncher { scope: shellRoot }
   property HexLauncher hexLauncher: HexLauncher { scope: shellRoot }
   property WallpaperLauncher wallpaperLauncher: WallpaperLauncher { scope: shellRoot }
+  property SystemMonitorLauncher systemMonitorLauncher: SystemMonitorLauncher { scope: shellRoot }
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }
   property VolumePopup volumePopup: VolumePopup { scope: shellRoot }
   property CalendarPopup calendarPopup: CalendarPopup { scope: shellRoot }
@@ -46,7 +47,6 @@ Scope {
   property OpenCodeUsagePopup openCodeUsagePopup: OpenCodeUsagePopup { scope: shellRoot }
   property HandyPopup handyPopup: HandyPopup { scope: shellRoot }
   property HexPopup hexPopup: HexPopup { scope: shellRoot }
-  property SystemMonitorPopup systemMonitorPopup: SystemMonitorPopup { scope: shellRoot }
   property HexHud hexHud: HexHud {}
   property DisplayPopup displayPopup: DisplayPopup { scope: shellRoot }
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
@@ -106,14 +106,15 @@ Scope {
     shellRoot.openingSurface = except
     const launchers = [shellRoot.kmdotLauncher, shellRoot.systemLauncher,
       shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.keybindsLauncher,
-      shellRoot.clipboardLauncher, shellRoot.handyLauncher, shellRoot.hexLauncher, shellRoot.wallpaperLauncher]
+      shellRoot.clipboardLauncher, shellRoot.handyLauncher, shellRoot.hexLauncher,
+      shellRoot.wallpaperLauncher, shellRoot.systemMonitorLauncher]
     for (const l of launchers) {
       if (l && l !== except) l.closeLauncher()
     }
     const popups = [shellRoot.confirmPopup, shellRoot.batteryPopup,
       shellRoot.volumePopup, shellRoot.calendarPopup, shellRoot.serverModeDropdown,
       shellRoot.openCodeUsagePopup, shellRoot.handyPopup, shellRoot.hexPopup, shellRoot.displayPopup,
-      shellRoot.systemMonitorPopup, shellRoot.notificationCenter, shellRoot.notificationReplyPopup]
+      shellRoot.notificationCenter, shellRoot.notificationReplyPopup]
     for (const p of popups) {
       if (p && p !== except) p.close()
     }
@@ -514,7 +515,7 @@ PanelWindow {
         }
         spacing: 8
 
-        SystemStats { popupRef: systemMonitorPopup }
+        SystemStats { launcherRef: systemMonitorLauncher }
         HiddenModules {
           id: hiddenTray
           stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened || hexPopup.opened

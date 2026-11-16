@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 
 // Single owner for bar-vitals state. One poll feeds every screen's bar, and the
-// timer only runs while a vitals segment is enabled or the System Monitor card
+// timer only runs while a vitals segment is enabled or the System Monitor launcher
 // is open. Hiding both segments therefore stops all /proc reads and the script
 // exec entirely. Poll cadence lives here, not in the view modules.
 Singleton {
@@ -14,7 +14,7 @@ Singleton {
   // Persisted bar visibility (same JsonAdapter pattern as DnDState).
   property bool cpuEnabled: true
   property bool memEnabled: true
-  // Set by the System Monitor popup while it is open, so the card still shows
+  // Set by the System Monitor launcher while it is open, so it still shows
   // live values even when both bar segments are hidden.
   property bool keepPolling: false
 
@@ -33,7 +33,7 @@ Singleton {
   // before the first thread sample so the card height never jumps.
   property int threadCount: 0
   // Per-logical-CPU busy percentages, index = cpuN. Only sampled while the
-  // System Monitor card is open.
+  // System Monitor launcher is open.
   property var threadPercents: []
 
   readonly property bool anyEnabled: root.cpuEnabled || root.memEnabled
@@ -178,8 +178,8 @@ Singleton {
     }
   }
 
-  // Thread detail is card-only: this timer runs exclusively while the popup
-  // holds keepPolling, so a closed card costs nothing.
+  // Thread detail is launcher-only: this timer runs exclusively while the
+  // launcher holds keepPolling, so a closed launcher costs nothing.
   Timer {
     interval: 1000
     repeat: true
@@ -199,7 +199,7 @@ Singleton {
   }
 
   // Temperatures change slowly; a 2s cadence is plenty and keeps the extra
-  // sysfs reads off the thread meter's 1s path. Card-only, like the threads.
+  // sysfs reads off the thread meter's 1s path. Launcher-only, like the threads.
   Timer {
     interval: 2000
     repeat: true
