@@ -76,6 +76,9 @@ Item {
   property string footerActionGlyph: ""
   property bool footerActionActive: false
   property bool footerActionVisible: true
+  // Keyboard hints for custom bodyContent surfaces that use the footer's
+  // action layout (e.g. navigate and stop a selected process).
+  property var bodyFooterActions: []
   // Prompt (password) mode: turns the search input into a masked field and swaps
   // the results list for a centered prompt. Used for e.g. wifi connection passwords.
   property bool promptMode: false
@@ -142,6 +145,8 @@ Item {
   // Optional arrow-key handling for search-driven custom content (e.g. an
   // inline scrollable result area instead of the launcher's ordinary list).
   property var searchNavigationHandler: null
+  // Optional custom keys for a search-driven surface (e.g. process actions).
+  property var searchKeyHandler: null
 
   readonly property string fullFooterHint: {
     const parts = [root.footerHint]
@@ -715,7 +720,8 @@ Item {
               event.accepted = true
             }
             Keys.onPressed: function(event) {
-              if (event.key === Qt.Key_PageUp) { root.step(10); event.accepted = true }
+              if (root.searchKeyHandler && root.searchKeyHandler(event)) event.accepted = true
+              else if (event.key === Qt.Key_PageUp) { root.step(10); event.accepted = true }
               else if (event.key === Qt.Key_PageDown) { root.step(-10); event.accepted = true }
               else if (root.tryItemAction(event)) event.accepted = true
             }

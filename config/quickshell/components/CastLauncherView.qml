@@ -138,11 +138,13 @@ PanelWindow {
         }
         Keys.onDownPressed: function(event) {
           if (view.controller.headerMenuOpen) view.moveHeaderMenu(1)
+          else if (view.controller.searchNavigationHandler && view.controller.searchNavigationHandler(1)) {}
           else view.controller.step(1)
           event.accepted = true
         }
         Keys.onUpPressed: function(event) {
           if (view.controller.headerMenuOpen) view.moveHeaderMenu(-1)
+          else if (view.controller.searchNavigationHandler && view.controller.searchNavigationHandler(-1)) {}
           else view.controller.step(-1)
           event.accepted = true
         }
@@ -168,7 +170,8 @@ PanelWindow {
             event.accepted = true
             return
           }
-          if (event.key === Qt.Key_PageUp) { view.controller.step(10); event.accepted = true }
+          if (view.controller.searchKeyHandler && view.controller.searchKeyHandler(event)) event.accepted = true
+          else if (event.key === Qt.Key_PageUp) { view.controller.step(10); event.accepted = true }
           else if (event.key === Qt.Key_PageDown) { view.controller.step(-10); event.accepted = true }
           else if (view.controller.tryItemAction(event)) event.accepted = true
         }
@@ -733,6 +736,28 @@ PanelWindow {
               color: Colors.text_alt
             }
             Cast.KeyHint { anchors.verticalCenter: parent.verticalCenter; keys: (modelData.hint || "").split(" ")[0].replace(/\+/g, " "); color: Colors.text; fontFamily: view.uiFont }
+          }
+        }
+        Repeater {
+          model: view.controller.promptMode ? [] : view.controller.bodyFooterActions
+          delegate: Row {
+            required property var modelData
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 8
+            Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              text: modelData.label || ""
+              font.family: view.uiFont
+              font.pixelSize: 12
+              color: Colors.text_alt
+            }
+            Cast.KeyHint {
+              anchors.verticalCenter: parent.verticalCenter
+              keys: modelData.keys || ""
+              color: Colors.text
+              fontFamily: view.uiFont
+            }
           }
         }
         Rectangle { visible: view.hasHeaderAction && !view.controller.promptMode; anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }

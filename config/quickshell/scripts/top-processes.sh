@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Processes for the System Monitor launcher, as CPU% <tab> MEM% <tab> name.
+# Processes for the System Monitor launcher, as CPU% <tab> MEM% <tab> PID <tab> name.
 # Batch top needs two samples: the first screen has no previous delta, so its
 # %CPU is the process lifetime average instead of current load.
 set -euo pipefail
@@ -25,7 +25,7 @@ ncpu=$(nproc)
 top -b -n 2 -d 0.3 -o "$sort_key" -w 512 2>/dev/null \
   | awk -v ncpu="$ncpu" '/^ *PID/ { n++; next }
     n == 2 && NF >= 12 {
-      printf "%.1f\t%s\t", $9 / ncpu, $10
+      printf "%.1f\t%s\t%s\t", $9 / ncpu, $10, $1
       for (i = 12; i <= NF; i++) printf "%s%s", $i, (i < NF ? " " : "")
       printf "\n"
     }'

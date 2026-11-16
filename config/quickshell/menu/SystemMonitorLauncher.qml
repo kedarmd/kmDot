@@ -17,11 +17,24 @@ LauncherBase {
   searchEnabled: false
   clearQueryOnEscape: true
   property bool filterMode: false
+  property real filterProgress: root.filterMode ? 1 : 0
+  Behavior on filterProgress {
+    NumberAnimation {
+      duration: Tokens.reducedMotion ? 0 : 320
+      easing.type: Easing.InOutCubic
+    }
+  }
   escapeKeyHandler: function() {
+    if (root.pendingKillConfirmation) {
+      root.pendingKillConfirmation = false
+      root.pendingKillProcess = null
+      return true
+    }
     if (!root.filterMode) return false
     root.resetQuery()
     root.filterMode = false
     root.searchEnabled = false
+    root.clearProcessSelection()
     Qt.callLater(function() {
       if (root.opened && root.viewNav) root.viewNav.forceActiveFocus()
     })
@@ -32,6 +45,7 @@ LauncherBase {
     run: function() {
       root.filterMode = true
       root.searchEnabled = true
+      root.clearProcessSelection()
       Qt.callLater(function() {
         if (root.viewInput) root.viewInput.forceActiveFocus()
       })
@@ -44,15 +58,29 @@ LauncherBase {
   footerActionGlyph: "\uf080"
   footerActionActive: SystemStatsState.anyEnabled
   closeHint: "Esc close"
+  bodyFooterActions: root.filterMode ? [
+    { label: "Navigate", keys: "↑ ↓" },
+    { label: "Stop", keys: "Del" }
+  ] : [
+    { label: "Filter", keys: "/" }
+  ]
 
   property var processes: []
   property string processSort: "cpu"
   readonly property var visibleProcesses: {
     const query = root.query.trim().toLowerCase()
-    if (!query) return root.processes.slice(0, 4)
+    if (!query) return root.filterMode ? root.processes : root.processes.slice(0, 4)
     return root.processes.filter(process => process.name.toLowerCase().includes(query))
   }
   property bool pendingProcessRefresh: false
+  property bool processSelectionActive: false
+  property int selectedProcessPid: 0
+  property bool pendingKillConfirmation: false
+  property bool killInProgress: false
+  property var pendingKillProcess: null
+  property var killTarget: null
+  property string killNotice: ""
+  property var processSelectionSyncHandler: null
   property var cpuHistory: []
   property var memoryHistory: []
   items: []
@@ -115,14 +143,19 @@ LauncherBase {
     const rows = []
     String(text).trim().split("\n").forEach(line => {
       const parts = line.split("\t")
-      if (parts.length < 3) return
+      if (parts.length < 4) return
       rows.push({
         cpu: parseFloat(parts[0]) || 0,
         mem: parseFloat(parts[1]) || 0,
-        name: parts.slice(2).join(" ").trim()
+        pid: parseInt(parts[2], 10) || 0,
+        name: parts.slice(3).join(" ").trim()
       })
     })
     root.processes = rows
+    Qt.callLater(function() {
+      if (root.opened && root.processSelectionSyncHandler)
+        root.processSelectionSyncHandler()
+    })
   }
 
   function setTopbarEnabled(value) {
@@ -132,8 +165,16 @@ LauncherBase {
 
   function setProcessSort(sort) {
     if (root.processSort === sort) return
+    root.clearProcessSelection()
     root.processSort = sort
     root.refreshProcesses()
+  }
+
+  function clearProcessSelection() {
+    root.processSelectionActive = false
+    root.selectedProcessPid = 0
+    root.pendingKillConfirmation = false
+    root.pendingKillProcess = null
   }
 
   function onOpenedChange() {
@@ -141,6 +182,8 @@ LauncherBase {
     if (root.opened) {
       root.filterMode = false
       root.searchEnabled = false
+      root.clearProcessSelection()
+      root.killNotice = ""
       root.cpuHistory = []
       root.memoryHistory = []
       root.sampleHistory()
@@ -149,6 +192,7 @@ LauncherBase {
     else {
       root.processes = []
       root.pendingProcessRefresh = false
+      root.clearProcessSelection()
     }
   }
 
@@ -163,23 +207,79 @@ LauncherBase {
       property int coreRows: Math.ceil(coreCount / coreColumns)
       property int coreGap: 6
 
-      Component.onCompleted: root.searchNavigationHandler = function(delta) {
-        if (root.query.trim() === "" || root.visibleProcesses.length === 0) return false
-        const next = Math.max(0, Math.min(root.visibleProcesses.length - 1, processList.currentIndex + delta))
-        processList.currentIndex = next
-        processList.positionViewAtIndex(next, ListView.Contain)
-        return true
+      Component.onCompleted: {
+        root.processSelectionSyncHandler = function() {
+          if (!root.processSelectionActive) return
+          const index = root.visibleProcesses.findIndex(process => process.pid === root.selectedProcessPid)
+          if (index < 0) {
+            root.clearProcessSelection()
+            return
+          }
+          processList.currentIndex = index
+          processList.positionViewAtIndex(index, ListView.Contain)
+          if (root.pendingKillConfirmation && root.pendingKillProcess) {
+            const stillRunning = root.processes.some(process => process.pid === root.pendingKillProcess.pid)
+            if (!stillRunning) {
+              root.pendingKillConfirmation = false
+              root.pendingKillProcess = null
+              root.killNotice = "PROCESS NO LONGER AVAILABLE"
+              processNoticeTimer.restart()
+            }
+          }
+        }
+        root.searchNavigationHandler = function(delta) {
+          if (!root.filterMode || root.visibleProcesses.length === 0) return false
+          if (root.pendingKillConfirmation) return true
+          const next = root.processSelectionActive
+            ? Math.max(0, Math.min(root.visibleProcesses.length - 1, processList.currentIndex + delta))
+            : (delta > 0 ? 0 : root.visibleProcesses.length - 1)
+          root.processSelectionActive = true
+          processList.currentIndex = next
+          root.selectedProcessPid = root.visibleProcesses[next].pid
+          processList.positionViewAtIndex(next, ListView.Contain)
+          return true
+        }
+        root.searchKeyHandler = function(event) {
+          if (event.key !== Qt.Key_Delete || !root.filterMode) return false
+          if (root.killInProgress) return true
+          if (root.pendingKillConfirmation) {
+            const target = root.pendingKillProcess
+            root.pendingKillConfirmation = false
+            root.pendingKillProcess = null
+            if (!target || target.pid <= 0) {
+              root.killNotice = "PROCESS NO LONGER AVAILABLE"
+              processNoticeTimer.restart()
+              return true
+            }
+            root.killTarget = target
+            root.killInProgress = true
+            killProc.exec(["kill", "-TERM", String(target.pid)])
+            return true
+          }
+          if (!root.processSelectionActive || processList.currentIndex < 0
+              || processList.currentIndex >= root.visibleProcesses.length) return false
+          root.pendingKillProcess = root.visibleProcesses[processList.currentIndex]
+          root.pendingKillConfirmation = true
+          return true
+        }
       }
-      Component.onDestruction: root.searchNavigationHandler = null
+      Component.onDestruction: {
+        root.processSelectionSyncHandler = null
+        root.searchNavigationHandler = null
+        root.searchKeyHandler = null
+      }
 
       Column {
+        id: dashboardColumn
         anchors.fill: parent
-        spacing: dashboard.gap
+        spacing: dashboard.gap * (1 - root.filterProgress)
 
         Row {
           id: summaryRow
           width: parent.width
-          height: 140
+          height: 140 * (1 - root.filterProgress)
+          opacity: 1 - root.filterProgress
+          clip: true
           spacing: dashboard.gap
 
           Rectangle {
@@ -187,7 +287,9 @@ LauncherBase {
             width: (parent.width - parent.spacing) / 2
             height: parent.height
             radius: 14
-            color: Colors.surface_alt
+            color: Colors.surface_high
+            border.width: 1
+            border.color: Colors.outline_variant
 
             Column {
               anchors.fill: parent
@@ -243,7 +345,7 @@ LauncherBase {
                   width: parent.width - 96
                   height: 58
                   anchors.verticalCenter: parent.verticalCenter
-                  Rectangle { anchors.fill: parent; radius: 8; color: Colors.surface_high }
+                  Rectangle { anchors.fill: parent; radius: 8; color: Colors.surface_alt }
                   Canvas {
                     id: cpuTrend
                     anchors.fill: parent
@@ -270,7 +372,9 @@ LauncherBase {
             width: (parent.width - parent.spacing) / 2
             height: parent.height
             radius: 14
-            color: Colors.surface_alt
+            color: Colors.surface_high
+            border.width: 1
+            border.color: Colors.outline_variant
 
             Column {
               anchors.fill: parent
@@ -326,7 +430,7 @@ LauncherBase {
                   width: parent.width - 96
                   height: 58
                   anchors.verticalCenter: parent.verticalCenter
-                  Rectangle { anchors.fill: parent; radius: 8; color: Colors.surface_high }
+                  Rectangle { anchors.fill: parent; radius: 8; color: Colors.surface_alt }
                   Canvas {
                     id: memoryTrend
                     anchors.fill: parent
@@ -352,9 +456,13 @@ LauncherBase {
         Rectangle {
           id: coresCard
           width: parent.width
-          height: coreFlow.height + 54
+          height: (coreFlow.height + 54) * (1 - root.filterProgress)
+          opacity: 1 - root.filterProgress
+          clip: true
           radius: 14
-          color: Colors.surface_alt
+          color: Colors.surface_high
+          border.width: 1
+          border.color: Colors.outline_variant
 
           Text {
             anchors { left: parent.left; top: parent.top; leftMargin: 14; topMargin: 12 }
@@ -380,7 +488,7 @@ LauncherBase {
                 width: Math.max(54, Math.floor((coreFlow.width - (dashboard.coreColumns - 1) * dashboard.coreGap) / dashboard.coreColumns))
                 height: dashboard.coreTileHeight
                 radius: 7
-                color: Colors.surface_high
+                color: Colors.surface_alt
 
                 Column {
                   anchors.fill: parent
@@ -426,9 +534,13 @@ LauncherBase {
         Rectangle {
           id: processesCard
           width: parent.width
-          height: 148
+          height: root.filterMode
+            ? Math.max(148, dashboard.height - summaryRow.height - coresCard.height - dashboardColumn.spacing * 2)
+            : 148
           radius: 14
-          color: Colors.surface_alt
+          color: Colors.surface_high
+          border.width: 1
+          border.color: Colors.outline_variant
 
           Column {
             anchors.fill: parent
@@ -436,26 +548,46 @@ LauncherBase {
             spacing: 6
 
             Row {
-              width: parent.width
+              width: parent.width - 16
+              anchors.horizontalCenter: parent.horizontalCenter
               Text {
                 id: processHeading
-                text: "TOP PROCESSES"
+                text: root.pendingKillConfirmation ? "STOP PROCESS?"
+                  : root.killNotice !== "" ? root.killNotice
+                  : root.filterMode ? "PROCESSES · " + root.visibleProcesses.length
+                  : "TOP PROCESSES"
                 font.family: "JetBrainsMono Nerd Font"
                 font.pixelSize: 11
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.6
-                color: Colors.text_alt
+                color: root.pendingKillConfirmation ? Colors.warning : Colors.text_alt
               }
-              Item { width: parent.width - processHeading.implicitWidth - processLegend.implicitWidth; height: 1 }
+              Item {
+                width: parent.width - processHeading.implicitWidth
+                  - (root.pendingKillConfirmation ? killConfirmHint.implicitWidth
+                    : root.killNotice !== "" ? 0 : processLegend.implicitWidth)
+                height: 1
+              }
+              Text {
+                id: killConfirmHint
+                visible: root.pendingKillConfirmation
+                text: "Delete again · Esc cancel"
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 10
+                color: Colors.warning
+              }
               Row {
                 id: processLegend
-                width: 65
+                visible: !root.pendingKillConfirmation && root.killNotice === ""
+                width: 77
                 spacing: 1
                 Text {
-                  width: 32
+                  width: 38
                   text: "CPU"
+                  horizontalAlignment: Text.AlignRight
                   font.family: "JetBrainsMono Nerd Font"
                   font.pixelSize: 10
+                  font.weight: root.processSort === "cpu" ? Font.DemiBold : Font.Normal
                   color: root.processSort === "cpu" ? Colors.primary : Colors.text_alt
                   MouseArea {
                     anchors.fill: parent
@@ -464,10 +596,12 @@ LauncherBase {
                   }
                 }
                 Text {
-                  width: 32
+                  width: 38
                   text: "RAM"
+                  horizontalAlignment: Text.AlignRight
                   font.family: "JetBrainsMono Nerd Font"
                   font.pixelSize: 10
+                  font.weight: root.processSort === "mem" ? Font.DemiBold : Font.Normal
                   color: root.processSort === "mem" ? Colors.primary : Colors.text_alt
                   MouseArea {
                     anchors.fill: parent
@@ -481,7 +615,7 @@ LauncherBase {
             Item {
               id: processArea
               width: parent.width
-              height: 104
+              height: root.filterMode ? Math.max(104, processesCard.height - 43) : 104
 
             ListView {
               id: processList
@@ -491,51 +625,73 @@ LauncherBase {
               spacing: 6
               currentIndex: 0
               boundsBehavior: Flickable.StopAtBounds
-              delegate: Row {
+              delegate: Item {
+                required property int index
                 required property var modelData
                 readonly property var process: modelData
+                readonly property bool selected: ListView.isCurrentItem
                 width: parent.width
                 height: 20
-                spacing: 8
-                Text {
-                  width: 135
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: process ? process.name : ""
-                  elide: Text.ElideRight
-                  font.family: "JetBrainsMono Nerd Font"
-                  font.pixelSize: 11
-                  color: Colors.text
-                }
                 Rectangle {
-                  width: Math.max(40, parent.width - 220)
-                  height: 5
-                  anchors.verticalCenter: parent.verticalCenter
-                  radius: 3
-                  color: Colors.surface_high
-                  Rectangle {
-                    width: parent.width * Math.max(0, Math.min(1, process ? process.cpu / 100 : 0))
-                    height: parent.height
-                    radius: parent.radius
-                    color: Colors.primary
+                  anchors { fill: parent; topMargin: 1; bottomMargin: 1 }
+                  visible: root.filterMode && root.processSelectionActive && selected
+                  radius: 8
+                  color: Colors.primary_container
+                }
+                TapHandler {
+                  enabled: root.filterMode
+                  onTapped: {
+                    root.clearProcessSelection()
+                    root.processSelectionActive = true
+                    processList.currentIndex = index
+                    root.selectedProcessPid = process.pid
                   }
                 }
-                Text {
-                  width: 32
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: process ? process.cpu.toFixed(1) + "%" : ""
-                  horizontalAlignment: Text.AlignRight
-                  font.family: "JetBrainsMono Nerd Font"
-                  font.pixelSize: 10
-                  color: Colors.text_alt
-                }
-                Text {
-                  width: 32
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: process ? process.mem.toFixed(1) + "%" : ""
-                  horizontalAlignment: Text.AlignRight
-                  font.family: "JetBrainsMono Nerd Font"
-                  font.pixelSize: 10
-                  color: Colors.text_alt
+                Row {
+                  anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
+                  spacing: 8
+                  Text {
+                    width: 135
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: process ? process.name : ""
+                    elide: Text.ElideRight
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 11
+                    color: root.processSelectionActive && selected ? Colors.on_primary_container : Colors.text
+                  }
+                  Rectangle {
+                    width: Math.max(40, parent.width - 235)
+                    height: 5
+                    anchors.verticalCenter: parent.verticalCenter
+                    radius: 3
+                    color: Colors.surface_alt
+                    Rectangle {
+                      readonly property real metricPercent: process
+                        ? (root.processSort === "cpu" ? process.cpu : process.mem) : 0
+                      width: parent.width * Math.max(0, Math.min(1, metricPercent / 100))
+                      height: parent.height
+                      radius: parent.radius
+                      color: Colors.primary
+                    }
+                  }
+                  Text {
+                    width: 38
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: process ? process.cpu.toFixed(1) + "%" : ""
+                    horizontalAlignment: Text.AlignRight
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 10
+                    color: root.processSelectionActive && selected ? Colors.on_primary_container : Colors.text_alt
+                  }
+                  Text {
+                    width: 38
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: process ? process.mem.toFixed(1) + "%" : ""
+                    horizontalAlignment: Text.AlignRight
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 10
+                    color: root.processSelectionActive && selected ? Colors.on_primary_container : Colors.text_alt
+                  }
                 }
               }
             }
@@ -559,6 +715,7 @@ LauncherBase {
         function onCpuHistoryChanged() { cpuTrend.requestPaint() }
         function onMemoryHistoryChanged() { memoryTrend.requestPaint() }
         function onQueryChanged() {
+          root.clearProcessSelection()
           processList.currentIndex = 0
           processList.contentY = 0
         }
@@ -591,6 +748,31 @@ LauncherBase {
         root.refreshProcesses()
       }
     }
+  }
+
+  Process {
+    id: killProc
+    onExited: function(code) {
+      root.killInProgress = false
+      root.killNotice = code === 0 ? "SIGTERM SENT" : "STOP FAILED"
+      root.killTarget = null
+      processNoticeTimer.restart()
+      if (code === 0) postKillRefreshTimer.restart()
+    }
+  }
+
+  Timer {
+    id: processNoticeTimer
+    interval: 2500
+    repeat: false
+    onTriggered: root.killNotice = ""
+  }
+
+  Timer {
+    id: postKillRefreshTimer
+    interval: 700
+    repeat: false
+    onTriggered: root.refreshProcesses()
   }
 
   onFooterActionClicked: root.setTopbarEnabled(!SystemStatsState.anyEnabled)
