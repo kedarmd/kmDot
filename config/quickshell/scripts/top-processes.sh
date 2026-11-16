@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Top six processes for the System Monitor launcher, as CPU% <tab> MEM% <tab> name.
+# Processes for the System Monitor launcher, as CPU% <tab> MEM% <tab> name.
 # Batch top needs two samples: the first screen has no previous delta, so its
 # %CPU is the process lifetime average instead of current load.
 set -euo pipefail
@@ -20,12 +20,11 @@ esac
 # to keep the process rows on the same 0-100 scale (all 8 threads = ~100%).
 ncpu=$(nproc)
 
-# Never close the pipe early (head/exit would SIGPIPE top under pipefail);
-# print the first six rows and let both processes finish cleanly.
+# Keep the complete sampled process list so the launcher can filter by name,
+# including processes outside the default top rows.
 top -b -n 2 -d 0.3 -o "$sort_key" -w 512 2>/dev/null \
   | awk -v ncpu="$ncpu" '/^ *PID/ { n++; next }
-    n == 2 && NF >= 12 && shown < 6 {
-      shown++
+    n == 2 && NF >= 12 {
       printf "%.1f\t%s\t", $9 / ncpu, $10
       for (i = 12; i <= NF; i++) printf "%s%s", $i, (i < NF ? " " : "")
       printf "\n"

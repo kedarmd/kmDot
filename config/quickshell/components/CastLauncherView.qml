@@ -148,6 +148,7 @@ PanelWindow {
         }
         Keys.onEscapePressed: function(event) {
           if (view.controller.headerMenuOpen) view.controller.headerMenuOpen = false
+          else if (view.controller.escapeKeyHandler && view.controller.escapeKeyHandler()) {}
           else if (view.controller.detailMode) view.controller.detailBackRequested()
           else if (view.controller.promptMode) view.controller.exitPrompt()
           else view.controller.closeLauncher()
@@ -197,7 +198,8 @@ PanelWindow {
           anchors.fill: parent
           cursorShape: Qt.PointingHandCursor
           onClicked: {
-            if (view.controller.detailMode) view.controller.detailBackRequested()
+            if (view.controller.escapeKeyHandler && view.controller.escapeKeyHandler()) {}
+            else if (view.controller.detailMode) view.controller.detailBackRequested()
             else if (view.controller.promptMode) view.controller.exitPrompt()
             else view.controller.closeLauncher()
           }
@@ -270,7 +272,8 @@ PanelWindow {
           event.accepted = true
         }
         else if (event.key === Qt.Key_Escape) {
-          if (view.controller.detailMode) view.controller.detailBackRequested()
+          if (view.controller.escapeKeyHandler && view.controller.escapeKeyHandler()) {}
+          else if (view.controller.detailMode) view.controller.detailBackRequested()
           else view.controller.closeLauncher()
           event.accepted = true
         }

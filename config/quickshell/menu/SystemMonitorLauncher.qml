@@ -12,8 +12,31 @@ LauncherBase {
   title: "System Monitor"
   headerTitle: "System Monitor"
   headerText: "System Monitor"
+  searchPlaceholder: "Filter processes…"
   headerGlyph: "\uf080"
   searchEnabled: false
+  clearQueryOnEscape: true
+  property bool filterMode: false
+  escapeKeyHandler: function() {
+    if (!root.filterMode) return false
+    root.resetQuery()
+    root.filterMode = false
+    root.searchEnabled = false
+    Qt.callLater(function() {
+      if (root.opened && root.viewNav) root.viewNav.forceActiveFocus()
+    })
+    return true
+  }
+  bareKeyCallbacks: [{
+    key: Qt.Key_Slash,
+    run: function() {
+      root.filterMode = true
+      root.searchEnabled = true
+      Qt.callLater(function() {
+        if (root.viewInput) root.viewInput.forceActiveFocus()
+      })
+    }
+  }]
   deactivatable: false
   cardHeight: SystemStatsState.threadPercents.length > 8 ? 565 : 520
   footerHint: "live values · refreshes every 3s"
@@ -23,6 +46,12 @@ LauncherBase {
   closeHint: "Esc close"
 
   property var processes: []
+  property string processSort: "cpu"
+  readonly property var visibleProcesses: {
+    const query = root.query.trim().toLowerCase()
+    if (!query) return root.processes.slice(0, 4)
+    return root.processes.filter(process => process.name.toLowerCase().includes(query))
+  }
   property bool pendingProcessRefresh: false
   property var cpuHistory: []
   property var memoryHistory: []
@@ -79,7 +108,7 @@ LauncherBase {
       root.pendingProcessRefresh = true
       return
     }
-    topProc.exec(["bash", SystemStatsState.scriptsDir + "/top-processes.sh", "cpu"])
+    topProc.exec(["bash", SystemStatsState.scriptsDir + "/top-processes.sh", root.processSort])
   }
 
   function applyProcesses(text) {
@@ -101,9 +130,17 @@ LauncherBase {
     SystemStatsState.setMemEnabled(value)
   }
 
+  function setProcessSort(sort) {
+    if (root.processSort === sort) return
+    root.processSort = sort
+    root.refreshProcesses()
+  }
+
   function onOpenedChange() {
     SystemStatsState.keepPolling = root.opened
     if (root.opened) {
+      root.filterMode = false
+      root.searchEnabled = false
       root.cpuHistory = []
       root.memoryHistory = []
       root.sampleHistory()
@@ -125,6 +162,15 @@ LauncherBase {
       property int coreTileHeight: 37
       property int coreRows: Math.ceil(coreCount / coreColumns)
       property int coreGap: 6
+
+      Component.onCompleted: root.searchNavigationHandler = function(delta) {
+        if (root.query.trim() === "" || root.visibleProcesses.length === 0) return false
+        const next = Math.max(0, Math.min(root.visibleProcesses.length - 1, processList.currentIndex + delta))
+        processList.currentIndex = next
+        processList.positionViewAtIndex(next, ListView.Contain)
+        return true
+      }
+      Component.onDestruction: root.searchNavigationHandler = null
 
       Column {
         anchors.fill: parent
@@ -401,20 +447,53 @@ LauncherBase {
                 color: Colors.text_alt
               }
               Item { width: parent.width - processHeading.implicitWidth - processLegend.implicitWidth; height: 1 }
-              Text {
+              Row {
                 id: processLegend
-                text: "CPU  ·  RAM"
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 10
-                color: Colors.text_alt
+                width: 65
+                spacing: 1
+                Text {
+                  width: 32
+                  text: "CPU"
+                  font.family: "JetBrainsMono Nerd Font"
+                  font.pixelSize: 10
+                  color: root.processSort === "cpu" ? Colors.primary : Colors.text_alt
+                  MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.setProcessSort("cpu")
+                  }
+                }
+                Text {
+                  width: 32
+                  text: "RAM"
+                  font.family: "JetBrainsMono Nerd Font"
+                  font.pixelSize: 10
+                  color: root.processSort === "mem" ? Colors.primary : Colors.text_alt
+                  MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.setProcessSort("mem")
+                  }
+                }
               }
             }
 
-            Repeater {
-              model: Math.min(4, root.processes.length)
+            Item {
+              id: processArea
+              width: parent.width
+              height: 104
+
+            ListView {
+              id: processList
+              anchors.fill: parent
+              clip: true
+              model: root.visibleProcesses
+              spacing: 6
+              currentIndex: 0
+              boundsBehavior: Flickable.StopAtBounds
               delegate: Row {
-                required property int index
-                readonly property var process: root.processes[index]
+                required property var modelData
+                readonly property var process: modelData
                 width: parent.width
                 height: 20
                 spacing: 8
@@ -441,9 +520,18 @@ LauncherBase {
                   }
                 }
                 Text {
-                  width: 65
+                  width: 32
                   anchors.verticalCenter: parent.verticalCenter
-                  text: process ? process.cpu.toFixed(1) + "% · " + process.mem.toFixed(1) + "%" : ""
+                  text: process ? process.cpu.toFixed(1) + "%" : ""
+                  horizontalAlignment: Text.AlignRight
+                  font.family: "JetBrainsMono Nerd Font"
+                  font.pixelSize: 10
+                  color: Colors.text_alt
+                }
+                Text {
+                  width: 32
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: process ? process.mem.toFixed(1) + "%" : ""
                   horizontalAlignment: Text.AlignRight
                   font.family: "JetBrainsMono Nerd Font"
                   font.pixelSize: 10
@@ -453,15 +541,15 @@ LauncherBase {
             }
 
             Text {
-              visible: root.processes.length === 0
-              width: parent.width
-              height: visible ? 80 : 0
+              anchors.fill: parent
+              visible: root.processes.length === 0 || (root.query.trim() !== "" && root.visibleProcesses.length === 0)
               verticalAlignment: Text.AlignVCenter
               horizontalAlignment: Text.AlignHCenter
-              text: "Collecting process usage…"
+              text: root.processes.length === 0 ? "Collecting process usage…" : "No matching processes"
               font.family: "JetBrainsMono Nerd Font"
               font.pixelSize: 12
               color: Colors.text_alt
+            }
             }
           }
         }
@@ -470,6 +558,10 @@ LauncherBase {
         target: root
         function onCpuHistoryChanged() { cpuTrend.requestPaint() }
         function onMemoryHistoryChanged() { memoryTrend.requestPaint() }
+        function onQueryChanged() {
+          processList.currentIndex = 0
+          processList.contentY = 0
+        }
       }
     }
   }

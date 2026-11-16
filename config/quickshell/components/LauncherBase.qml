@@ -132,6 +132,16 @@ Item {
   // Bare (modifier-less) key actions for the no-search surface, e.g. Delete on
   // a list view. Entries: { key, hint }; hints are appended to the footer.
   property var bareKeyActions: []
+  // Optional callbacks for bare keys on searchless launchers. These are
+  // controller actions rather than selected-item actions (e.g. `/` to search).
+  property var bareKeyCallbacks: []
+  // Searchless launcher can opt into clearing a typed query before Escape closes.
+  property bool clearQueryOnEscape: false
+  // Optional subclass Escape behavior; return true when the key was handled.
+  property var escapeKeyHandler: null
+  // Optional arrow-key handling for search-driven custom content (e.g. an
+  // inline scrollable result area instead of the launcher's ordinary list).
+  property var searchNavigationHandler: null
 
   readonly property string fullFooterHint: {
     const parts = [root.footerHint]
@@ -207,6 +217,13 @@ Item {
   // Keyboard handler for the no-search nav surface: bareKeyActions match
   // modifier-less presses; itemActions chords still work here.
   function tryNavItemAction(event) {
+    for (const i in root.bareKeyCallbacks) {
+      const action = root.bareKeyCallbacks[i]
+      if (action.key === event.key && !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier))) {
+        action.run()
+        return true
+      }
+    }
     const ctrl = (event.modifiers & Qt.ControlModifier) !== 0
     const selected = root.results.length > 0 && root.selectedIndex >= 0
       && root.selectedIndex < root.results.length
@@ -547,7 +564,9 @@ Item {
             event.accepted = true
           }
           else if (event.key === Qt.Key_Escape) {
-            if (root.detailMode) root.detailBackRequested()
+            if (root.escapeKeyHandler && root.escapeKeyHandler()) {}
+            else if (root.detailMode) root.detailBackRequested()
+            else if (root.clearQueryOnEscape && root.query !== "") root.resetQuery()
             else root.closeLauncher()
             event.accepted = true
           }
@@ -687,16 +706,31 @@ Item {
               root.activate()
             }
 
-            Keys.onDownPressed: function(event) { root.step(1); event.accepted = true }
-            Keys.onUpPressed: function(event) { root.step(-1); event.accepted = true }
+            Keys.onDownPressed: function(event) {
+              if (!root.searchNavigationHandler || !root.searchNavigationHandler(1)) root.step(1)
+              event.accepted = true
+            }
+            Keys.onUpPressed: function(event) {
+              if (!root.searchNavigationHandler || !root.searchNavigationHandler(-1)) root.step(-1)
+              event.accepted = true
+            }
             Keys.onPressed: function(event) {
               if (event.key === Qt.Key_PageUp) { root.step(10); event.accepted = true }
               else if (event.key === Qt.Key_PageDown) { root.step(-10); event.accepted = true }
               else if (root.tryItemAction(event)) event.accepted = true
             }
             Keys.onEscapePressed: function(event) {
+              if (root.escapeKeyHandler && root.escapeKeyHandler()) {
+                event.accepted = true
+                return
+              }
               if (root.promptMode) {
                 root.exitPrompt()
+                event.accepted = true
+                return
+              }
+              if (root.clearQueryOnEscape && root.query !== "") {
+                root.resetQuery()
                 event.accepted = true
                 return
               }
