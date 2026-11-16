@@ -412,7 +412,11 @@ LauncherBase {
                           font.weight: Font.DemiBold
                           color: Colors.text_alt
                         }
-                        Item { width: parent.width - coreMetric.implicitWidth - coreTemperature.implicitWidth - coreName.implicitWidth - parent.spacing * 4; height: 1 }
+                        Item {
+                          width: Math.max(0, parent.width - coreName.implicitWidth - coreMetric.implicitWidth
+                            - coreTempSeparator.implicitWidth - coreTemperature.implicitWidth - parent.spacing * 4)
+                          height: 1
+                        }
                         Text {
                           id: coreMetric
                           text: SystemStatsState.threadPercents[index] + "%"
@@ -422,6 +426,7 @@ LauncherBase {
                           color: SystemStatsState.threadPercents[index] >= 85 ? Colors.warning : Colors.text
                         }
                         Text {
+                          id: coreTempSeparator
                           visible: SystemStatsState.threadTemp(index) >= 0
                           text: "·"
                           font.family: "JetBrainsMono Nerd Font"
@@ -617,20 +622,31 @@ LauncherBase {
             Row {
               width: parent.width - 16
               anchors.horizontalCenter: parent.horizontalCenter
-              Text {
-                id: processHeading
-                text: root.pendingKillConfirmation ? "STOP PROCESS?"
-                  : root.killNotice !== "" ? root.killNotice
-                  : root.filterMode ? "PROCESSES · " + root.visibleProcesses.length
-                  : "TOP PROCESSES"
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 11
-                font.weight: Font.DemiBold
-                font.letterSpacing: 0.6
-                color: root.pendingKillConfirmation ? Colors.warning : Colors.text_alt
+              Row {
+                id: processTitle
+                spacing: 8
+                R1Icon {
+                  anchors.verticalCenter: parent.verticalCenter
+                  iconName: "chart"
+                  font.pixelSize: 16
+                  color: Colors.text_alt
+                }
+                Text {
+                  id: processHeading
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: root.pendingKillConfirmation ? "STOP PROCESS?"
+                    : root.killNotice !== "" ? root.killNotice
+                    : root.filterMode ? "PROCESSES · " + root.visibleProcesses.length
+                    : "TOP PROCESSES"
+                  font.family: "JetBrainsMono Nerd Font"
+                  font.pixelSize: 11
+                  font.weight: Font.DemiBold
+                  font.letterSpacing: 0.6
+                  color: root.pendingKillConfirmation ? Colors.warning : Colors.text_alt
+                }
               }
               Item {
-                width: parent.width - processHeading.implicitWidth
+                width: parent.width - processTitle.implicitWidth
                   - (root.pendingKillConfirmation ? killConfirmHint.implicitWidth
                     : root.killNotice !== "" ? 0 : processLegend.implicitWidth)
                 height: 1
@@ -646,8 +662,8 @@ LauncherBase {
               Row {
                 id: processLegend
                 visible: !root.pendingKillConfirmation && root.killNotice === ""
-                width: 77
-                spacing: 1
+                width: 84
+                spacing: 8
                 Text {
                   width: 38
                   text: "CPU"
