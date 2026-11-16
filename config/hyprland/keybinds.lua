@@ -106,6 +106,6 @@ hl.bind(mod .. " + J", hl.dsp.layout("togglesplit")) -- Toggle split layout
 hl.bind("SUPER + CTRL + SPACE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-wallpaper'")) -- Wallpaper switcher (quickshell)
 
 hl.bind(
-	mod .. " + I",
+	"CTRL + SPACE",
 	hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/dictation-provider.sh dictate'")
 ) -- Toggle selected dictation app

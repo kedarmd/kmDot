@@ -37,6 +37,25 @@ stop_handy() {
   systemctl --user stop app-Handy@autostart.service >/dev/null 2>&1 || true
 }
 
+ensure_hex_running() {
+  if systemctl --user cat hex.service >/dev/null 2>&1; then
+    if ! systemctl --user is-active --quiet hex.service; then
+      start_provider hex
+    fi
+  elif ! "$HEX_BIN" status --json >/dev/null 2>&1; then
+    start_provider hex
+  fi
+
+  # The systemd service waits for Hex's ready notification. The fallback
+  # launcher does not, so wait until its listener can answer before toggling.
+  for _ in {1..80}; do
+    if "$HEX_BIN" status --json >/dev/null 2>&1; then return 0; fi
+    sleep 0.25
+  done
+  echo "Hex did not become ready; dictation was not started." >&2
+  return 1
+}
+
 start_provider() {
   case "$1" in
     handy)
@@ -117,7 +136,10 @@ case "${1:-get}" in
   dictate)
     case "$(read_provider)" in
       handy) exec "$HANDY_BIN" --toggle-transcription ;;
-      hex) exec "$HEX_BIN" dictation toggle ;;
+      hex)
+        ensure_hex_running
+        exec "$HEX_BIN" dictation toggle
+        ;;
     esac
     ;;
   *) echo "Usage: dictation-provider.sh {get|start|stop|set|toggle|dictate|launcher|configure-autostart}" >&2; exit 2 ;;
