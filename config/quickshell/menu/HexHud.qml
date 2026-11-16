@@ -91,7 +91,10 @@ PanelWindow {
       root.syncEscapeBinding()
     }
     function onErrorTextChanged() {
-      if (HexStore.errorText !== "") {
+      // An unavailable status poll is an idle backend state, not a dictation
+      // failure. Keep it visible in Hex's launcher/popup, but don't raise the
+      // transient recording HUD every time Quickshell starts while Hex is off.
+      if (HexStore.errorText !== "" && HexStore.errorText !== "Hex status is unavailable") {
         root.transientError = HexStore.errorText
         errorTimer.restart()
       } else if (!HexStore.active) {
