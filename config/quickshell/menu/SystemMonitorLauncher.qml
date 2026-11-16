@@ -52,11 +52,7 @@ LauncherBase {
     }
   }]
   deactivatable: false
-  cardHeight: {
-    const rows = Math.ceil(SystemStatsState.threadPercents.length / 4)
-    const coreFlowHeight = rows > 0 ? rows * 46 + (rows - 1) * 6 : 0
-    return Math.max(555, 157 + coreFlowHeight + 300)
-  }
+  cardHeight: 520
   footerHint: "live values · refreshes every 3s"
   footerActionText: SystemStatsState.anyEnabled ? "Topbar on" : "Topbar off"
   footerActionGlyph: "\uf080"
@@ -204,12 +200,12 @@ LauncherBase {
       property real gap: 10
       property int coreCount: SystemStatsState.threadPercents.length
       property int coreColumns: 4
-      property int coreTileHeight: 46
+      property int coreTileHeight: 40
       property int coreRows: Math.ceil(coreCount / coreColumns)
       property int coreGap: 6
       property int coreFlowHeight: coreRows > 0
         ? coreRows * coreTileHeight + (coreRows - 1) * coreGap : 0
-      property int cpuCardHeight: 157 + coreFlowHeight
+      property int cpuCardHeight: 146 + coreFlowHeight
 
       Component.onCompleted: {
         root.processSelectionSyncHandler = function() {
@@ -298,7 +294,7 @@ LauncherBase {
             Column {
               anchors.fill: parent
               anchors.margins: 12
-              spacing: 4
+              spacing: 3
 
               Row {
                 spacing: 8
@@ -321,7 +317,7 @@ LauncherBase {
 
               Row {
                 width: parent.width
-                height: 64
+                height: 58
                 spacing: 8
 
                 Row {

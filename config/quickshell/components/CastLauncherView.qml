@@ -742,9 +742,10 @@ PanelWindow {
           model: view.controller.promptMode ? [] : view.controller.bodyFooterActions
           delegate: Row {
             required property var modelData
+            required property int index
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
-            Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
+            Rectangle { visible: index > 0; anchors.verticalCenter: parent.verticalCenter; width: 1; height: 14; color: Colors.divider }
             Text {
               anchors.verticalCenter: parent.verticalCenter
               text: modelData.label || ""
