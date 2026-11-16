@@ -52,7 +52,11 @@ LauncherBase {
     }
   }]
   deactivatable: false
-  cardHeight: SystemStatsState.threadPercents.length > 8 ? 565 : 520
+  cardHeight: {
+    const rows = Math.ceil(SystemStatsState.threadPercents.length / 4)
+    const coreFlowHeight = rows > 0 ? rows * 46 + (rows - 1) * 6 : 0
+    return Math.max(555, 157 + coreFlowHeight + 300)
+  }
   footerHint: "live values · refreshes every 3s"
   footerActionText: SystemStatsState.anyEnabled ? "Topbar on" : "Topbar off"
   footerActionGlyph: "\uf080"
@@ -82,7 +86,6 @@ LauncherBase {
   property string killNotice: ""
   property var processSelectionSyncHandler: null
   property var cpuHistory: []
-  property var memoryHistory: []
   items: []
 
   function appendHistory(values, percent) {
@@ -95,7 +98,6 @@ LauncherBase {
 
   function sampleHistory() {
     root.cpuHistory = root.appendHistory(root.cpuHistory, SystemStatsState.cpuPercent)
-    root.memoryHistory = root.appendHistory(root.memoryHistory, SystemStatsState.memPercent)
   }
 
   function drawTrend(canvas, values, hot) {
@@ -185,7 +187,6 @@ LauncherBase {
       root.clearProcessSelection()
       root.killNotice = ""
       root.cpuHistory = []
-      root.memoryHistory = []
       root.sampleHistory()
       root.refreshProcesses()
     }
@@ -202,10 +203,13 @@ LauncherBase {
       anchors.fill: parent
       property real gap: 10
       property int coreCount: SystemStatsState.threadPercents.length
-      property int coreColumns: 8
-      property int coreTileHeight: 37
+      property int coreColumns: 4
+      property int coreTileHeight: 46
       property int coreRows: Math.ceil(coreCount / coreColumns)
       property int coreGap: 6
+      property int coreFlowHeight: coreRows > 0
+        ? coreRows * coreTileHeight + (coreRows - 1) * coreGap : 0
+      property int cpuCardHeight: 157 + coreFlowHeight
 
       Component.onCompleted: {
         root.processSelectionSyncHandler = function() {
@@ -277,14 +281,14 @@ LauncherBase {
         Row {
           id: summaryRow
           width: parent.width
-          height: 140 * (1 - root.filterProgress)
+          height: dashboard.cpuCardHeight * (1 - root.filterProgress)
           opacity: 1 - root.filterProgress
           clip: true
           spacing: dashboard.gap
 
           Rectangle {
             id: cpuCard
-            width: (parent.width - parent.spacing) / 2
+            width: (parent.width - parent.spacing) * 0.72
             height: parent.height
             radius: 14
             color: Colors.surface_high
@@ -364,24 +368,114 @@ LauncherBase {
                 color: Colors.text_alt
                 elide: Text.ElideRight
               }
+
+              Rectangle {
+                width: parent.width
+                height: 1
+                color: Colors.divider
+              }
+
+              Row {
+                width: parent.width
+                Text {
+                  id: cpuThreadsTitle
+                  text: "CORES"
+                  font.family: "JetBrainsMono Nerd Font"
+                  font.pixelSize: 10
+                  font.weight: Font.DemiBold
+                  font.letterSpacing: 0.4
+                  color: Colors.text_alt
+                }
+              }
+
+              Flow {
+                id: coreFlow
+                width: parent.width
+                height: dashboard.coreFlowHeight
+                spacing: dashboard.coreGap
+                Repeater {
+                  model: dashboard.coreCount
+                  delegate: Rectangle {
+                    required property int index
+                    width: Math.floor((coreFlow.width - (dashboard.coreColumns - 1) * dashboard.coreGap) / dashboard.coreColumns)
+                    height: dashboard.coreTileHeight
+                    radius: 7
+                    color: Colors.surface_alt
+
+                    Item {
+                      anchors.fill: parent
+                      anchors.margins: 8
+                      Row {
+                        anchors { left: parent.left; right: parent.right; top: parent.top }
+                        spacing: 4
+                        Text {
+                          id: coreName
+                          text: "C" + index
+                          font.family: "JetBrainsMono Nerd Font"
+                          font.pixelSize: 10
+                          font.weight: Font.DemiBold
+                          color: Colors.text_alt
+                        }
+                        Item { width: parent.width - coreMetric.implicitWidth - coreTemperature.implicitWidth - coreName.implicitWidth - parent.spacing * 4; height: 1 }
+                        Text {
+                          id: coreMetric
+                          text: SystemStatsState.threadPercents[index] + "%"
+                          font.family: "JetBrainsMono Nerd Font"
+                          font.pixelSize: 10
+                          font.weight: Font.DemiBold
+                          color: SystemStatsState.threadPercents[index] >= 85 ? Colors.warning : Colors.text
+                        }
+                        Text {
+                          visible: SystemStatsState.threadTemp(index) >= 0
+                          text: "·"
+                          font.family: "JetBrainsMono Nerd Font"
+                          font.pixelSize: 10
+                          color: Colors.text_alt
+                        }
+                        Text {
+                          id: coreTemperature
+                          visible: SystemStatsState.threadTemp(index) >= 0
+                          text: SystemStatsState.threadTemp(index) >= 0 ? SystemStatsState.threadTemp(index) + "°C" : ""
+                          font.family: "JetBrainsMono Nerd Font"
+                          font.pixelSize: 10
+                          color: SystemStatsState.threadTemp(index) >= SystemStatsState.tempWarn ? Colors.warning : Colors.text_alt
+                        }
+                      }
+                      Rectangle {
+                        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                        height: 4
+                        radius: 2
+                        color: Colors.surface
+                        Rectangle {
+                          width: parent.width * Math.max(0, Math.min(1, SystemStatsState.threadPercents[index] / 100))
+                          height: parent.height
+                          radius: parent.radius
+                          color: SystemStatsState.threadPercents[index] >= 85 ? Colors.warning : Colors.primary
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
 
           Rectangle {
             id: memoryCard
-            width: (parent.width - parent.spacing) / 2
+            width: parent.width - cpuCard.width - parent.spacing
             height: parent.height
             radius: 14
             color: Colors.surface_high
             border.width: 1
             border.color: Colors.outline_variant
 
-            Column {
+            Item {
               anchors.fill: parent
               anchors.margins: 12
-              spacing: 4
 
               Row {
+                id: memoryHeading
+                anchors.top: parent.top
                 spacing: 8
                 R1Icon {
                   anchors.verticalCenter: parent.verticalCenter
@@ -400,131 +494,110 @@ LauncherBase {
                 }
               }
 
-              Row {
-                width: parent.width
-                height: 64
-                spacing: 8
+              Item {
+                id: memoryBody
+                anchors { top: memoryHeading.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; topMargin: 8 }
+                property real columnWidth: (width - 20) / 2
 
-                Row {
-                  width: 88
-                  anchors.verticalCenter: parent.verticalCenter
-                  spacing: 3
+                Rectangle {
+                  width: 1
+                  anchors { top: parent.top; bottom: parent.bottom; horizontalCenter: parent.horizontalCenter; topMargin: 8; bottomMargin: 8 }
+                  color: Colors.divider
+                }
+
+                Item {
+                  id: gaugeColumn
+                  width: memoryBody.columnWidth
+                  anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
                   Text {
                     id: memValue
-                    text: SystemStatsState.memPercent < 0 ? "--" : SystemStatsState.memPercent.toString()
+                    anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 8 }
+                    text: SystemStatsState.memPercent < 0 ? "--%" : SystemStatsState.memPercent + "%"
+                    horizontalAlignment: Text.AlignHCenter
                     font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 36
+                    font.pixelSize: 30
                     font.weight: Font.DemiBold
                     color: SystemStatsState.memHot ? Colors.warning : Colors.text
                   }
-                  Text {
-                    anchors.baseline: memValue.baseline
-                    text: "%"
-                    font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 18
-                    color: Colors.text_alt
+                  Rectangle {
+                    id: memoryGaugeTrack
+                    width: 52
+                    anchors { top: memValue.bottom; bottom: parent.bottom; horizontalCenter: parent.horizontalCenter; topMargin: 12; bottomMargin: 8 }
+                    radius: 9
+                    color: Colors.surface_alt
+                    Rectangle {
+                      width: parent.width
+                      height: parent.height * Math.max(0, Math.min(1, SystemStatsState.memPercent / 100))
+                      anchors.bottom: parent.bottom
+                      radius: parent.radius
+                      color: SystemStatsState.memHot ? Colors.warning : Colors.primary
+                    }
                   }
                 }
 
                 Item {
-                  width: parent.width - 96
-                  height: 58
-                  anchors.verticalCenter: parent.verticalCenter
-                  Rectangle { anchors.fill: parent; radius: 8; color: Colors.surface_alt }
-                  Canvas {
-                    id: memoryTrend
-                    anchors.fill: parent
-                    anchors.margins: 4
-                    onPaint: root.drawTrend(memoryTrend, root.memoryHistory, SystemStatsState.memHot)
-                  }
-                }
-              }
+                  id: metricsColumn
+                  width: memoryBody.columnWidth
+                  anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
 
-              Text {
-                width: parent.width
-                text: SystemStatsState.memUsedGb + " / " + SystemStatsState.memTotalGb
-                  + " GB used  ·  " + SystemStatsState.memFreeGb + " GB available"
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 10
-                color: Colors.text_alt
-                elide: Text.ElideRight
-              }
-            }
-          }
-        }
-
-        Rectangle {
-          id: coresCard
-          width: parent.width
-          height: (coreFlow.height + 54) * (1 - root.filterProgress)
-          opacity: 1 - root.filterProgress
-          clip: true
-          radius: 14
-          color: Colors.surface_high
-          border.width: 1
-          border.color: Colors.outline_variant
-
-          Text {
-            anchors { left: parent.left; top: parent.top; leftMargin: 14; topMargin: 12 }
-            text: "CPU CORES"
-            font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: 11
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.6
-            color: Colors.text_alt
-          }
-
-          Flow {
-            id: coreFlow
-            anchors { left: parent.left; right: parent.right; top: parent.top; leftMargin: 14; rightMargin: 14; topMargin: 36 }
-            height: dashboard.coreRows > 0
-              ? dashboard.coreRows * dashboard.coreTileHeight + (dashboard.coreRows - 1) * dashboard.coreGap
-              : 0
-            spacing: 6
-            Repeater {
-              model: dashboard.coreCount
-              delegate: Rectangle {
-                required property int index
-                width: Math.max(54, Math.floor((coreFlow.width - (dashboard.coreColumns - 1) * dashboard.coreGap) / dashboard.coreColumns))
-                height: dashboard.coreTileHeight
-                radius: 7
-                color: Colors.surface_alt
-
-                Column {
-                  anchors.fill: parent
-                  anchors.margins: 6
-                  spacing: 3
-                  Row {
-                    width: parent.width
-                    Text {
-                      width: 28
-                      text: "C" + index
-                      font.family: "JetBrainsMono Nerd Font"
-                      font.pixelSize: 10
-                      color: Colors.text_alt
-                    }
-                    Item { width: parent.width - 28 - coreValue.implicitWidth; height: 1 }
-                    Text {
-                      id: coreValue
-                      text: SystemStatsState.threadPercents[index] + "%"
-                      font.family: "JetBrainsMono Nerd Font"
-                      font.pixelSize: 10
-                      font.weight: Font.DemiBold
-                      color: SystemStatsState.threadPercents[index] >= 85 ? Colors.warning : Colors.text
-                    }
-                  }
                   Rectangle {
-                    width: parent.width
-                    height: 4
-                    radius: 2
-                    color: Colors.surface
-                    Rectangle {
-                      width: parent.width * Math.max(0, Math.min(1, SystemStatsState.threadPercents[index] / 100))
-                      height: parent.height
-                      radius: parent.radius
-                      color: SystemStatsState.threadPercents[index] >= 85 ? Colors.warning : Colors.primary
+                    id: metricRowDivider
+                    width: parent.width - 8
+                    height: 1
+                    anchors.centerIn: parent
+                    color: Colors.divider
+                  }
+
+                  Item {
+                    id: inUseCell
+                    anchors { left: parent.left; right: parent.right; top: parent.top; bottom: metricRowDivider.top }
+                    Column {
+                      anchors.centerIn: parent
+                      spacing: 4
+                      Text {
+                        width: metricsColumn.width
+                        text: "IN USE"
+                        horizontalAlignment: Text.AlignHCenter
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 9
+                        color: Colors.text_alt
+                      }
+                      Text {
+                        width: metricsColumn.width
+                        text: SystemStatsState.memUsedGb + "/" + SystemStatsState.memTotalGb + " GB"
+                        horizontalAlignment: Text.AlignHCenter
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 9
+                        color: Colors.text
+                      }
                     }
                   }
+
+                  Item {
+                    id: availableCell
+                    anchors { left: parent.left; right: parent.right; top: metricRowDivider.bottom; bottom: parent.bottom }
+                    Column {
+                      anchors.centerIn: parent
+                      spacing: 4
+                      Text {
+                        width: metricsColumn.width
+                        text: "AVAILABLE"
+                        horizontalAlignment: Text.AlignHCenter
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 9
+                        color: Colors.text_alt
+                      }
+                      Text {
+                        width: metricsColumn.width
+                        text: SystemStatsState.memFreeGb + " GB"
+                        horizontalAlignment: Text.AlignHCenter
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 9
+                        color: Colors.text
+                      }
+                    }
+                  }
+
                 }
               }
             }
@@ -534,9 +607,7 @@ LauncherBase {
         Rectangle {
           id: processesCard
           width: parent.width
-          height: root.filterMode
-            ? Math.max(148, dashboard.height - summaryRow.height - coresCard.height - dashboardColumn.spacing * 2)
-            : 148
+          height: Math.max(148, dashboard.height - summaryRow.height - dashboardColumn.spacing)
           radius: 14
           color: Colors.surface_high
           border.width: 1
@@ -713,7 +784,6 @@ LauncherBase {
       Connections {
         target: root
         function onCpuHistoryChanged() { cpuTrend.requestPaint() }
-        function onMemoryHistoryChanged() { memoryTrend.requestPaint() }
         function onQueryChanged() {
           root.clearProcessSelection()
           processList.currentIndex = 0

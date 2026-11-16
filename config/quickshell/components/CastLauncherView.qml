@@ -346,7 +346,7 @@ PanelWindow {
 
     Item {
       id: body
-      anchors { top: header.bottom; bottom: footer.top; left: parent.left; right: parent.right; leftMargin: 12; rightMargin: 12; topMargin: 8; bottomMargin: listError.visible ? listError.height + 24 : 8 }
+      anchors { top: header.bottom; bottom: footer.top; left: parent.left; right: parent.right; leftMargin: 12; rightMargin: 12; topMargin: 12; bottomMargin: listError.visible ? listError.height + 28 : 12 }
 
       Text {
         id: sectionLabel
