@@ -58,15 +58,22 @@ PanelWindow {
   }
 
   Rectangle {
+    z: 0
     anchors.fill: parent
     color: Colors.scrim
     opacity: view.controller.opened ? 0.3 : 0
     Behavior on opacity { NumberAnimation { duration: Tokens.motionStandard; easing.type: Tokens.motionEasing } }
   }
-  MouseArea { anchors.fill: parent; onClicked: view.controller.closeLauncher() }
+  MouseArea {
+    z: 1
+    anchors.fill: parent
+    acceptedButtons: Qt.LeftButton
+    onPressed: view.controller.closeLauncher()
+  }
 
   Rectangle {
     id: card
+    z: 2
     objectName: "castLauncherCard"
     anchors.centerIn: parent
     width: Math.min(680, parent.width - 32)
@@ -106,6 +113,7 @@ PanelWindow {
           leftMargin: 56; rightMargin: 14
         }
         visible: view.controller.searchEnabled && !view.controller.detailMode
+        Keys.priority: Keys.BeforeItem
         font.family: view.uiFont
         font.pixelSize: 17
         color: Colors.text
@@ -162,6 +170,15 @@ PanelWindow {
         }
         Keys.onBacktabPressed: function(event) { event.accepted = true }
         Keys.onPressed: function(event) {
+          if (event.key === Qt.Key_Escape) {
+            if (view.controller.headerMenuOpen) view.controller.headerMenuOpen = false
+            else if (view.controller.escapeKeyHandler && view.controller.escapeKeyHandler()) {}
+            else if (view.controller.detailMode) view.controller.detailBackRequested()
+            else if (view.controller.promptMode) view.controller.exitPrompt()
+            else view.controller.closeLauncher()
+            event.accepted = true
+            return
+          }
           if (view.controller.headerMenuOpen) {
             if (event.key === Qt.Key_Down) view.moveHeaderMenu(1)
             else if (event.key === Qt.Key_Up) view.moveHeaderMenu(-1)
@@ -259,6 +276,7 @@ PanelWindow {
       id: navKeys
       anchors.fill: parent
       visible: !view.controller.searchEnabled
+      Keys.priority: Keys.BeforeItem
       Keys.onPressed: function(event) {
         if (view.controller.headerMenuOpen) {
           if (event.key === Qt.Key_Down) view.moveHeaderMenu(1)

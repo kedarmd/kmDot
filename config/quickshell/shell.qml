@@ -40,6 +40,9 @@ Scope {
   property HexLauncher hexLauncher: HexLauncher { scope: shellRoot }
   property WallpaperLauncher wallpaperLauncher: WallpaperLauncher { scope: shellRoot }
   property SystemMonitorLauncher systemMonitorLauncher: SystemMonitorLauncher { scope: shellRoot }
+  property PackageManagerLauncher packageInstallLauncher: PackageManagerLauncher { scope: shellRoot; uninstallMode: false }
+  property PackageManagerLauncher packageRemoveLauncher: PackageManagerLauncher { scope: shellRoot; uninstallMode: true }
+  property SystemUpgradeLauncher systemUpgradeLauncher: SystemUpgradeLauncher { scope: shellRoot }
   property BatteryPopup batteryPopup: BatteryPopup { scope: shellRoot }
   property VolumePopup volumePopup: VolumePopup { scope: shellRoot }
   property CalendarPopup calendarPopup: CalendarPopup { scope: shellRoot }
@@ -107,7 +110,9 @@ Scope {
     const launchers = [shellRoot.kmdotLauncher, shellRoot.systemLauncher,
       shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.keybindsLauncher,
       shellRoot.clipboardLauncher, shellRoot.handyLauncher, shellRoot.hexLauncher,
-      shellRoot.wallpaperLauncher, shellRoot.systemMonitorLauncher]
+      shellRoot.wallpaperLauncher, shellRoot.systemMonitorLauncher,
+      shellRoot.packageInstallLauncher, shellRoot.packageRemoveLauncher,
+      shellRoot.systemUpgradeLauncher]
     for (const l of launchers) {
       if (l && l !== except) l.closeLauncher()
     }
