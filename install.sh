@@ -9,8 +9,8 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Usage: ./install.sh                          (interactive gum choose over all groups)
 #        ./install.sh --all                     (non-interactive, default groups only —
-#                                               includes handy/opencode/zed via no-AUR
-#                                               installers, no AUR for those three)
+#                                               includes upstream installers for Handy,
+#                                               Herdr App, OpenCode, and Zed; no AUR)
 #        ./install.sh --all [--themed-extras] [--server]
 #                                               (defaults plus the given opt-in groups)
 #        ./install.sh [--themed-extras] [--server] [--handy]
@@ -153,6 +153,7 @@ PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet p
 PKGS["opencode"]=""
 PKGS["zed"]=""
 PKGS["handy"]=""
+PKGS["herdr-app"]="libxcb libxkbcommon"
 # Opt-in groups: visible in the picker, excluded from --all
 PKGS["themed-extras"]="btop"
 PKGS["server"]="tailscale jellyfin-server docker containerd"
@@ -164,6 +165,7 @@ APPS=(
   "ghostty"
   "handy"
   "herdr"
+  "herdr-app"
   "hyprland"
   "nvim"
   "opencode"
@@ -180,13 +182,14 @@ APPS=(
 )
 
 # Default groups installed by --all (opt-in groups excluded).
-# handy/opencode/zed are defaults — installed via no-AUR installers, not AUR.
+# handy/herdr-app/opencode/zed are defaults installed by upstream installers.
 DEFAULT_APPS=(
   "battery"
   "fish"
   "ghostty"
   "handy"
   "herdr"
+  "herdr-app"
   "hyprland"
   "nvim"
   "opencode"
@@ -286,6 +289,32 @@ install_herdr() {
     head -5 <<<"$err"
     rm -f "$tmp"
     FAILED_PKGS+=("herdr")
+  fi
+}
+
+install_herdr_app() {
+  local pkg
+  for pkg in ${PKGS["herdr-app"]}; do
+    install_pkg "$pkg"
+  done
+
+  if [[ -x "$HOME/.local/bin/herdr-app" ]]; then
+    echo "  herdr-app: already installed."
+    return 0
+  fi
+
+  echo -n "  Installing Herdr App (official installer)... "
+  tmp=$(mktemp) || { echo "FAILED (mktemp)"; FAILED_PKGS+=("herdr-app"); return 0; }
+  if err=$(curl -fSL -o "$tmp" https://releases.herdr.dev/app/install.sh 2>&1) \
+    && echo "$HERDR_APP_INSTALL_SHA256  $tmp" | sha256sum -c - &>/dev/null \
+    && sh "$tmp"; then
+    rm -f "$tmp"
+    echo "done."
+  else
+    echo "FAILED (download or installer checksum mismatch; re-verify HERDR_APP_INSTALL_SHA256)"
+    head -5 <<<"$err"
+    rm -f "$tmp"
+    FAILED_PKGS+=("herdr-app")
   fi
 }
 
@@ -429,12 +458,15 @@ install_zed() {
 #   versioned checksums for the script path) — accepted residual risk.
 # HERDR_INSTALL_SHA256 pins the upstream installer script; the installer then
 # verifies the downloaded binary against Herdr's release manifest.
+# HERDR_APP_INSTALL_SHA256 pins Herdr App's official installer script. That
+# installer verifies the app archive against the official latest.json manifest.
 # ZEN_VERSION + ZEN_SHA256 pin the official x86_64 release asset.
 OPENCODE_VERSION="1.18.34"
 HANDY_VERSION="0.9.7"
 HANDY_SHA256="e0625120b5a5c1d45e1e536b9d20f5220e7558e50c701e72e014f99c948e363a"
 ZED_INSTALL_SHA256="c42e96c9e3da1fae61ac11b0922ad033e8fcac3c34b44303805ad3796081b502"
 HERDR_INSTALL_SHA256="bf83668c944cff30b3365eee5a4fe15ff61a4b749ab0c73b98e7a203f70893dd"
+HERDR_APP_INSTALL_SHA256="b636d66cf54eb42e16e47fb2be419a9ff2ded0dc1ecc3db46fb2cc193dda92c2"
 ZEN_VERSION="1.24b"
 ZEN_SHA256="323f2682e73e38247a51fbcc75e5628ed2bb9b404db00cf9cf16af329a916fae"
 
@@ -472,6 +504,7 @@ install_handy() {
 for app in "${SELECTED[@]}"; do
   case "$app" in
     opencode) install_opencode; continue ;;
+    herdr-app) install_herdr_app; continue ;;
     zed) install_zed; continue ;;
     handy) install_handy; continue ;;
     herdr) install_herdr; continue ;;

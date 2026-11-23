@@ -4,6 +4,8 @@
 **Guest:** Arch Linux x86_64, 2 vCPU, 3 GiB RAM, QEMU/KVM, `testuser`
 **Install path:** `install.sh --all`, then `config-install.sh --all`, followed by the first-login sync actions documented below.
 
+The repeat validation on 2026-11-23 is documented in [fresh-arch-vm-2026-11-23.md](fresh-arch-vm-2026-11-23.md). That run uses the current scripts and smoke set. Firefox was installed manually during this historical run and is not part of the intended kmDot browser setup; Zen Browser is installed by `install.sh`.
+
 This records an end-to-end install on a clean Arch VM and a smoke pass from its running Hyprland session. The VM was left booted so the setup can be checked interactively.
 
 ## Automated smoke check

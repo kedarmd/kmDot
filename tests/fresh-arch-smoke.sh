@@ -87,6 +87,14 @@ check_no_foreign_packages() {
   [[ -z "$foreign" ]]
 }
 
+check_herdr_app() {
+  local app="$HOME/.local/share/herdr-app/herdr-app"
+  [[ -x "$HOME/.local/bin/herdr-app" ]] \
+    && [[ -f "${XDG_DATA_HOME:-$HOME/.local/share}/applications/herdr-app.desktop" ]] \
+    && [[ -x "$app" ]] \
+    && ! ldd "$app" 2>&1 | grep -q 'not found'
+}
+
 check_quickshell_launcher() {
   [[ -n "${WAYLAND_DISPLAY:-}" ]] || return 1
   pgrep -x quickshell >/dev/null || return 1
@@ -102,8 +110,8 @@ check 'Hyprland session, loaded config, and monitor API are live' check_hyprland
 check 'Quickshell IPC and app launcher open/close' check_quickshell_launcher
 check 'Ghostty starts' ghostty --version
 check 'Herdr upstream CLI starts' herdr --version
+check 'Herdr App launcher and dynamic libraries are installed' check_herdr_app
 check 'Zen Browser starts' zen --version
-check 'Firefox starts' firefox --version
 check 'Zed CLI starts' zed --version
 check 'OpenCode CLI starts' mise exec -- opencode --version
 check 'Handy loads its model catalog' check_handy
