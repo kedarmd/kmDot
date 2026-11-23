@@ -9,7 +9,7 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Usage: ./install.sh                          (interactive gum choose over all groups)
 #        ./install.sh --all                     (non-interactive, default groups only —
-#                                               includes upstream installers for Handy,
+#                                               includes upstream installers for Handy, Hex,
 #                                               Herdr App, OpenCode, Codex, Pi, and Zed;
 #                                               no AUR)
 #        ./install.sh --all [--themed-extras] [--server]
@@ -154,6 +154,7 @@ PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet p
 PKGS["opencode"]=""
 PKGS["zed"]=""
 PKGS["handy"]=""
+PKGS["hex"]=""
 PKGS["herdr-app"]="libxcb libxkbcommon"
 PKGS["codex"]=""
 PKGS["pi"]=""
@@ -168,6 +169,7 @@ APPS=(
   "fish"
   "ghostty"
   "handy"
+  "hex"
   "herdr"
   "herdr-app"
   "hyprland"
@@ -187,13 +189,14 @@ APPS=(
 )
 
 # Default groups installed by --all (opt-in groups excluded).
-# handy/herdr-app/opencode/codex/pi/zed use official upstream/npm installers.
+# handy/hex/herdr-app/opencode/codex/pi/zed use official upstream/npm installers.
 DEFAULT_APPS=(
   "battery"
   "codex"
   "fish"
   "ghostty"
   "handy"
+  "hex"
   "herdr"
   "herdr-app"
   "hyprland"
@@ -497,6 +500,7 @@ HERDR_INSTALL_SHA256="bf83668c944cff30b3365eee5a4fe15ff61a4b749ab0c73b98e7a203f7
 HERDR_APP_INSTALL_SHA256="b636d66cf54eb42e16e47fb2be419a9ff2ded0dc1ecc3db46fb2cc193dda92c2"
 ZEN_VERSION="1.24b"
 ZEN_SHA256="323f2682e73e38247a51fbcc75e5628ed2bb9b404db00cf9cf16af329a916fae"
+HEX_INSTALL_SHA256="6bd033610c36fbbcd744377b1cdad20a440a40bbd69ccae4603e84f950ca6168"
 
 install_handy() {
   if [[ -x "$HOME/.local/bin/handy" ]]; then
@@ -529,6 +533,35 @@ install_handy() {
   fi
 }
 
+install_hex() {
+  if [[ -x "$HOME/.local/bin/hex" ]]; then
+    echo "  hex: already installed."
+    return 0
+  fi
+  # Runtime dependencies from official Arch repositories, as listed by Hex's
+  # Linux install documentation. The installer verifies the signed release.
+  local pkg
+  for pkg in alsa-lib curl jq libxkbcommon libxkbcommon-x11 libx11 libxcb openblas openssl util-linux vulkan-icd-loader wl-clipboard wtype xxd; do
+    install_pkg "$pkg"
+  done
+
+  local tmp
+  tmp=$(mktemp) || { echo "FAILED (mktemp)"; FAILED_PKGS+=("hex"); return 0; }
+  echo -n "  Installing Hex (official signed Linux release)... "
+  if err=$(curl --proto '=https' --tlsv1.2 -fsSL https://anoma.ly/hex/files/install-linux.sh -o "$tmp" 2>&1) \
+    && echo "$HEX_INSTALL_SHA256  $tmp" | sha256sum -c - &>/dev/null \
+    && err=$(sh "$tmp" 2>&1); then
+    echo "done."
+  else
+    echo "FAILED (download, checksum mismatch, or upstream installer error)"
+    head -5 <<<"${err:-Hex installer failed}"
+    rm -f "$tmp"
+    FAILED_PKGS+=("hex")
+    return 0
+  fi
+  rm -f "$tmp"
+}
+
 for app in "${SELECTED[@]}"; do
   case "$app" in
     opencode) install_opencode; continue ;;
@@ -537,6 +570,7 @@ for app in "${SELECTED[@]}"; do
     pi) install_npm_agent "pi" "@mariozechner/pi-coding-agent" "pi" "$PI_VERSION"; continue ;;
     zed) install_zed; continue ;;
     handy) install_handy; continue ;;
+    hex) install_hex; continue ;;
     herdr) install_herdr; continue ;;
   esac
 

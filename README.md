@@ -4,9 +4,9 @@ Dotfiles for CachyOS + Hyprland. Source of truth is this repo; sync copies confi
 
 ## Apps
 
-codex · fish · ghostty · herdr · herdr-app · hyprland · nvim · pi · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
+codex · fish · ghostty · handy · hex · herdr · herdr-app · hyprland · nvim · pi · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
 
-Codex CLI (`@openai/codex`) and Pi coding agent (`@mariozechner/pi-coding-agent`) install from their official npm packages through `./install.sh --all`. Their versions are pinned in the installer. No AUR packages or helpers are used.
+Handy and Hex install from their official upstream releases through `./install.sh --all`; Handy is the default dictation provider. Codex CLI (`@openai/codex`) and Pi coding agent (`@mariozechner/pi-coding-agent`) install from their official npm packages. Their versions are pinned in the installer. No AUR packages or helpers are used.
 
 ## Dictation: Handy and Hex
 
