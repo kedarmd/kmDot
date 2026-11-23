@@ -10,7 +10,8 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Usage: ./install.sh                          (interactive gum choose over all groups)
 #        ./install.sh --all                     (non-interactive, default groups only —
 #                                               includes upstream installers for Handy,
-#                                               Herdr App, OpenCode, and Zed; no AUR)
+#                                               Herdr App, OpenCode, Codex, Pi, and Zed;
+#                                               no AUR)
 #        ./install.sh --all [--themed-extras] [--server]
 #                                               (defaults plus the given opt-in groups)
 #        ./install.sh [--themed-extras] [--server] [--handy]
@@ -154,6 +155,8 @@ PKGS["opencode"]=""
 PKGS["zed"]=""
 PKGS["handy"]=""
 PKGS["herdr-app"]="libxcb libxkbcommon"
+PKGS["codex"]=""
+PKGS["pi"]=""
 # Opt-in groups: visible in the picker, excluded from --all
 PKGS["themed-extras"]="btop"
 PKGS["server"]="tailscale jellyfin-server docker containerd"
@@ -161,6 +164,7 @@ PKGS["server"]="tailscale jellyfin-server docker containerd"
 # Canonical order for display (includes opt-in groups)
 APPS=(
   "battery"
+  "codex"
   "fish"
   "ghostty"
   "handy"
@@ -169,6 +173,7 @@ APPS=(
   "hyprland"
   "nvim"
   "opencode"
+  "pi"
   "quickshell"
   "runtime"
   "sddm"
@@ -182,9 +187,10 @@ APPS=(
 )
 
 # Default groups installed by --all (opt-in groups excluded).
-# handy/herdr-app/opencode/zed are defaults installed by upstream installers.
+# handy/herdr-app/opencode/codex/pi/zed use official upstream/npm installers.
 DEFAULT_APPS=(
   "battery"
+  "codex"
   "fish"
   "ghostty"
   "handy"
@@ -193,6 +199,7 @@ DEFAULT_APPS=(
   "hyprland"
   "nvim"
   "opencode"
+  "pi"
   "quickshell"
   "runtime"
   "sddm"
@@ -416,6 +423,24 @@ install_opencode() {
   fi
 }
 
+install_npm_agent() {
+  local app="$1" package="$2" binary="$3" version="$4" err
+  if (cd "$REPO_DIR" && mise exec -- "$binary" --version 2>&1 | grep -Fq "$version"); then
+    echo "  $app: already installed at v$version."
+    return 0
+  fi
+
+  echo -n "  Installing $app v$version (npm -g)... "
+  if err=$(cd "$REPO_DIR" && mise exec -- npm install -g "$package@$version" 2>&1) \
+    && (cd "$REPO_DIR" && mise exec -- "$binary" --version 2>&1 | grep -Fq "$version"); then
+    echo "done."
+  else
+    echo "FAILED"
+    head -5 <<<"$err"
+    FAILED_PKGS+=("$app")
+  fi
+}
+
 install_zed() {
   if command -v zed &>/dev/null; then
     echo "  zed: already installed."
@@ -460,8 +485,11 @@ install_zed() {
 # verifies the downloaded binary against Herdr's release manifest.
 # HERDR_APP_INSTALL_SHA256 pins Herdr App's official installer script. That
 # installer verifies the app archive against the official latest.json manifest.
+# CODEX_VERSION and PI_VERSION pin the official npm packages for the coding agents.
 # ZEN_VERSION + ZEN_SHA256 pin the official x86_64 release asset.
 OPENCODE_VERSION="1.18.34"
+CODEX_VERSION="0.171.0"
+PI_VERSION="0.73.1"
 HANDY_VERSION="0.9.7"
 HANDY_SHA256="e0625120b5a5c1d45e1e536b9d20f5220e7558e50c701e72e014f99c948e363a"
 ZED_INSTALL_SHA256="c42e96c9e3da1fae61ac11b0922ad033e8fcac3c34b44303805ad3796081b502"
@@ -505,6 +533,8 @@ for app in "${SELECTED[@]}"; do
   case "$app" in
     opencode) install_opencode; continue ;;
     herdr-app) install_herdr_app; continue ;;
+    codex) install_npm_agent "codex" "@openai/codex" "codex" "$CODEX_VERSION"; continue ;;
+    pi) install_npm_agent "pi" "@mariozechner/pi-coding-agent" "pi" "$PI_VERSION"; continue ;;
     zed) install_zed; continue ;;
     handy) install_handy; continue ;;
     herdr) install_herdr; continue ;;

@@ -4,7 +4,9 @@ Dotfiles for CachyOS + Hyprland. Source of truth is this repo; sync copies confi
 
 ## Apps
 
-fish · ghostty · herdr · herdr-app · hyprland · nvim · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
+codex · fish · ghostty · herdr · herdr-app · hyprland · nvim · pi · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
+
+Codex CLI (`@openai/codex`) and Pi coding agent (`@mariozechner/pi-coding-agent`) install from their official npm packages through `./install.sh --all`. Their versions are pinned in the installer. No AUR packages or helpers are used.
 
 ## Dictation: Handy and Hex
 

@@ -18,7 +18,7 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 | Action | Command | Notes |
 |---|---|---|
 | Install selected apps | `./config-install.sh` | Requires `gum` (`pacman -S gum`). Multi-select TUI. |
-| Install packages | `./install.sh` | Installs Arch Linux packages via pacman/yay. Gum TUI + `--all` flag. |
+| Install packages | `./install.sh` | Installs official Arch repository packages and approved upstream releases. Never uses AUR. Gum TUI + `--all` flag. |
 | Single-app sync | `./sync/<app>.sh` | E.g. `./sync/nvim.sh`. Skips the TUI picker. |
 | Uninstall | `./config-uninstall.sh` | Also requires `gum`. Removes symlink targets + kmdot copies. |
 | Switch theme (CLI) | `theme-switcher/main.sh <theme>` | Themes: catppuccin, everforest, nord, tokyonight |
@@ -26,6 +26,13 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 | Quickshell sync | `./sync/quickshell.sh` | Bar config lives in `config/quickshell/`. |
 | Server mode (icon in hidden tray, right group) | hover the chevron (before Wi-Fi), click the server icon | Toggles the headless-server mode (see Key Quirks). |
 | Install polkit rule (one-time, sudo) | `sudo install -Dm644 config/polkit/90-kmdot-server-mode.rules /etc/polkit-1/rules.d/` | Lets the bar start/stop tailscaled/jellyfin/docker/containerd without password prompts. |
+
+## Arch package source policy (strict)
+
+- Install system packages only from the official Arch Linux repositories with `pacman`.
+- **Never install or recommend AUR packages. Never install, bootstrap, or invoke an AUR helper** such as `yay` or `paru`. Apply this to interactive installs, `--all`, dependencies, fallbacks, and test setup.
+- If an application is not available in the official repositories, use its official upstream installer, release binary, AppImage, or npm package with a pinned version where practical. Do not silently fall back to AUR.
+- Keep installer changes and runbooks consistent with this rule. AUR/foreign package checks in the fresh Arch smoke test must continue to pass.
 
 ## Adding an App
 

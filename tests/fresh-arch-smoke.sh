@@ -111,9 +111,11 @@ check 'Quickshell IPC and app launcher open/close' check_quickshell_launcher
 check 'Ghostty starts' ghostty --version
 check 'Herdr upstream CLI starts' herdr --version
 check 'Herdr App launcher and dynamic libraries are installed' check_herdr_app
+check 'Codex CLI starts' mise exec -- codex --version
 check 'Zen Browser starts' zen --version
 check 'Zed CLI starts' zed --version
 check 'OpenCode CLI starts' mise exec -- opencode --version
+check 'Pi coding agent starts' mise exec -- pi --version
 check 'Handy loads its model catalog' check_handy
 check 'Fish startup succeeds' fish -c 'printf fish-ok'
 check 'Starship CLI starts' starship --version
