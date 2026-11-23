@@ -150,6 +150,10 @@ The latest run passed **21 checks, 0 failures**. Checks cover Neovim, Hyprland a
 
 ## Installation details and recovery
 
+### Follow-up: Archinstall's automatic drive setup
+
+While preparing the physical-laptop guide, I booted the 2026.10 ISO in a disposable VM and inspected Archinstall's interactive automatic layout. With the 30 GiB VM drive selected, the preview showed it would erase and use that full drive; choosing `ext4` kept the main filesystem ext4. This verifies the automatic full-drive choice in Archinstall's UI. The complete guided installation and post-install smoke check were not rerun through this interactive path; the 21-check pass above belongs to the earlier VM setup recorded in this document.
+
 ### VM choices used for validation
 
 | Setting | Value |
