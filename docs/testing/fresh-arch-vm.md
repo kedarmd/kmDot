@@ -1,5 +1,7 @@
 # Fresh Arch VM validation
 
+For the physical laptop installation procedure, use the [Arch laptop setup guide](../install/arch-laptop-setup.md). This document is retained for VM validation history.
+
 **Run date:** 2026-10-31
 **Guest:** Arch Linux x86_64, 2 vCPU, 3 GiB RAM, QEMU/KVM, `testuser`
 **Install path:** `install.sh --all`, then `config-install.sh --all`, followed by the first-login sync actions documented below.

@@ -1,6 +1,6 @@
-# Fresh Arch install and kmDot setup
+# Fresh Arch VM validation — 2026-11-23
 
-This guide follows the install from the first ISO boot through the kmDot smoke test. Follow the numbered sections in order. Arch is installed first; clone the repository only after the new system boots and you can sign in.
+This file records the agent-run VM setup and validation. For the physical laptop procedure, follow the [Arch laptop setup guide](../install/arch-laptop-setup.md).
 
 ## 1. Prepare and boot the Arch ISO
 

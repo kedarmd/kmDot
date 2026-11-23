@@ -58,9 +58,13 @@ The screenshots below were captured on an empty Hyprland workspace with no appli
 
 ## Install
 
+For a fresh physical laptop install, follow the [Arch Linux and kmDot setup guide](docs/install/arch-laptop-setup.md) from preparing the USB through the final smoke check.
+
+For an already installed Arch system:
+
 ```bash
-sudo pacman -S gum
-./config-install.sh   # multi-select TUI
+./install.sh --all
+./config-install.sh --all
 ```
 
 Single-app re-sync: `./sync/<app>.sh` (skips TUI).
