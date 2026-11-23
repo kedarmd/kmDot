@@ -172,3 +172,11 @@ cd kmDot
 ./install.sh --all
 ./config-install.sh --all
 ```
+
+## Installer additions: Codex, Pi, and Hex
+
+The installer now includes Codex CLI (`@openai/codex` v0.171.0) and Pi (`@mariozechner/pi-coding-agent` v0.73.1) from their official npm packages through mise. Handy remains a default app and the default dictation provider. Hex is included in `install.sh --all` and uses the [official Linux installer](https://github.com/anomalyco/hex/blob/dev/docs/linux.md#install-a-published-build), pinned by installer-script SHA-256; that installer verifies the signed Hex release. Its runtime libraries and Wayland paste helpers are installed from official Arch repositories. No AUR package or helper is used.
+
+Hex's initial model download is a separate first-launch step (`~/.local/bin/hex model install`); it can take longer than the app install depending on connection speed. The kmDot QuickShell sync disables Hex's independent autostart and selects Handy by default, so Hex remains available for manual provider switching without replacing Handy at login.
+
+On 2026-11-23, the updated scripts were pulled into `kmdot-arch-selftest-20261123` and run directly. `./install.sh --all` installed Codex v0.171.0, then stopped at the `openblas` dependency because the sudo password available for this VM was rejected; Hex and later packages, including Pi, were not installed in that run. `./config-install.sh --all` synced the app configs and set `~/.config/kmdot/dictation-provider` to `handy`; SDDM sync was the only reported app failure because it also needed sudo. The updated smoke script reported 19 passed and 2 failed: Pi and Hex were absent, while the Handy model catalog and default-provider checks passed. The previous full smoke result above predates these additions, so a complete validation of Codex, Pi, and Hex remains pending a successful `./install.sh --all` on the clean guest.
