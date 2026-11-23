@@ -1,6 +1,6 @@
 # Install Arch Linux and kmDot on a laptop
 
-This is the hands-on guide for replacing the current OS with Arch Linux on a physical laptop, then installing kmDot from GitHub. Follow the numbered steps in order. The agent-run VM procedure and validation history are kept separately in the [VM validation record](../testing/fresh-arch-vm-2026-11-23.md).
+This is the hands-on guide for replacing the current OS with Arch Linux on a physical laptop, then installing kmDot from GitHub. Follow the numbered steps in order. VM installation and validation notes are kept in a separate internal record.
 
 ## 1. Prepare the laptop and USB installer
 
@@ -76,7 +76,7 @@ cd ~/kmDot
 ./tests/fresh-arch-smoke.sh
 ```
 
-The previous clean Arch VM run passed **21 checks, 0 failures**. The checks cover the desktop session and configs, apps including Codex, Pi, Herdr App, Zen Browser, Handy, and Hex, Handy as the default dictation provider, SDDM, NetworkManager, locale generation, and the absence of foreign/AUR packages.
+The smoke check covers the desktop session and configs, apps including Codex, Pi, Herdr App, Zen Browser, Handy, and Hex, Handy as the default dictation provider, SDDM, NetworkManager, locale generation, and the absence of foreign/AUR packages.
 
 Handy is the default dictation app. Hex is installed as the alternate provider. Hex's CLI is installed by the scripts; its speech model is a separate first-run download:
 
