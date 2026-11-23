@@ -501,41 +501,88 @@ HERDR_APP_INSTALL_SHA256="b636d66cf54eb42e16e47fb2be419a9ff2ded0dc1ecc3db46fb2cc
 ZEN_VERSION="1.24b"
 ZEN_SHA256="323f2682e73e38247a51fbcc75e5628ed2bb9b404db00cf9cf16af329a916fae"
 HEX_INSTALL_SHA256="6bd033610c36fbbcd744377b1cdad20a440a40bbd69ccae4603e84f950ca6168"
+HEX_ICON_VERSION="3.4.0"
+HEX_ICON_SHA256="c6715346520daf5d991760d3b2016d014e48329fc31af7b621e807a895df2194"
 
 install_handy() {
-  if [[ -x "$HOME/.local/bin/handy" ]]; then
-    echo "  handy: already installed."
-    return 0
-  fi
-  if pacman -Qi handy-bin &>/dev/null; then
-    echo "  WARNING: legacy package handy-bin may shadow ~/.local/bin/handy."
-    echo "  Remove it with: sudo pacman -Rns handy-bin"
-  fi
-  # Runtime deps from official repos: fuse2 runs the AppImage,
-  # gtk-layer-shell is the overlay window layer.
-  install_pkg "gtk-layer-shell"
-  install_pkg "fuse2"
+  local handy_bin="$HOME/.local/bin/handy"
+  if [[ ! -x "$handy_bin" ]]; then
+    if pacman -Qi handy-bin &>/dev/null; then
+      echo "  WARNING: legacy package handy-bin may shadow ~/.local/bin/handy."
+      echo "  Remove it with: sudo pacman -Rns handy-bin"
+    fi
+    # Runtime deps from official repos: fuse2 runs the AppImage,
+    # gtk-layer-shell is the overlay window layer.
+    install_pkg "gtk-layer-shell"
+    install_pkg "fuse2"
 
-  mkdir -p "$HOME/.local/bin"
-  echo -n "  Installing handy v$HANDY_VERSION (upstream AppImage)... "
-  tmp=$(mktemp "$HOME/.local/bin/.handy.XXXXXX") || { echo "FAILED (mktemp)"; FAILED_PKGS+=("handy"); return 0; }
-  if err=$(curl -fSL -o "$tmp" \
-    "https://github.com/cjpais/Handy/releases/download/v$HANDY_VERSION/Handy_${HANDY_VERSION}_amd64.AppImage" 2>&1) \
-    && echo "$HANDY_SHA256  $tmp" | sha256sum -c - &>/dev/null \
-    && chmod +x "$tmp" \
-    && mv "$tmp" "$HOME/.local/bin/handy"; then
-    echo "done."
+    mkdir -p "$HOME/.local/bin"
+    echo -n "  Installing handy v$HANDY_VERSION (upstream AppImage)... "
+    local tmp err
+    tmp=$(mktemp "$HOME/.local/bin/.handy.XXXXXX") || { echo "FAILED (mktemp)"; FAILED_PKGS+=("handy"); return 0; }
+    if err=$(curl -fSL -o "$tmp" \
+      "https://github.com/cjpais/Handy/releases/download/v$HANDY_VERSION/Handy_${HANDY_VERSION}_amd64.AppImage" 2>&1) \
+      && echo "$HANDY_SHA256  $tmp" | sha256sum -c - &>/dev/null \
+      && chmod +x "$tmp" \
+      && mv "$tmp" "$handy_bin"; then
+      echo "done."
+    else
+      echo "FAILED (download or checksum mismatch — upstream asset may have changed; re-verify HANDY_SHA256)"
+      head -5 <<<"$err"
+      rm -f "$tmp"
+      FAILED_PKGS+=("handy")
+      return 0
+    fi
   else
-    echo "FAILED (download or checksum mismatch — upstream asset may have changed; re-verify HANDY_SHA256)"
-    head -5 <<<"$err"
-    rm -f "$tmp"
+    echo "  handy: already installed; registering its application launcher."
+  fi
+
+  # The upstream AppImage contains a desktop entry and icons, but installing
+  # only the AppImage binary does not register an app with desktop launchers.
+  # Extract just the small metadata assets so Handy is discoverable by its name
+  # and has its official icon. Do this on reruns too, repairing existing installs.
+  local data_home="${XDG_DATA_HOME:-$HOME/.local/share}" extract_dir
+  extract_dir=$(mktemp -d) || { echo "FAILED (could not create temporary directory)"; FAILED_PKGS+=("handy"); return 0; }
+  if (cd "$extract_dir" && "$handy_bin" --appimage-extract Handy.desktop >/dev/null 2>&1) \
+    && (cd "$extract_dir" && "$handy_bin" --appimage-extract Handy.png >/dev/null 2>&1) \
+    && [[ -f "$extract_dir/squashfs-root/Handy.desktop" && -f "$extract_dir/squashfs-root/Handy.png" ]] \
+    && install -Dm644 "$extract_dir/squashfs-root/Handy.desktop" "$data_home/applications/handy.desktop" \
+    && install -Dm644 "$extract_dir/squashfs-root/Handy.png" "$data_home/icons/hicolor/256x256/apps/handy.png"; then
+    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$data_home/applications" >/dev/null 2>&1 || true
+    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$data_home/icons/hicolor" >/dev/null 2>&1 || true
+    rm -rf "$extract_dir"
+    echo "  handy launcher and icon registered."
+  else
+    rm -rf "$extract_dir"
+    echo "  FAILED (could not extract Handy's desktop entry and icon from its AppImage)"
     FAILED_PKGS+=("handy")
   fi
 }
 
+install_hex_icon() {
+  local data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+  local icon_tmp
+  icon_tmp=$(mktemp) || return 1
+  if curl --proto '=https' --tlsv1.2 -fsSL \
+    "https://raw.githubusercontent.com/anomalyco/hex/v$HEX_ICON_VERSION/packaging/linux/icons/hicolor/256x256/apps/anomaly.hex.png" \
+    -o "$icon_tmp" \
+    && echo "$HEX_ICON_SHA256  $icon_tmp" | sha256sum -c - &>/dev/null \
+    && install -Dm644 "$icon_tmp" "$data_home/icons/hicolor/256x256/apps/anomaly.hex.png"; then
+    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$data_home/icons/hicolor" >/dev/null 2>&1 || true
+    rm -f "$icon_tmp"
+    return 0
+  fi
+  rm -f "$icon_tmp"
+  return 1
+}
+
 install_hex() {
   if [[ -x "$HOME/.local/bin/hex" ]]; then
-    echo "  hex: already installed."
+    echo "  hex: already installed; refreshing its application icon."
+    if ! install_hex_icon; then
+      echo "  FAILED (could not download or verify Hex's official icon)"
+      FAILED_PKGS+=("hex")
+    fi
     return 0
   fi
   # Runtime dependencies from official Arch repositories, as listed by Hex's
@@ -560,6 +607,10 @@ install_hex() {
     return 0
   fi
   rm -f "$tmp"
+  if ! install_hex_icon; then
+    echo "  FAILED (could not download or verify Hex's official icon)"
+    FAILED_PKGS+=("hex")
+  fi
 }
 
 for app in "${SELECTED[@]}"; do
