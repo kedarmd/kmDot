@@ -486,7 +486,10 @@ PanelWindow {
         }
         spacing: 8
 
-        SystemStats { launcherRef: systemMonitorLauncher }
+        BarIsland {
+          visible: SystemStatsState.anyEnabled
+          SystemStats { launcherRef: systemMonitorLauncher }
+        }
         BarIsland {
           Network { popupRef: wifiDropdown; active: wifiDropdown.opened }
           Audio { popupRef: volumePopup; active: volumePopup.opened }
