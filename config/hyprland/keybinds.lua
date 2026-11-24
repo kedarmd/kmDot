@@ -14,10 +14,11 @@ hl.bind(
 hl.bind(mod .. " + B", hl.dsp.exec_cmd("zen-browser")) -- Open Zen browser
 hl.bind(mod .. " + F", hl.dsp.exec_cmd("/usr/bin/nautilus")) -- Open file manager
 hl.bind(mod .. " + SPACE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-launcher'")) -- Applications (kmDot launcher)
+hl.bind("ALT + SPACE", hl.dsp.global("anomaly.hex:dictation")) -- Hex dictation
+hl.bind(mod .. " + H", hl.dsp.exec_cmd("hex window show history")) -- Hex transcription history
 hl.bind(mod .. " + T", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-theme'")) -- Theme switcher (quickshell)
  hl.bind(mod .. " + V", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-clipboard'")) -- Clipboard history (quickshell)
 
-hl.bind(mod .. " + H", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/dictation-provider.sh launcher'")) -- Dictation launcher (selected app)
 hl.bind(mod .. " + W", hl.dsp.window.close()) -- Close window
 hl.bind(mod .. " + SHIFT + E", hl.dsp.exit()) -- Exit Hyprland
 hl.bind(mod .. " + L", hl.dsp.exec_cmd("~/.config/kmdot/quickshell/scripts/lock-screen.sh")) -- Lock screen
@@ -104,8 +105,3 @@ hl.bind("PRINT", hl.dsp.exec_cmd("hyprshot -m region")) -- Screenshot region
 -- Custom scripts
 hl.bind(mod .. " + J", hl.dsp.layout("togglesplit")) -- Toggle split layout
 hl.bind("SUPER + CTRL + SPACE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-wallpaper'")) -- Wallpaper switcher (quickshell)
-
-hl.bind(
-	"ALT + SPACE",
-	hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/dictation-provider.sh dictate'")
-) -- Toggle selected dictation app

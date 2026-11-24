@@ -9,14 +9,13 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Usage: ./install.sh                          (interactive gum choose over all groups)
 #        ./install.sh --all                     (non-interactive, default groups only —
-#                                               includes upstream installers for Handy, Hex,
-#                                               Herdr App, OpenCode, Codex, Pi, and Zed;
+#                                               includes upstream installers for Herdr App,
+#                                               OpenCode, Codex, Pi, and Zed;
 #                                               no AUR)
 #        ./install.sh --all [--themed-extras] [--server]
 #                                               (defaults plus the given opt-in groups)
-#        ./install.sh [--themed-extras] [--server] [--handy]
-#                                               (non-interactive, just the given opt-in groups;
-#                                                --handy kept for compatibility, handy is a default)
+#        ./install.sh [--themed-extras] [--server]
+#                                               (non-interactive, just the given opt-in groups)
 
 echo '
 ██╗                   ██████╗              ██╗
@@ -39,14 +38,14 @@ OPT_INS=()
 for arg in "$@"; do
   case "$arg" in
     --all) MODE="all" ;;
-    --themed-extras|--server|--handy) OPT_INS+=("${arg#--}") ;;
+    --themed-extras|--server) OPT_INS+=("${arg#--}") ;;
     -h|--help)
       sed -n '/^# Usage:/,/^$/p' "$0" | sed 's/^# \?//'
       exit 0
       ;;
     *)
       echo "Unknown option: $arg" >&2
-      echo "Usage: ./install.sh [--all] [--themed-extras] [--server] [--handy]" >&2
+      echo "Usage: ./install.sh [--all] [--themed-extras] [--server]" >&2
       exit 2
       ;;
   esac
@@ -82,8 +81,8 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # Bootstrap: mise via the upstream install pipe. curl|sh here is an accepted
 # risk (mise publishes no versioned checksums for the bootstrap script);
-# every versioned payload below (opencode, handy, zed installer) is pinned,
-# and handy + the zed install script are hash-verified.
+# every versioned payload below (opencode, zed installer) is pinned and the
+# zed install script is hash-verified.
 ensure_mise() {
   if command -v mise &>/dev/null; then
     echo "mise is already installed."
@@ -154,8 +153,6 @@ PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet p
 # Apps installed from upstream releases/installers; no package helper or AUR.
 PKGS["opencode"]=""
 PKGS["zed"]=""
-PKGS["handy"]=""
-PKGS["hex"]=""
 PKGS["herdr-app"]="libxcb libxkbcommon"
 PKGS["codex"]=""
 PKGS["pi"]=""
@@ -169,8 +166,6 @@ APPS=(
   "codex"
   "fish"
   "ghostty"
-  "handy"
-  "hex"
   "herdr"
   "herdr-app"
   "hyprland"
@@ -191,14 +186,12 @@ APPS=(
 )
 
 # Default groups installed by --all (opt-in groups excluded).
-# handy/hex/herdr-app/opencode/codex/pi/zed use official upstream/npm installers.
+# herdr-app/opencode/codex/pi/zed use official upstream/npm installers.
 DEFAULT_APPS=(
   "battery"
   "codex"
   "fish"
   "ghostty"
-  "handy"
-  "hex"
   "herdr"
   "herdr-app"
   "hyprland"
@@ -219,7 +212,7 @@ DEFAULT_APPS=(
 # --- Selection (APPS known here; interactive picker needs gum above) ---
 
 if [[ "$MODE" == "all" ]]; then
-  # Dedupe: --all already includes handy, so --all --handy must not double it.
+  # Dedupe any overlapping default and opt-in groups.
   SELECTED=($(printf "%s\n" "${DEFAULT_APPS[@]}" "${OPT_INS[@]}" | awk '!seen[$0]++'))
 elif [ ${#OPT_INS[@]} -gt 0 ]; then
   MODE="opt-in"
@@ -482,8 +475,6 @@ install_zed() {
 # Pinned — never resolve "latest" at install time.
 # OPENCODE_VERSION: latest opencode-ai on npm as of 2026-10-03
 #   (`npm view opencode-ai versions`); re-verify on bump.
-# HANDY_VERSION + HANDY_SHA256: GitHub release v0.9.7 asset
-#   Handy_0.9.7_amd64.AppImage (sha256 computed 2026-10-03); re-verify on bump.
 # ZED_INSTALL_SHA256: https://zed.dev/install.sh fetched 2026-10-03. Pins the
 #   installer logic; the script itself tracks Zed stable (Zed publishes no
 #   versioned checksums for the script path) — accepted residual risk.
@@ -496,126 +487,11 @@ install_zed() {
 OPENCODE_VERSION="1.18.34"
 CODEX_VERSION="0.171.0"
 PI_VERSION="0.73.1"
-HANDY_VERSION="0.9.7"
-HANDY_SHA256="e0625120b5a5c1d45e1e536b9d20f5220e7558e50c701e72e014f99c948e363a"
 ZED_INSTALL_SHA256="c42e96c9e3da1fae61ac11b0922ad033e8fcac3c34b44303805ad3796081b502"
 HERDR_INSTALL_SHA256="bf83668c944cff30b3365eee5a4fe15ff61a4b749ab0c73b98e7a203f70893dd"
 HERDR_APP_INSTALL_SHA256="b636d66cf54eb42e16e47fb2be419a9ff2ded0dc1ecc3db46fb2cc193dda92c2"
 ZEN_VERSION="1.24b"
 ZEN_SHA256="323f2682e73e38247a51fbcc75e5628ed2bb9b404db00cf9cf16af329a916fae"
-HEX_INSTALL_SHA256="6bd033610c36fbbcd744377b1cdad20a440a40bbd69ccae4603e84f950ca6168"
-HEX_ICON_VERSION="3.4.0"
-HEX_ICON_SHA256="c6715346520daf5d991760d3b2016d014e48329fc31af7b621e807a895df2194"
-
-install_handy() {
-  local handy_bin="$HOME/.local/bin/handy"
-  if [[ ! -x "$handy_bin" ]]; then
-    if pacman -Qi handy-bin &>/dev/null; then
-      echo "  WARNING: legacy package handy-bin may shadow ~/.local/bin/handy."
-      echo "  Remove it with: sudo pacman -Rns handy-bin"
-    fi
-    # Runtime deps from official repos: fuse2 runs the AppImage,
-    # gtk-layer-shell is the overlay window layer.
-    install_pkg "gtk-layer-shell"
-    install_pkg "fuse2"
-
-    mkdir -p "$HOME/.local/bin"
-    echo -n "  Installing handy v$HANDY_VERSION (upstream AppImage)... "
-    local tmp err
-    tmp=$(mktemp "$HOME/.local/bin/.handy.XXXXXX") || { echo "FAILED (mktemp)"; FAILED_PKGS+=("handy"); return 0; }
-    if err=$(curl -fSL -o "$tmp" \
-      "https://github.com/cjpais/Handy/releases/download/v$HANDY_VERSION/Handy_${HANDY_VERSION}_amd64.AppImage" 2>&1) \
-      && echo "$HANDY_SHA256  $tmp" | sha256sum -c - &>/dev/null \
-      && chmod +x "$tmp" \
-      && mv "$tmp" "$handy_bin"; then
-      echo "done."
-    else
-      echo "FAILED (download or checksum mismatch — upstream asset may have changed; re-verify HANDY_SHA256)"
-      head -5 <<<"$err"
-      rm -f "$tmp"
-      FAILED_PKGS+=("handy")
-      return 0
-    fi
-  else
-    echo "  handy: already installed; registering its application launcher."
-  fi
-
-  # The upstream AppImage contains a desktop entry and icons, but installing
-  # only the AppImage binary does not register an app with desktop launchers.
-  # Extract just the small metadata assets so Handy is discoverable by its name
-  # and has its official icon. Do this on reruns too, repairing existing installs.
-  local data_home="${XDG_DATA_HOME:-$HOME/.local/share}" extract_dir
-  extract_dir=$(mktemp -d) || { echo "FAILED (could not create temporary directory)"; FAILED_PKGS+=("handy"); return 0; }
-  if (cd "$extract_dir" && "$handy_bin" --appimage-extract Handy.desktop >/dev/null 2>&1) \
-    && (cd "$extract_dir" && "$handy_bin" --appimage-extract Handy.png >/dev/null 2>&1) \
-    && [[ -f "$extract_dir/squashfs-root/Handy.desktop" && -f "$extract_dir/squashfs-root/Handy.png" ]] \
-    && install -Dm644 "$extract_dir/squashfs-root/Handy.desktop" "$data_home/applications/handy.desktop" \
-    && install -Dm644 "$extract_dir/squashfs-root/Handy.png" "$data_home/icons/hicolor/256x256/apps/handy.png"; then
-    command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$data_home/applications" >/dev/null 2>&1 || true
-    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$data_home/icons/hicolor" >/dev/null 2>&1 || true
-    rm -rf "$extract_dir"
-    echo "  handy launcher and icon registered."
-  else
-    rm -rf "$extract_dir"
-    echo "  FAILED (could not extract Handy's desktop entry and icon from its AppImage)"
-    FAILED_PKGS+=("handy")
-  fi
-}
-
-install_hex_icon() {
-  local data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
-  local icon_tmp
-  icon_tmp=$(mktemp) || return 1
-  if curl --proto '=https' --tlsv1.2 -fsSL \
-    "https://raw.githubusercontent.com/anomalyco/hex/v$HEX_ICON_VERSION/packaging/linux/icons/hicolor/256x256/apps/anomaly.hex.png" \
-    -o "$icon_tmp" \
-    && echo "$HEX_ICON_SHA256  $icon_tmp" | sha256sum -c - &>/dev/null \
-    && install -Dm644 "$icon_tmp" "$data_home/icons/hicolor/256x256/apps/anomaly.hex.png"; then
-    command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -f -t "$data_home/icons/hicolor" >/dev/null 2>&1 || true
-    rm -f "$icon_tmp"
-    return 0
-  fi
-  rm -f "$icon_tmp"
-  return 1
-}
-
-install_hex() {
-  if [[ -x "$HOME/.local/bin/hex" ]]; then
-    echo "  hex: already installed; refreshing its application icon."
-    if ! install_hex_icon; then
-      echo "  FAILED (could not download or verify Hex's official icon)"
-      FAILED_PKGS+=("hex")
-    fi
-    return 0
-  fi
-  # Runtime dependencies from official Arch repositories, as listed by Hex's
-  # Linux install documentation. The installer verifies the signed release.
-  local pkg
-  for pkg in alsa-lib curl jq libxkbcommon libxkbcommon-x11 libx11 libxcb openblas openssl util-linux vulkan-icd-loader wl-clipboard wtype xxd; do
-    install_pkg "$pkg"
-  done
-
-  local tmp
-  tmp=$(mktemp) || { echo "FAILED (mktemp)"; FAILED_PKGS+=("hex"); return 0; }
-  echo -n "  Installing Hex (official signed Linux release)... "
-  if err=$(curl --proto '=https' --tlsv1.2 -fsSL https://anoma.ly/hex/files/install-linux.sh -o "$tmp" 2>&1) \
-    && echo "$HEX_INSTALL_SHA256  $tmp" | sha256sum -c - &>/dev/null \
-    && err=$(sh "$tmp" 2>&1); then
-    echo "done."
-  else
-    echo "FAILED (download, checksum mismatch, or upstream installer error)"
-    head -5 <<<"${err:-Hex installer failed}"
-    rm -f "$tmp"
-    FAILED_PKGS+=("hex")
-    return 0
-  fi
-  rm -f "$tmp"
-  if ! install_hex_icon; then
-    echo "  FAILED (could not download or verify Hex's official icon)"
-    FAILED_PKGS+=("hex")
-  fi
-}
-
 for app in "${SELECTED[@]}"; do
   case "$app" in
     opencode) install_opencode; continue ;;
@@ -623,8 +499,6 @@ for app in "${SELECTED[@]}"; do
     codex) install_npm_agent "codex" "@openai/codex" "codex" "$CODEX_VERSION"; continue ;;
     pi) install_npm_agent "pi" "@mariozechner/pi-coding-agent" "pi" "$PI_VERSION"; continue ;;
     zed) install_zed; continue ;;
-    handy) install_handy; continue ;;
-    hex) install_hex; continue ;;
     herdr) install_herdr; continue ;;
   esac
 

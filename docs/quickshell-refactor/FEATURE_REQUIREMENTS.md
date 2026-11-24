@@ -37,7 +37,7 @@ The audit covered every file under `config/quickshell/`, Quickshell-specific Hyp
 - **Purpose / surface:** Launcher.
 - **Status:** Implemented and functional.
 - **Entry points:** Super+K; `kmdot-kmdot` socket. Entries can open other launchers.
-- **Capabilities:** Top-level access to Applications, Clipboard, Connections, Handy, Keybinds, System, and Themes. Search can reach Wi-Fi/Bluetooth children and system commands through nested entries; activation dispatches to the owning launcher or runs the selected system action.
+- **Capabilities:** Top-level access to Applications, Clipboard, Connections, Keybinds, System, and Themes. Search can reach Wi-Fi/Bluetooth children and system commands through nested entries; activation dispatches to the owning launcher or runs the selected system action.
 - **State/data:** Static entries and child item pools supplied by the relevant launchers.
 - **Dependencies/integrations:** Launcher coordinator in `shell.qml`, child launchers, `LauncherBase.qml`, socket helper.
 - **Errors/edge cases:** Empty query presents top-level entries; dynamic theme pool is not included in nested search. Opening one coordinated surface closes competing launchers/popups.
@@ -205,10 +205,10 @@ The audit covered every file under `config/quickshell/`, Quickshell-specific Hyp
 - **Purpose / surface:** Hidden top bar entry and popup panel; desktop service.
 - **Status:** Implemented and functional, subject to Polkit rule installation for privileged system services.
 - **Entry points:** Hidden tray server icon/dropdown; `server-mode.sh` CLI.
-- **Capabilities:** Toggles server mode; reports mode/inhibitor/Tailscale/Jellyfin status and Tailscale IP; starts/stops services; can manage service controls; suspends selected desktop/background services and processes while active, starts them again when disabled; installs sleep/lid-switch inhibitor. Keeps Handy hidden when restarted.
+- **Capabilities:** Toggles server mode; reports mode/inhibitor/Tailscale/Jellyfin status and Tailscale IP; starts/stops services; can manage service controls; suspends selected desktop/background services and processes while active, starts them again when disabled; installs sleep/lid-switch inhibitor.
 - **State/data:** Marker/config under user config/cache; user and system service state; inhibitor unit state.
 - **Dependencies/integrations:** `server-mode.sh`, systemd user/system, Tailscale, Jellyfin, Docker/containerd and configured background processes; Polkit rule `90-kmdot-server-mode.rules`; shared `serverstatus.js`; quickshell status polling.
-- **Errors/edge cases:** Service operations may warn/fail without Polkit rule or installed service; state reflects actual system service status; Handy must be killed/restarted hidden to avoid surfacing its window. Server mode’s sleep inhibition is independent of display DPMS behavior.
+- **Errors/edge cases:** Service operations may warn/fail without Polkit rule or installed service; state reflects actual system service status. Server mode’s sleep inhibition is independent of display DPMS behavior.
 - **Acceptance criteria:** Mode transitions update status and inhibitor; configured services/processes stop/start as intended; status identifies failures instead of claiming success; Polkit authorization supports one-click operation after installation.
 - **Sources:** `config/quickshell/modules/ServerMode.qml`, `config/quickshell/menu/ServerModeDropdown.qml`, `config/quickshell/components/serverstatus.js`, `config/quickshell/scripts/server-mode.sh`, `config/polkit/90-kmdot-server-mode.rules`, `config/hyprland/hypridle.conf`.
 
@@ -223,18 +223,6 @@ The audit covered every file under `config/quickshell/`, Quickshell-specific Hyp
 - **Errors/edge cases:** Display-off timeout occurs after lock timeout and before suspend; server mode inhibits suspend but still allows display off. Resume path re-enables DPMS.
 - **Acceptance criteria:** Idle actions are consistent with configured mode, lock/suspend/DPMS ordering, and server sleep inhibition; activity restores displays.
 - **Sources:** `config/quickshell/modules/AttentionMode.qml`, `config/quickshell/scripts/attention-mode.sh`, `config/hyprland/hypridle.conf`, `config/hyprland/appearance.lua`.
-
-### QS-19 — Handy transcription controls and history
-
-- **Purpose / surface:** Hidden top bar entry, popup panel, launcher, external recording overlay.
-- **Status:** Implemented and functional; integrations depend on Handy’s installed app/data files.
-- **Entry points:** Super+H opens Handy launcher; hidden bar Handy entry opens rich popup; Super+I invokes Hyprland recording toggle; Handy app may show its recording overlay.
-- **Capabilities:** Browse/select local models, persist model selection and restart Handy hidden, inspect transcription history, copy text, retry retained recordings, play/pause audio, edit/save transcription in popup, and delete WAV/database records with confirmation. Launcher provides keyboard-focused model/history actions. Recording toggle begins capture; Enter submits and Escape cancels.
-- **State/data:** Handy settings store and history database; model catalog; transcript text; WAV availability; playback/retry/delete state.
-- **Dependencies/integrations:** `HandyStore.qml`, `handy-control.mjs`, Handy CLI/app, `~/.local/share/com.pais.handy/{settings_store.json,history.db}`, SQLite, PipeWire/cpal default source, `wl-copy`, Hyprland `toggle_handy.sh` and window rules.
-- **Errors/edge cases:** History may outlive WAV files; retry is unavailable then, while delete tolerates missing WAV. Model changes restart Handy hidden. Playback survives switching between launcher and popup and stops after both close. Handy may retain an old per-app PipeWire source route after system-default changes; backend route limitations are documented in AGENTS.md.
-- **Acceptance criteria:** Model selection persists and reloads; history actions operate on the selected record; retry requires available audio; deletion removes row/audio and stops playback; switching views preserves active playback; recording key flow submits/cancels.
-- **Sources:** `config/quickshell/HandyStore.qml`, `config/quickshell/menu/HandyPopup.qml`, `HandyLauncher.qml`, `config/quickshell/modules/Handy.qml`, `config/quickshell/scripts/handy-control.mjs`, `config/hyprland/scripts/toggle_handy.sh`, `config/hyprland/rules.lua`, `config/hyprland/keybinds.lua`, `config/quickshell/shell.qml`.
 
 ### QS-20 — OpenCode and AI-agent usage panels
 
@@ -266,7 +254,7 @@ The audit covered every file under `config/quickshell/`, Quickshell-specific Hyp
 - **Startup/deployment:** `sync/quickshell.sh` requires a selected theme, renders palette data, replaces the deployed Quickshell tree under `~/.config/kmdot/quickshell`, links `~/.config/quickshell`, marks shell scripts executable, and may start clipboard watchers. Hyprland autostart starts Quickshell and clipboard history. Quickshell package is installed/removed by repository app configuration.
 - **Theme compatibility:** Theme switching is shared with other applications. Quickshell consumes a complete validated role schema from each theme’s `quickshell.conf`; generated `Colors.qml` is deployed only and the hook restarts the shell after writing it. A redesign must preserve the switcher contract while replacing the palette data model only through an approved later phase.
 - **Shared dependencies:** Hyprland wallpaper helpers are also used by wallpaper startup/theme switching/SDDM; theme-switcher scripts drive multiple applications; system packages, PipeWire/NetworkManager/BlueZ, clipboard scripts, systemd and PAM are broader workstation integrations. Do not remove them solely because a UI caller changes.
-- **Related but out of Quickshell scope:** `config/sddm/themes/kmd-quickshell/` is a separate SDDM login theme, and `config/hyprland/scripts/toggle_handy.sh` creates Handy’s transcription window. They are documented here as integrations, not identified as Quickshell implementation files.
+- **Related but out of Quickshell scope:** `config/sddm/themes/kmd-quickshell/` is a separate SDDM login theme. It is documented here as integrations.
 
 ## Partially implemented, referenced, and potentially obsolete items
 
@@ -288,8 +276,8 @@ The audit covered every file under `config/quickshell/`, Quickshell-specific Hyp
 1. Should the separate brightness popup described in the supplied AGENTS.md but absent from the repository be included in the redesign, or should brightness remain represented by the current display controls and OSD?
 2. Should both Wi-Fi/Bluetooth launcher and dropdown/add flows be preserved as independent entry paths, or should the later design phase propose one unified interaction per radio while retaining the full capability set?
 3. Should the standalone Quickshell session lock surface be included in the FigCraft design scope, given that it is a security-critical surface and the current implementation uses native Wayland session lock plus PAM?
-4. Are the optional OpenCode/AI usage panels, notification reply flow, and Handy history editing/deletion all approved feature scope, or should any be marked for possible retirement? No feature is removed by this inventory.
+4. Are the optional OpenCode/AI usage panels, notification reply flow all approved feature scope, or should any be marked for possible retirement? No feature is removed by this inventory.
 
 ## Repository traceability index
 
-Primary implementation roots: `config/quickshell/shell.qml`; `config/quickshell/modules/`; `config/quickshell/menu/`; `config/quickshell/components/`; `config/quickshell/scripts/`; `config/quickshell/{DisplayState,DnDState,HandyStore,Wifi,BluetoothStore}.qml`. Integration roots: `config/hyprland/{keybinds.lua,autostart.lua,hypridle.conf,rules.lua,env.lua}`; `config/hyprland/scripts/`; `sync/quickshell.sh`; `theme-switcher/{main.sh,hooks/quickshell.sh,render-quickshell.sh,quickshell.roles}`; `themes/*/quickshell.conf`; `config/polkit/90-kmdot-server-mode.rules`; `install.sh`; `config-install.sh`; `config-uninstall.sh`; `sync/sddm.sh`; `config/sddm/`.
+Primary implementation roots: `config/quickshell/shell.qml`; `config/quickshell/modules/`; `config/quickshell/menu/`; `config/quickshell/components/`; `config/quickshell/scripts/`; `config/quickshell/{DisplayState,DnDState,Wifi,BluetoothStore}.qml`. Integration roots: `config/hyprland/{keybinds.lua,autostart.lua,hypridle.conf,rules.lua,env.lua}`; `config/hyprland/scripts/`; `sync/quickshell.sh`; `theme-switcher/{main.sh,hooks/quickshell.sh,render-quickshell.sh,quickshell.roles}`; `themes/*/quickshell.conf`; `config/polkit/90-kmdot-server-mode.rules`; `install.sh`; `config-install.sh`; `config-uninstall.sh`; `sync/sddm.sh`; `config/sddm/`.

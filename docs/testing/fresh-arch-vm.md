@@ -19,7 +19,7 @@ The final run passed all 17 checks:
 - Neovim loads the installed configuration, edits a buffer, and writes the result.
 - Hyprland is running and returns a monitor through `hyprctl`.
 - QuickShell responds to IPC; its app launcher opens and closes.
-- Ghostty, Herdr, Zen Browser, Firefox, Zed, OpenCode, Fish, and Starship start and report versions or execute a simple command. Handy loads its model catalog.
+- Ghostty, Herdr, Zen Browser, Firefox, Zed, OpenCode, Fish, and Starship start and report versions or execute a simple command.
 - Tmux starts a session with the installed config and closes it.
 - SDDM is enabled, NetworkManager is active, `en_IN.UTF-8` is generated, and `pacman -Qm` is empty.
 

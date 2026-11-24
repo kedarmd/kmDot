@@ -44,7 +44,7 @@ Item {
   // Optional palette for a live theme preview; defaults to the active shell palette.
   property var themePreviewPalette: null
   // Title row shown in the search bar's slot when searchEnabled is false
-  // (e.g. "Handy History"). Empty = no header row.
+  // (e.g. "History"). Empty = no header row.
   property string headerText: ""
   property string headerGlyph: ""
   property var items: []
@@ -551,7 +551,7 @@ Item {
         }
       }
 
-      // Invisible key-catcher for searchless views (e.g. Handy History): owns
+      // Invisible key-catcher for searchless views (e.g. History): owns
       // keyboard focus so bare keys reach the list instead of a text input.
       Item {
         id: navKeys

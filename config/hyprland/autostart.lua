@@ -8,6 +8,4 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("nm-applet")
     hl.exec_cmd("~/.config/kmdot/hyprland/scripts/recover_internal_display.sh")
     hl.exec_cmd("gnome-keyring-daemon --start --components=secrets")
-    -- Temporarily keep Hex manual: i915 recorded Hex GPU hangs on 2026-11-01.
-    -- Restore autostart after the graphics stability investigation.
 end)

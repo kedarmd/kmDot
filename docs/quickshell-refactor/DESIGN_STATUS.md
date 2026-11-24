@@ -1,4 +1,5 @@
 # Quickshell Design Status
+> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 Design work is in FigCraft. No production QML has been written.
 
@@ -40,7 +41,6 @@ Each cell tracks that feature and theme independently.
 | QS-16 Native session lock screen | Not started | Not started | Not started | Not started |
 | QS-17 Server mode and service control | Not started | Not started | Not started | Not started |
 | QS-18 Attention mode and idle behavior | Not started | Not started | Not started | Not started |
-| QS-19 Handy transcription controls and history | Not started | Not started | Not started | Not started |
 | QS-20 OpenCode and AI-agent usage panels | Not started | Not started | Not started | Not started |
 | QS-21 Display keybind reference | Not started | Not started | Not started | Not started |
 

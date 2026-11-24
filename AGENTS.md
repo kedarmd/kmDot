@@ -58,7 +58,7 @@ When creating, restyling, or reviewing a Quickshell launcher, popup, dropdown, o
 
 ## Operational reference
 
-When working on Quickshell, themes, wallpapers, audio, Handy, server mode, or other workstation integrations, read [the detailed operational quirks](docs/agents/key-quirks.md) for the relevant area. It records runtime behavior and non-obvious constraints that are easy to break.
+When working on Quickshell, themes, wallpapers, audio, server mode, or other workstation integrations, read [the detailed operational quirks](docs/agents/key-quirks.md) for the relevant area. It records runtime behavior and non-obvious constraints that are easy to break.
 
 ## Agent skills
 

@@ -7,7 +7,7 @@ import qs
 // open via anchorItem + toggle.sh (self-healing, never direct open/toggle),
 // optional tooltip show/hide, generic busy spinner. Subclass supplies display
 // props + status sourcing only (native reactive preferred; Process poll only
-// for Display brightnessctl / ServerMode script; Clock/Handy/OpenCode source
+// for Display brightnessctl / ServerMode script; Clock/OpenCode source
 // nothing). No right-click verbs, no timers in the base.
 Item {
   id: root

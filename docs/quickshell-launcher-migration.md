@@ -1,4 +1,5 @@
 # Integrated kmDot launcher
+> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 Phase one replaces both the command hub and the separate Applications picker
 with the local oma-cast implementation. Further launchers migrate one at a time,

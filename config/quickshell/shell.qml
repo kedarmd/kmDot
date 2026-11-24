@@ -36,8 +36,6 @@ Scope {
   property ConfirmPopup confirmPopup: ConfirmPopup { scope: shellRoot }
   property KeybindsLauncher keybindsLauncher: KeybindsLauncher { scope: shellRoot }
   property ClipboardLauncher clipboardLauncher: ClipboardLauncher { scope: shellRoot }
-  property HandyLauncher handyLauncher: HandyLauncher { scope: shellRoot }
-  property HexLauncher hexLauncher: HexLauncher { scope: shellRoot }
   property WallpaperLauncher wallpaperLauncher: WallpaperLauncher { scope: shellRoot }
   property SystemMonitorLauncher systemMonitorLauncher: SystemMonitorLauncher { scope: shellRoot }
   property PackageManagerLauncher packageInstallLauncher: PackageManagerLauncher { scope: shellRoot; uninstallMode: false }
@@ -48,9 +46,6 @@ Scope {
   property CalendarPopup calendarPopup: CalendarPopup { scope: shellRoot }
   property ServerModeDropdown serverModeDropdown: ServerModeDropdown { scope: shellRoot }
   property OpenCodeUsagePopup openCodeUsagePopup: OpenCodeUsagePopup { scope: shellRoot }
-  property HandyPopup handyPopup: HandyPopup { scope: shellRoot }
-  property HexPopup hexPopup: HexPopup { scope: shellRoot }
-  property HexHud hexHud: HexHud {}
   property DisplayPopup displayPopup: DisplayPopup { scope: shellRoot }
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
   property NotificationPopup notificationPopup: NotificationPopup { scope: shellRoot }
@@ -109,7 +104,7 @@ Scope {
     shellRoot.openingSurface = except
     const launchers = [shellRoot.kmdotLauncher, shellRoot.systemLauncher,
       shellRoot.themeLauncher, shellRoot.connectionsLauncher, shellRoot.keybindsLauncher,
-      shellRoot.clipboardLauncher, shellRoot.handyLauncher, shellRoot.hexLauncher,
+      shellRoot.clipboardLauncher,
       shellRoot.wallpaperLauncher, shellRoot.systemMonitorLauncher,
       shellRoot.packageInstallLauncher, shellRoot.packageRemoveLauncher,
       shellRoot.systemUpgradeLauncher]
@@ -118,7 +113,7 @@ Scope {
     }
     const popups = [shellRoot.confirmPopup, shellRoot.batteryPopup,
       shellRoot.volumePopup, shellRoot.calendarPopup, shellRoot.serverModeDropdown,
-      shellRoot.openCodeUsagePopup, shellRoot.handyPopup, shellRoot.hexPopup, shellRoot.displayPopup,
+      shellRoot.openCodeUsagePopup, shellRoot.displayPopup,
       shellRoot.notificationCenter, shellRoot.notificationReplyPopup]
     for (const p of popups) {
       if (p && p !== except) p.close()
@@ -400,35 +395,6 @@ Scope {
     }
   }
 
-  // Handy playback lifecycle (issue #55, spec #51): audio survives switching
-  // between the launcher and the popup, and stops once BOTH are closed.
-  // The stop is deferred 150ms (same grace as the hidden-tray timer): a
-  // view switch closes one surface just before opening the other via
-  // closeAllExcept, so a synchronous both-closed check would misfire
-  // mid-switch and kill audio that should survive. Opening either surface
-  // cancels the pending stop.
-  Timer {
-    id: handyStopTimer
-    interval: 150
-    onTriggered: {
-      if (!shellRoot.handyPopup.opened && !shellRoot.handyLauncher.opened)
-        HandyStore.stopPlayback()
-    }
-  }
-  function stopHandyIfBothClosed() {
-    if (!shellRoot.handyPopup.opened && !shellRoot.handyLauncher.opened)
-      handyStopTimer.restart()
-    else handyStopTimer.stop()
-  }
-  Connections {
-    target: shellRoot.handyPopup
-    function onOpenedChanged() { shellRoot.stopHandyIfBothClosed() }
-  }
-  Connections {
-    target: shellRoot.handyLauncher
-    function onOpenedChanged() { shellRoot.stopHandyIfBothClosed() }
-  }
-
   Component.onCompleted: {
     // The migrated launcher's Wayland surfaces require a full process restart
     // for source changes. Theme/config data still refresh through FileView.
@@ -523,21 +489,13 @@ PanelWindow {
         SystemStats { launcherRef: systemMonitorLauncher }
         HiddenModules {
           id: hiddenTray
-          stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened || handyPopup.opened || hexPopup.opened
+          stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened
           AttentionMode {}
           ServerMode {
             popupRef: serverModeDropdown
           }
           OpenCodeUsage {
             popupRef: openCodeUsagePopup
-          }
-          Handy {
-            visible: DictationConfig.provider === "handy"
-            popupRef: handyPopup
-          }
-          Hex {
-            visible: DictationConfig.provider === "hex"
-            popupRef: hexPopup
           }
         }
         Row {

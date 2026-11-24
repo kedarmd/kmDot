@@ -1,4 +1,5 @@
 # Quickshell stability audit
+> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 Audit date: 2026-11-04. This was a static and read-only runtime investigation. No graphical session, Quickshell instance, compositor, audio service, display mode, or theme was started, stopped, or changed.
 

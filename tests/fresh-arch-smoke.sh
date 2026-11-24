@@ -69,22 +69,7 @@ check_hyprland() {
   hyprctl -j monitors | jq -e 'length > 0' >/dev/null
 }
 
-check_handy() {
-  local models
-  models="$(mktemp)" || return 1
-  if handy --list-models --json >"$models" 2>/dev/null \
-    && jq -e 'length > 0' "$models" >/dev/null; then
-    rm -f "$models"
-    return 0
-  fi
-  rm -f "$models"
-  return 1
-}
 
-check_dictation_default() {
-  [[ -x "$HOME/.local/bin/handy" ]] \
-    && [[ "$("$HOME/.config/kmdot/quickshell/scripts/dictation-provider.sh" get)" == handy ]]
-}
 
 check_no_foreign_packages() {
   local foreign
@@ -121,9 +106,6 @@ check 'Zen Browser starts' zen --version
 check 'Zed CLI starts' zed --version
 check 'OpenCode CLI starts' mise exec -- opencode --version
 check 'Pi coding agent starts' mise exec -- pi --version
-check 'Handy loads its model catalog' check_handy
-check 'Hex CLI starts' "$HOME/.local/bin/hex" --version
-check 'Handy is the installed default dictation provider' check_dictation_default
 check 'Fish startup succeeds' fish -c 'printf fish-ok'
 check 'Starship CLI starts' starship --version
 check 'Tmux config creates and closes a session' check_tmux

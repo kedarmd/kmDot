@@ -20,14 +20,14 @@ function catalog(snapshot, configRoot) {
       ["package-remove", "Remove Installed Package", "kmdot-package-remove"],
       ["system-upgrade", "Full System Upgrade", "kmdot-system-upgrade"],
       ["wifi", "Wi-Fi", "kmdot-wifi"], ["bluetooth", "Bluetooth", "kmdot-bluetooth"],
-      ["hex", "Hex Dictation", "kmdot-hex-launcher"], ["keybinds", "Keyboard Shortcuts", "kmdot-keybinds"],
+      ["keybinds", "Keyboard Shortcuts", "kmdot-keybinds"],
       ["system", "System / Power Menu", "kmdot-system"]
     ]
     var menuIcons = { menu: "\uf009", apps: "\uf00a", themes: "\uf1fc", wallpapers: "\uf03e",
       clipboard: "\uf0ea", connections: "\uf0ac", "package-install": "\uf055", "package-remove": "\uf1f8",
       "system-upgrade": "\uf021",
       wifi: "\uf1eb", bluetooth: "\uf293",
-      hex: "\uf130", keybinds: "\uf11c", system: "\uf011" }
+      keybinds: "\uf11c", system: "\uf011" }
     menus.forEach(function(m) { add(m[0], m[1], "Desktop", [scripts + "toggle.sh", m[2]], menuIcons[m[0]]) })
   }
   if (available["script:lock-screen.sh"]) add("lock", "Lock Screen", "System", [scripts + "lock-screen.sh"], "\uf023")

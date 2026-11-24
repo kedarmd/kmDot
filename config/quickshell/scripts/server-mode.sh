@@ -61,11 +61,8 @@ stop_inhibitor() {
 
 stop_background_apps() {
   for s in $USER_SERVICES; do
-    # The provider manager exclusively owns Handy and Hex.
-    [[ "$s" == "app-Handy@autostart.service" ]] && continue
     systemctl --user stop "$s" >/dev/null 2>&1 || true
   done
-  "$HOME/.config/kmdot/quickshell/scripts/dictation-provider.sh" stop >/dev/null 2>&1 || true
   for s in $SYSTEM_SERVICES; do
     systemctl stop "$s" >/dev/null 2>&1 || true
   done
@@ -76,10 +73,8 @@ stop_background_apps() {
 
 start_background_apps() {
   for s in $USER_SERVICES; do
-    [[ "$s" == "app-Handy@autostart.service" ]] && continue
     systemctl --user start "$s" >/dev/null 2>&1 || true
   done
-  "$HOME/.config/kmdot/quickshell/scripts/dictation-provider.sh" start >/dev/null 2>&1 || true
   for s in $SYSTEM_SERVICES; do
     systemctl start "$s" >/dev/null 2>&1 || true
   done

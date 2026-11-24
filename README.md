@@ -4,23 +4,9 @@ Dotfiles for CachyOS + Hyprland. Source of truth is this repo; sync copies confi
 
 ## Apps
 
-codex · fish · ghostty · handy · hex · herdr · herdr-app · hyprland · nvim · pi · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
+codex · fish · ghostty · herdr · herdr-app · hyprland · nvim · pi · starship · tmux · xdg-desktop-portal · theme-switcher · battery · quickshell
 
-Handy and Hex install from their official upstream releases through `./install.sh --all`; Handy is the default dictation provider. Codex CLI (`@openai/codex`) and Pi coding agent (`@mariozechner/pi-coding-agent`) install from their official npm packages. Their versions are pinned in the installer. No AUR packages or helpers are used.
-
-## Dictation: Handy and Hex
-
-Handy and Hex are available through one provider choice in the Quickshell launcher and top-bar panel. The selected provider is stored in `~/.config/kmdot/dictation-provider`; the same setting routes dictation and controls which app is started at login.
-
-- **Super+I** toggles dictation in the selected app.
-- **Super+H** opens the selected app's launcher. Both launchers provide Models and History tabs and a provider dropdown. Hex history entries copy to the clipboard; Handy keeps its playback, retry, and delete actions.
-- The selected app's top-bar item opens its Models/History panel. Selecting a Hex transcript copies it to the clipboard.
-- `dictation-provider.service` starts only the selected app. Quickshell sync disables the apps' independent login startup routes so changing providers stops the old app rather than leaving it running in the background.
-- The themed HUD shows the live microphone waveform while recording and an animated waveform while Hex transcribes. Press **Escape** during recording or transcription to cancel that Hex operation. The temporary compositor binding consumes Escape so it does not reach the focused application; it is removed when Hex returns to idle. It calls `hex dictation cancel`, not a command to stop the Hex service.
-- Handy does not currently expose a recording/transcription state through the CLI used by kmDot, so the custom waveform HUD remains Hex-only. Handy's own recording feedback remains in use.
-- Hex's installed Linux interface does not provide Handy-equivalent audio playback, retry, transcript editing, or per-entry deletion. The kmDot Hex history view is read-only apart from copying text.
-
-Handy's integration and local recordings remain intact. The shared selector makes switching providers reversible without changing either app's stored models or history. Run `~/.config/kmdot/quickshell/scripts/dictation-provider.sh set handy` or use the dropdown to switch back.
+Codex CLI (`@openai/codex`) and Pi coding agent (`@mariozechner/pi-coding-agent`) install from their official npm packages. Their versions are pinned in the installer. No AUR packages or helpers are used.
 
 ## Screenshots
 
@@ -39,7 +25,6 @@ The screenshots below were captured on an empty Hyprland workspace with no appli
 ![System launcher](./screenshots/quickshell-r2/launcher-system.png)
 ![Theme launcher](./screenshots/quickshell-r2/launcher-themes.png)
 ![Clipboard launcher](./screenshots/quickshell-r2/launcher-clipboard.png)
-![Handy launcher](./screenshots/quickshell-r2/launcher-handy.png)
 ![Wi-Fi launcher](./screenshots/quickshell-r2/launcher-wifi.png)
 ![Bluetooth launcher](./screenshots/quickshell-r2/launcher-bluetooth.png)
 
@@ -53,7 +38,6 @@ The screenshots below were captured on an empty Hyprland workspace with no appli
 ![Calendar menu](./screenshots/quickshell-r2/panel-calendar.png)
 ![Server mode menu](./screenshots/quickshell-r2/panel-server.png)
 ![OpenCode usage panel](./screenshots/quickshell-r2/panel-opencode.png)
-![Handy panel](./screenshots/quickshell-r2/panel-handy.png)
 ![Notification center](./screenshots/quickshell-r2/panel-notifications.png)
 
 ## Install

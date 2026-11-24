@@ -1,4 +1,5 @@
 # Hex streaming dictation: internal decode vs. live text
+> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 Checked 2026-11-01 against the installed Hex 3.0.0 and Hex's official Linux, CLI, and README documentation. The upstream `dev` docs are moving and may describe a newer build than the installed app.
 

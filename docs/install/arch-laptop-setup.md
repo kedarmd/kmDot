@@ -76,19 +76,12 @@ cd ~/kmDot
 ./tests/fresh-arch-smoke.sh
 ```
 
-The smoke check covers the desktop session and configs, apps including Codex, Pi, Herdr App, Zen Browser, Handy, and Hex, Handy as the default dictation provider, SDDM, NetworkManager, locale generation, and the absence of foreign/AUR packages.
-
-Handy is the default dictation app. Hex is installed as the alternate provider. Hex's CLI is installed by the scripts; its speech model is a separate first-run download:
-
-```bash
-~/.local/bin/hex model install
-```
+The smoke check covers the desktop session and configs, apps including Codex, Pi, Herdr App, and Zen Browser, SDDM, NetworkManager, locale generation, and the absence of foreign/AUR packages.
 
 ## Troubleshooting and hardware checks
 
 - If a package download stalls or times out in Archinstall, choose **Mirrors and repositories**, select a different nearby mirror, and retry the install.
-- Hex's official Linux installer verifies its signed release. Its runtime dependencies, including `openblas` and `wtype`, are installed from official Arch repositories. See [Hex's Linux install documentation](https://github.com/anomalyco/hex/blob/dev/docs/linux.md#install-a-published-build).
 - Herdr App is installed using [Herdr's official installer](https://herdr.dev/download/). Its installer includes the required `libxcb` and `libxkbcommon` libraries.
 - Zen Browser is installed from the pinned, checksum-verified upstream tarball in `install.sh`; Firefox is not required. Zen's [official Linux guide](https://docs.zen-browser.app/guides/install-linux) also offers an AppImage, which was not the route tested.
-- The Arch base and some upstream applications are large downloads. Hex's speech model is a separate first-run download. Let downloads finish before interrupting an installer.
+- The Arch base and some upstream applications are large downloads. Let downloads finish before interrupting an installer.
 - After installation, check Wi-Fi, Bluetooth, microphone input, audio output, display brightness, suspend, and resume on the laptop.

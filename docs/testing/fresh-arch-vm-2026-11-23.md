@@ -1,4 +1,5 @@
 # Fresh Arch VM validation — 2026-11-23
+> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 This file records the agent-run VM setup and validation. For the physical laptop procedure, follow the [Arch laptop setup guide](../install/arch-laptop-setup.md).
 

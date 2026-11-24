@@ -1,4 +1,5 @@
 # Hex and kmDot integration feasibility
+> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 Researched 2026-11-01. Scope: whether Hex on Linux can replace kmDot's Handy Quickshell launcher and bar popup, and what a safe migration would require.
 
