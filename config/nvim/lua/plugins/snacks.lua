@@ -93,9 +93,15 @@ return {
 		{
 			"<leader>sg",
 			function()
-				Snacks.picker.grep()
+				if vim.fn.executable("rg") ~= 1 then
+					vim.notify("Repository search requires ripgrep (rg).", vim.log.levels.WARN)
+					return
+				end
+
+				local cwd = vim.fn.getcwd()
+				Snacks.picker.grep({ cwd = vim.fs.root(0, ".git") or vim.fs.root(cwd, ".git") or cwd })
 			end,
-			desc = "[Search] by [G]rep",
+			desc = "[Search] repository by [G]rep",
 		},
 		{
 			"<leader>sd",

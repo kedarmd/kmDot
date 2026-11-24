@@ -10,6 +10,7 @@ return {
 
 		-- 2. Set up blink.cmp capabilities
 		local capabilities = require("blink.cmp").get_lsp_capabilities()
+		local has_go = vim.fn.executable("go") == 1
 
 		-- 3. Define servers using the Native 0.12 syntax
 		local servers = {
@@ -43,10 +44,14 @@ return {
 		-- We must use Mason's specific package names here, not Neovim's LSP names
 		local ensure_installed = {
 			"typescript-language-server", -- Mason's name for ts_ls
-			"gopls", -- Mason's name for gopls
 			"lua-language-server", -- Mason's name for lua_ls
 			"stylua", -- Your Lua formatter
 		}
+		if has_go then
+			table.insert(ensure_installed, "gopls")
+		else
+			servers.gopls = nil
+		end
 		require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
 		-- 5. Configure Diagnostics Visually
