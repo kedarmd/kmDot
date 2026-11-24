@@ -486,9 +486,8 @@ PanelWindow {
         spacing: 8
 
         BarIsland {
-          visible: systemStats.visible
+          visible: SystemStatsState.anyEnabled
           SystemStats {
-            id: systemStats
             launcherRef: systemMonitorLauncher
           }
         }
