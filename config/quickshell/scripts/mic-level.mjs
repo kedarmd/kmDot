@@ -27,6 +27,9 @@ const rec = spawn("pw-record", [
   "--format", "f32",
   "--channels", "1",
   "--rate", "48000",
+  // Without --raw, pw-record wraps samples in a container header; treating
+  // those bytes as float samples produces invalid values and pins the meter.
+  "--raw",
   "-",
 ], { stdio: ["ignore", "pipe", "ignore"] });
 
