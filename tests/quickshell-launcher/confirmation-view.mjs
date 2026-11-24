@@ -45,12 +45,7 @@ Scope {
   IpcHandler {
     target: "fixture"
     function show(kind: string): void {
-      if (kind === "handy") popup.ask("Delete recording?", "October 24, 12:30 AM", {
-        showKeyboardHints:false,titleGlyph:"\\uf1f8",titleGlyphColor:Colors.text,
-        supportingText:"This deletes the recording and its transcription. This action cannot be undone.",
-        confirmText:"Delete",cancelText:"Keep recording",confirmFill:Colors.error,confirmTextColor:Colors.surface
-      })
-      else if (kind === "bluetooth") popup.ask("Forget Bluetooth device", "Remove 'Example headphones' and disconnect it? You will need to pair it again to use it.")
+      if (kind === "bluetooth") popup.ask("Forget Bluetooth device", "Remove 'Example headphones' and disconnect it? You will need to pair it again to use it.")
       else popup.ask("Forget Wi-Fi network", "Forget '<b>Example network with a long name & literal markup</b>'? You will need to re-enter the password to connect again.")
     }
     function close(): void { popup.close() }
@@ -104,19 +99,19 @@ Scope {
   await key('-k', 'Return')
   assert.equal(state().confirmed, 1)
   assert.equal(state().opened, false)
-  await open('handy')
-  const handy = state()
-  assert.ok(handy.supportVisible && handy.buttonsFit)
-  assert.equal(handy.cancel.label, 'Keep recording')
-  assert.equal(handy.accept.label, 'Delete')
-  capture('kmdot-confirmation-handy.png', handy)
+  await open('bluetooth')
+  const bluetooth = state()
+  assert.ok(!bluetooth.supportVisible && bluetooth.buttonsFit)
+  assert.equal(bluetooth.cancel.label, 'Cancel')
+  assert.equal(bluetooth.accept.label, 'Forget')
+  capture('kmdot-confirmation-bluetooth.png', bluetooth)
   await key('-k', 'Escape')
   assert.equal(state().cancelled, 2)
   await open('wifi')
   ipc('close')
   ipc('close')
   assert.equal(state().cancelled, 3, 'Backdrop/programmatic close cancels once')
-  await open('handy')
+  await open('bluetooth')
   ipc('clickConfirm')
   ipc('clickConfirm')
   assert.equal(state().confirmed, 2, 'Repeated clicks cannot confirm twice')
@@ -124,7 +119,7 @@ Scope {
   ipc('clickCancel')
   assert.equal(state().cancelled, 4)
   assert.ok(!/TypeError|ReferenceError|Cannot specify|Failed to load configuration/.test(log), log)
-  console.log(JSON.stringify({wifi, handy, checks:'default cancellation, explicit confirmation, Escape, dismissal, mouse actions and once-only signals'}, null, 2))
+  console.log(JSON.stringify({wifi, bluetooth, checks:'default cancellation, explicit confirmation, Escape, dismissal, mouse actions and once-only signals'}, null, 2))
 } finally {
   if (child && child.exitCode === null) {
     child.kill('SIGTERM')
