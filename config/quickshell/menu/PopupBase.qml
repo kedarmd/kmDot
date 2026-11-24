@@ -48,6 +48,16 @@ PanelWindow {
   property bool closeButtonVisible: true
   property bool dimBackground: false
   property bool centerCard: false
+
+  // Ordinary dropdowns leave the bar interactive. Its controls toggle their
+  // own panel and close siblings through the existing surface coordinator.
+  // Modal/centered surfaces retain their full-screen input capture.
+  mask: Region {
+    x: 0
+    y: root.centerCard || root.dimBackground ? 0 : Tokens.barHeight
+    width: root.width
+    height: Math.max(0, root.height - y)
+  }
   // Card vertical chrome (top+bottom padding) and optional height cap (0 = uncapped).
   // Taller panel cards set explicit bounds to match their Penpot frames.
   property real cardChrome: 48

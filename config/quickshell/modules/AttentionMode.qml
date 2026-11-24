@@ -11,6 +11,10 @@ Item {
 
   property bool attentionOn: false
 
+  function toggleMode() {
+    toggleProc.exec(["bash", "-c", "$HOME/.config/kmdot/quickshell/scripts/attention-mode.sh " + (root.attentionOn ? "off" : "on")])
+  }
+
   function refresh() {
     statusProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/attention-mode.sh status"])
   }
@@ -43,9 +47,7 @@ Item {
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton
     cursorShape: Qt.PointingHandCursor
-    onClicked: {
-      toggleProc.exec(["sh", "-c", "$HOME/.config/kmdot/quickshell/scripts/attention-mode.sh " + (root.attentionOn ? "off" : "on")])
-    }
+    onClicked: root.toggleMode()
   }
 
   Process {

@@ -2,7 +2,7 @@ import QtQuick
 import qs
 import "../components"
 
-// Compact vitals beside the hidden-module chevron: CPU busy share and memory
+// Compact vitals beside the everyday controls: CPU busy share and memory
 // used share. Pure view over SystemStatsState, which owns the poll, the
 // persistence, and the "hidden means nothing runs" rule.
 Item {
@@ -50,6 +50,8 @@ Item {
 
       Text {
         anchors.verticalCenter: parent.verticalCenter
+        width: 30
+        horizontalAlignment: Text.AlignRight
         text: SystemStatsState.cpuText
         font.family: "JetBrainsMono Nerd Font"
         font.pixelSize: 12
@@ -73,6 +75,8 @@ Item {
 
       Text {
         anchors.verticalCenter: parent.verticalCenter
+        width: 30
+        horizontalAlignment: Text.AlignRight
         text: SystemStatsState.memText
         font.family: "JetBrainsMono Nerd Font"
         font.pixelSize: 12

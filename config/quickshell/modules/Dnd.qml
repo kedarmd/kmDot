@@ -7,6 +7,7 @@ Item {
   id: root
   implicitHeight: 32
   width: 44
+  property bool panelOpened: false
   required property bool hasNotifications
 
   readonly property bool dndOn: DnDState.dndEnabled
@@ -16,7 +17,7 @@ Item {
     anchors.centerIn: parent
     width: root.width
     height: 32
-    active: root.dndOn
+    active: root.dndOn || root.panelOpened
     fill: Tokens.primaryContainer
     hovered: mouse.containsMouse
     pressed: mouse.pressed
@@ -27,8 +28,8 @@ Item {
       iconName: root.dndOn ? "bell-off" : "bell"
       font.family: "JetBrainsMono Nerd Font Propo"
       font.pixelSize: 20
-      color: dndOn ? Tokens.on_primary_container
-           : root.hasNotifications ? Colors.primary : Colors.text_alt
+      color: dndOn || root.panelOpened ? Tokens.on_primary_container
+           : Colors.text_alt
     }
 
     Rectangle {

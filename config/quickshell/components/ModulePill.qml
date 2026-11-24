@@ -15,6 +15,8 @@ Rectangle {
   property bool hovered: false
   property bool pressed: false
 
+  border.width: !root.disabled && (root.pressed || (root.active && root.hovered)) ? 1 : 0
+  border.color: Colors.focus
   radius: height / 2
   color: root.disabled ? "transparent" : root.active ? root.fill
     : root.hovered || root.pressed ? Colors.border : "transparent"

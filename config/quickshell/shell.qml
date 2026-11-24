@@ -46,6 +46,7 @@ Scope {
   property CalendarPopup calendarPopup: CalendarPopup { scope: shellRoot }
   property ServerModeDropdown serverModeDropdown: ServerModeDropdown { scope: shellRoot }
   property OpenCodeUsagePopup openCodeUsagePopup: OpenCodeUsagePopup { scope: shellRoot }
+  property BarMorePopup barMorePopup: BarMorePopup { scope: shellRoot }
   property DisplayPopup displayPopup: DisplayPopup { scope: shellRoot }
   property NotificationCenter notificationCenter: NotificationCenter { scope: shellRoot }
   property NotificationPopup notificationPopup: NotificationPopup { scope: shellRoot }
@@ -114,7 +115,7 @@ Scope {
     const popups = [shellRoot.confirmPopup, shellRoot.batteryPopup,
       shellRoot.volumePopup, shellRoot.calendarPopup, shellRoot.serverModeDropdown,
       shellRoot.openCodeUsagePopup, shellRoot.displayPopup,
-      shellRoot.notificationCenter, shellRoot.notificationReplyPopup]
+      shellRoot.notificationCenter, shellRoot.notificationReplyPopup, shellRoot.barMorePopup]
     for (const p of popups) {
       if (p && p !== except) p.close()
     }
@@ -485,29 +486,21 @@ PanelWindow {
         }
         spacing: 8
 
+        SystemStats { launcherRef: systemMonitorLauncher }
         BarIsland {
-          visible: SystemStatsState.anyEnabled
-          SystemStats {
-            launcherRef: systemMonitorLauncher
-          }
-        }
-        BarIsland {
-          HiddenModules {
-            stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened
-            AttentionMode {}
-            ServerMode { popupRef: serverModeDropdown }
-            OpenCodeUsage { popupRef: openCodeUsagePopup }
-          }
-        }
-        BarIsland {
-          Display { popupRef: displayPopup }
-          Audio { popupRef: volumePopup }
-          Network { popupRef: wifiDropdown }
-          Bluetooth { popupRef: bluetoothDropdown }
-          Battery { popupRef: batteryPopup }
+          Network { popupRef: wifiDropdown; active: wifiDropdown.opened }
+          Audio { popupRef: volumePopup; active: volumePopup.opened }
+          Battery { popupRef: batteryPopup; active: batteryPopup.opened }
           Dnd {
             id: dndModule
             hasNotifications: shellRoot.hasNotifications
+            panelOpened: notificationCenter.opened
+          }
+          BarModule {
+            glyph: "\uf141"
+            popupRef: barMorePopup
+            sock: "kmdot-bar-more"
+            active: barMorePopup.opened
           }
         }
       }

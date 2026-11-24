@@ -30,10 +30,8 @@ BarModule {
   glyph: ""
   trailingIconName: micMuted ? "mic-off" : ""
   trailingColor: Colors.warning
-  text: root.hovered || volumeReveal.running
-    ? (muted ? "Mute" : Math.round(volume * 100) + "%") : ""
-  Timer { id: volumeReveal; interval: 1600 }
-  onVolumeChanged: volumeReveal.restart()
+  // Keep the bar geometry stable; volume is available in the panel.
+  text: ""
   iconName: {
     if (muted || volume <= 0.01) return "audio-off"
     if (volume <= 0.333) return "audio-low"
