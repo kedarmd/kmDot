@@ -63,6 +63,10 @@ keymap.set("v", "J", ":m'>+1<CR>gv=gv")
 keymap.set("v", "K", ":m'<-2<CR>gv=gv")
 
 -- window management
+keymap.set("n", "<C-h>", "<C-w>h", { desc = "Focus split to the left" })
+keymap.set("n", "<C-j>", "<C-w>j", { desc = "Focus split below" })
+keymap.set("n", "<C-k>", "<C-w>k", { desc = "Focus split above" })
+keymap.set("n", "<C-l>", "<C-w>l", { desc = "Focus split to the right" })
 keymap.set("n", "<leader>sv", "<C-w>v", { desc = "Split window vertically" })
 keymap.set("n", "<leader>sh", "<C-w>s", { desc = "Split window horizontally" })
 keymap.set("n", "<leader>se", "<C-w>=", { desc = "Make splits equal size" })
