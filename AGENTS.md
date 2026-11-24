@@ -34,6 +34,8 @@ Dotfiles for a CachyOS + Hyprland workstation. Config files (not application cod
 - If an application is not available in the official repositories, use its official upstream installer, release binary, AppImage, or npm package with a pinned version where practical. Do not silently fall back to AUR.
 - Keep installer changes and runbooks consistent with this rule. AUR/foreign package checks in the fresh Arch smoke test must continue to pass.
 
+For sync activation, app removal, or a desktop crash, see [Config lifecycle](docs/agents/config-lifecycle.md).
+
 ## Adding an App
 
 1. Create `config/<app>/` with config files.
