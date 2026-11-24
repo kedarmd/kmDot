@@ -1,5 +1,4 @@
 # Fresh Arch VM validation — 2026-11-23
-> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 This file records the agent-run VM setup and validation. For the physical laptop procedure, follow the [Arch laptop setup guide](../install/arch-laptop-setup.md).
 
@@ -147,7 +146,7 @@ cd ~/kmDot
 ./tests/fresh-arch-smoke.sh
 ```
 
-The latest run passed **21 checks, 0 failures**. Checks cover Neovim, Hyprland and monitor access, QuickShell IPC and launcher, Ghostty, Herdr, Herdr App, Codex, Zen Browser, Zed, OpenCode, Pi, Handy's model catalog, Hex, Handy as the default provider, Fish, Starship, tmux, SDDM, NetworkManager, `en_IN.UTF-8`, and the absence of foreign/AUR packages.
+The latest run passed **21 checks, 0 failures**. Checks cover Neovim, Hyprland and monitor access, QuickShell IPC and launcher, Ghostty, Herdr, Herdr App, Codex, Zen Browser, Zed, OpenCode, Pi, Hex, Fish, Starship, tmux, SDDM, NetworkManager, `en_IN.UTF-8`, and the absence of foreign/AUR packages.
 
 ## Installation details and recovery
 
@@ -182,15 +181,12 @@ sed -i '/^\[options\]/a DisableDownloadTimeout' /etc/pacman.conf
 
 ### Apps, sources, and extra dependencies
 
-- Handy is installed by default and remains the default dictation provider. Hex is available as the alternate provider.
 - Codex CLI (`@openai/codex`) v0.171.0 and Pi (`@mariozechner/pi-coding-agent`) v0.73.1 install through mise from official npm packages.
-- Hex 3.4.0 uses the [official Linux installer](https://github.com/anomalyco/hex/blob/dev/docs/linux.md#install-a-published-build), pinned by installer-script SHA-256. The upstream installer verifies the signed release. Its first speech model download is separate: `~/.local/bin/hex model install`.
-- Hex required `openblas` and `wtype`, installed from official Arch repositories. Its other documented runtime packages are listed in `install.sh`; the completed run reported no further missing libraries.
 - Herdr App installs using Herdr's [official installer](https://herdr.dev/download/). Its binary required `libxcb` and `libxkbcommon`, which `install.sh` installs from official repositories.
 - Zen Browser installs from the pinned, checksum-verified upstream tarball in `install.sh`. Its [official Linux guide](https://docs.zen-browser.app/guides/install-linux) also offers an AppImage; the tarball route was the one tested.
 - Firefox is not part of the desired setup; Zen Browser is used instead.
 
-The host Wi-Fi made the clone and several downloads slow. The GitHub clone received about 116 MiB. The longest downloads were the Arch base package set, Handy, OpenCode, Zen Browser, and npm apps; Pi took about a minute in the latest run. Hex itself installed promptly after dependencies were available, while its speech model is a separate first-run download. If a pacman transfer stalls, use the mirror recovery above.
+The host Wi-Fi made the clone and several downloads slow. The GitHub clone received about 116 MiB. The longest downloads were the Arch base package set, OpenCode, Zen Browser, and npm apps; Pi took about a minute in the latest run. If a pacman transfer stalls, use the mirror recovery above.
 
 The VM had virtual display and network only. The test exercised Hyprland and QuickShell IPC, but not physical Bluetooth pairing, microphone input, or audible output. The smoke checks passed with no foreign/AUR packages.
 

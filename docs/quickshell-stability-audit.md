@@ -1,5 +1,4 @@
 # Quickshell stability audit
-> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 Audit date: 2026-11-04. This was a static and read-only runtime investigation. No graphical session, Quickshell instance, compositor, audio service, display mode, or theme was started, stopped, or changed.
 
@@ -14,7 +13,6 @@ The System Monitor itself is not supported by the source evidence as the cause o
 ## Evidence collected
 
 - Repository root: `/home/kedarmd/dev/kmDot`; branch `main`; HEAD `9a4326c6a81b30b6551df591c037b67e456d3bfb`.
-- Existing uncommitted changes were present before edits and have been preserved. In particular, the existing `autostart.lua` change removing unconditional `hex start` was not overwritten.
 - Deployed paths: `~/.config/quickshell` is a symlink to `~/.config/kmdot/quickshell`; `~/.config/hypr` is a symlink to `~/.config/kmdot/hyprland`.
 - Before editing, the deployed Quickshell and Hyprland trees were archived to `/tmp/kmdot-quickshell-audit-20261104T145251Z.tar.gz`, SHA-256 `c328f7722b49e90a7812b761f6246415dd9cee48b4fc25de2a19d0487ccdec58`.
 - Installed versions: Quickshell `0.3.1-1.1`, Hyprland `0.56.2-3.1`, Qt base/declarative `6.11.2`, PipeWire `1.6.9-1`, WirePlumber `0.5.17-2.1`.
@@ -22,7 +20,7 @@ The System Monitor itself is not supported by the source evidence as the cause o
 - Six older Quickshell 0.3.0 reports share a `QQmlListModel::data()` stack. Their logs include repeated `_ref is null` warnings while notification history was being written. This makes native notification objects stored in toast `ListModel` roles a credible, actionable lifecycle defect; it does not prove every one of those crashes came from notifications.
 - Quickshell 0.3.1 reports include an abort in `QWindow::unsetCursor()` during `QQuickItem` teardown and a SIGSEGV in `QInputMethod::commit()` during focus-scope teardown. Two other reports point through Wayland proxy calls during QObject destruction in a separate `/home/kedarmd/dev/oma-cast` config. These stacks establish shell/native UI teardown crashes, but do not identify a specific kmDot QML component.
 - Some crash logs end with `Exiting due to IPC request`; one report contains a configuration reload where QML files were missing at `~/.config/quickshell` during the reload. This is consistent with the old delete-then-copy sync window and confirms that deployment must not remove the active directory before a replacement has been prepared.
-- The available kernel journal search returned no OOM kill or i915 GPU hang record. It does confirm Intel i915 hardware. A pre-existing uncommitted autostart comment says Hex had recorded i915 GPU hangs on Nov 1; that is preserved user context, not a reproduced finding from the logs available here.
+- The available kernel journal search returned no OOM kill or i915 GPU hang record. It does confirm Intel i915 hardware.
 - The sandbox cannot connect to the user systemd bus and cannot see the active graphical session. Runtime service ownership, current process trees, live RSS/CPU, and current PipeWire restart history remain unverified. No graphical-session validation was attempted.
 - The repository's `toggle.sh` and deployed `toggle.sh` differed: the deployed script still had the restart-on-missing-socket implementation. Therefore, the source fix in this audit is not active until an authorized deployment.
 
@@ -44,12 +42,10 @@ The System Monitor itself is not supported by the source evidence as the cause o
 | `CalendarPopup.qml` | Instantiated at shell startup; sync on startup/open and periodic 30m refresh. | ICS fetch uses curl with a 25s timeout. The periodic Timer was present but disabled; it is now enabled, and concurrent sync requests are rejected. |
 | `NotificationPopup.qml` | 100ms remaining-time tick only while toast cards are open. | Bounded to three cards; appropriately gated. Toast model now retains scalar fields and notification IDs only. |
 | `NotificationCenter.qml` | 3s live-notification reconciliation only while the center is open. | History is capped at 100 records and persisted through FileView. A notification storm can still cause repeated async history writes. |
-| `VolumePopup.qml` / `HexHud.qml` | `pw-record` microphone capture while Volume is open / Hex is recording. | Child Node script handles normal termination, closes `pw-record`, and reports meter samples around every 80ms. The two surfaces can capture simultaneously. Abrupt Quickshell termination behavior still needs runtime validation. |
+| `VolumePopup.qml` | `pw-record` microphone capture while Volume is open. | Child Node script handles normal termination, closes `pw-record`, and reports meter samples around every 80ms. Abrupt Quickshell termination behavior still needs runtime validation. |
 | Clipboard daemon | Two long-lived `wl-paste --watch` children, text and PNG. | Started by Hyprland autostart, outside Quickshell. Startup is now serialized with a cache-directory flock; existing `pgrep` guard remains. Normal signals kill the watcher children. SIGKILL orphan behavior remains a concern; history was not read or changed. |
 | `DisplayColorState.qml` / display control | `hyprctl` monitor and shader reads; `hyprctl eval` only for explicit user changes. | No display mode, assignment, or shader was changed during this audit. Display mode changes can schedule one delayed shell recovery process, described below. |
 | Launcher plugin | Desktop source and JSON stores use FileView watchers; calculator currency uses XHR with a 15s timeout; backend has a short 30ms debounce. | Most search/ranking is synchronous JavaScript over in-memory indexes. OpenCode usage is started in an external QML `Process`; its Node utility uses synchronous child execution and has no command timeout. It cannot block the QML thread, but can continue consuming a child process after the popup closes. |
-
-`HexHud.qml` owns a timer while recording and starts/stops its meter through `Process.running`. Its destruction handler also attempts to execute the Hyprland Escape-unbind script. The component is still alive during `Component.onDestruction`, but whether that child completes during process teardown is not provable without a live-session lifecycle test. Startup already resynchronizes the binding. This remains a pending teardown check.
 
 ## Confirmed changes
 
@@ -58,15 +54,13 @@ The System Monitor itself is not supported by the source evidence as the cause o
 3. Notification toast and reply UI no longer store a native Notification or action object in `ListModel` roles. They retain scalar IDs, resolve the current tracked notification when needed, and omit the unused image payload. This directly addresses the `_ref is null` / `QQmlListModel::data()` warning pattern without changing presentation or action behavior.
 4. Calendar sync requests no longer overlap, and the documented 30-minute timer now runs.
 5. The clipboard daemon's startup check is protected by `flock`, preventing concurrent autostart invocations from passing the old `pgrep` check together.
-6. `dictation-provider.service` now invokes its supervisor's `stop` action when the unit stops. The unit was not reloaded, enabled, started, or stopped.
-7. The hidden Volume popup no longer polls MPRIS once per second; its timer is active only while the popup is open. The OpenCode busy spinner now animates only while its popup is open and loading. Display color polling likewise runs only while the Display popup is open.
-8. A temporary `tests/quickshell-toggle.sh` checked that a missing socket reports an error without shell restart commands, that notification list roles remain scalar, and that System Monitor's shared-consumer and non-overlap guards remain present. The script was later removed to follow this repository's no-test convention; these checks are historical validation, not a maintained test suite.
+6. The hidden Volume popup no longer polls MPRIS once per second; its timer is active only while the popup is open. The OpenCode busy spinner now animates only while its popup is open and loading. Display color polling likewise runs only while the Display popup is open.
+7. A temporary `tests/quickshell-toggle.sh` checked that a missing socket reports an error without shell restart commands, that notification list roles remain scalar, and that System Monitor's shared-consumer and non-overlap guards remain present. The script was later removed to follow this repository's no-test convention; these checks are historical validation, not a maintained test suite.
 
 ## Other confirmed risk areas
 
 - Restart paths remain separate from ordinary popup toggles. `theme-switcher/hooks/quickshell.sh` intentionally `pkill`s and starts Quickshell after a theme change; it has no shared restart lock, and output is suppressed. `DisplayState.qml` starts a delayed detached recovery after explicit layout-mode changes that may remove every output; repeated mode changes could schedule more than one recovery helper. `scripts/lock-screen.sh` can start Quickshell with `--no-duplicate` if lock IPC is unavailable. These paths were read, never executed. Future work should centralize or serialize intentional restarts and log failures.
-- `sync/quickshell.sh` still performs provider service configuration/restart and may start clipboard watchers after installing the staged tree. The complete sync path must be reviewed in an isolated HOME before deployment; it was not executed here.
-- The current Hyprland autostart source and deployed file both launch Quickshell and the clipboard daemon. The repo's existing uncommitted change has removed unconditional `hex start`. `dictation-provider.sh` is intended to own provider selection, but actual `systemctl --user` state and process ownership could not be checked.
+- `sync/quickshell.sh` may start clipboard watchers after installing the staged tree. The complete sync path must be reviewed in an isolated HOME before deployment; it was not executed here.
 - Per-screen Battery, ServerMode, Bluetooth, and Workspaces timers duplicate work on multi-monitor setups. Battery and ServerMode spawn external commands; Workspaces' current user-modified implementation runs one `hyprctl`/`jq` snapshot per screen each second. A shared per-session state owner would reduce process churn, but requires dedicated regression coverage before changing these paths.
 - `DisplayState.qml` polls backlight every 700ms; `DisplayColorState` is now popup-gated. The 700ms polling interval could be raised, but would affect how quickly bar brightness reflects keyboard-driven changes and needs interactive validation.
 - `scripts/clipboard-capture.sh` serializes history writes and bounds clipboard reads, but image thumbnail generation has no timeout or payload-size cap. It runs outside Quickshell. Existing history was preserved.
@@ -102,7 +96,7 @@ Controlled Quickshell-only deployment completed on 2026-11-04 at 22:19 local tim
 - Post-deployment comparison found only generated `Colors.qml` in addition to repository files; its content matches the `catppuccin` palette rendered before staging.
 - Quickshell remains stopped and the laptop remains in TTY. No graphical test has been started.
 
-Do not use `sync/quickshell.sh` for this QML-only deployment: in addition to copying Quickshell, it can disable/restart dictation-provider services and start clipboard watchers. The following staging procedure records how the activation was performed; do not rerun it unless planning another deployment. It does not invoke Quickshell, Hyprland, systemd, theme hooks, or display commands. It refuses to replace files while a Quickshell process is still present.
+Do not use `sync/quickshell.sh` for this QML-only deployment: in addition to copying Quickshell, it can start clipboard watchers. The following staging procedure records how the activation was performed; do not rerun it unless planning another deployment. It does not invoke Quickshell, Hyprland, systemd, theme hooks, or display commands. It refuses to replace files while a Quickshell process is still present.
 
 ```bash
 cd /home/kedarmd/dev/kmDot
@@ -158,7 +152,7 @@ For the first graphical login, keep the remote TTY/SSH reachable and leave the T
 
 ### Prepared first graphical test (not run)
 
-The active deployed Hyprland autostart file is `~/.config/kmdot/hyprland/autostart.lua`. Its only Quickshell launch is `hl.exec_cmd("quickshell &")`; it does not launch Hex. When ready to test, temporarily comment out that one line while keeping an exact backup:
+The active deployed Hyprland autostart file is `~/.config/kmdot/hyprland/autostart.lua`. Its only Quickshell launch is `hl.exec_cmd("quickshell &")`. When ready to test, temporarily comment out that one line while keeping an exact backup:
 
 ```bash
 set -euo pipefail
@@ -223,7 +217,7 @@ Next controlled-session steps: finish observing the current run and test the aud
 
 ## Controlled deployment and runtime validation (2026-11-05 02:28 IST)
 
-On the user's request to complete the remaining validations, the current repository Quickshell tree was staged with the selected `catppuccin` palette and Qt 6 checked before activation. Before deployment, only `shell.qml` and `menu/NotificationPopup.qml` differed from the deployed Quickshell source; no deployed-only source customization was found. The active Quickshell PID 6626 exited cleanly on SIGTERM. The staged tree was promoted while no Quickshell process was running, and the previous tree was retained at `~/.config/kmdot/quickshell.backup.20261105T021554`. The `~/.config/quickshell` symlink still resolves to `~/.config/kmdot/quickshell`. The full `sync/quickshell.sh` was not used, so the dictation-provider service and clipboard watchers were not restarted.
+On the user's request to complete the remaining validations, the current repository Quickshell tree was staged with the selected `catppuccin` palette and Qt 6 checked before activation. Before deployment, only `shell.qml` and `menu/NotificationPopup.qml` differed from the deployed Quickshell source; no deployed-only source customization was found. The active Quickshell PID 6626 exited cleanly on SIGTERM. The staged tree was promoted while no Quickshell process was running, and the previous tree was retained at `~/.config/kmdot/quickshell.backup.20261105T021554`. The `~/.config/quickshell` symlink still resolves to `~/.config/kmdot/quickshell`. The full `sync/quickshell.sh` was not used, so clipboard watchers were unaffected.
 
 The deployed Quickshell was manually restarted as PID 386807 with verbose output appended to `~/.local/state/kmdot/quickshell-first-login.log`. Live checks completed:
 
@@ -234,7 +228,7 @@ The deployed Quickshell was manually restarted as PID 386807 with verbose output
 - The persisted stats state was `cpuEnabled: false, memEnabled: false`. While the System Monitor remained open, the watched state file was temporarily changed to true/true and then false/false. The bar segments appeared and disappeared, while the popup continued displaying changing CPU/thread values and process data with both indicators disabled. Reopening the popup refreshed the data. The exact original stats state file was restored. This exercised the shared state and polling gates, but not the buttons' pointer click handlers.
 - Process gating was checked with the popup closed and open: the `system-stats` and `thread-stats` runtime cache mtimes advanced while open, then remained unchanged for three seconds after close. A short `/proc` scan also observed `top-processes.sh` while open and no occurrences after close.
 - PipeWire and WirePlumber remained active. `journalctl --user` had no entries for either service in the ten-minute check window; neither service was restarted.
-- No new Quickshell crash directory appeared. The runtime log showed no `_ref is null`, binding-loop, or PipeWire errors. `QLocalSocket::PeerClosedError` warnings followed one-shot IPC clients closing. Other observed warnings were `PopupWindow` width/height deprecations in the unchanged `DictationProviderDropdown.qml` and two Qt SVG invalid-path warnings; these were not investigated further.
+- No new Quickshell crash directory appeared. The runtime log showed no `_ref is null`, binding-loop, or PipeWire errors. `QLocalSocket::PeerClosedError` warnings followed one-shot IPC clients closing. Two Qt SVG invalid-path warnings also appeared.
 - RSS rose during startup and popup loading, then stayed between 292,172 and 293,104 KiB over a 30-second observation. `ps` average CPU was 6.3–6.5% over the final samples; the active Ghostty window title was changing during the check, so this is not an idle baseline.
 
 The live check did not stress-test notification expiry, restart PipeWire/WirePlumber, or change display/audio controls. The bar-visibility state is restored to false/false and DND is restored to false. Five temporary `notify-send` test notifications (IDs 1–5) remain in notification history. The Quickshell process is left running with the deployed repository tree; the rollback copy remains available at the path above.

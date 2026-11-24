@@ -1,5 +1,4 @@
 # Integrated kmDot launcher
-> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 Phase one replaces both the command hub and the separate Applications picker
 with the local oma-cast implementation. Further launchers migrate one at a time,
@@ -13,7 +12,7 @@ System (Super+Esc) opts into `components/CastLauncherView.qml` through
 presentation. The opt-in renderer shares the existing controller, search,
 selection and activation handlers. All five System actions, including Shutdown,
 dispatch immediately without confirmation. The shared confirmation popup remains
-for Wi-Fi/Bluetooth forget operations and Handy recording deletion. The new view reuses the imported
+for Wi-Fi/Bluetooth forget operations. The new view reuses the imported
 BrandMark, KeyHint, PointerMoveGate and UI font definition; the old renderer stays
 available during the per-launcher review process.
 
@@ -44,7 +43,7 @@ user verification before moving on.
 
 ## Shared confirmation popup (verified by user)
 
-The shared Wi-Fi/Bluetooth forget and Handy recording-delete popup follows the
+The shared Wi-Fi/Bluetooth forget popup follows the
 same visual direction while keeping its compact confirmation layout: 424px
 width, content-driven height, 20px corners, 1px outline, 17px medium heading,
 14px body text, and 34px buttons with 8px corners. It reuses the migrated font and
@@ -53,9 +52,7 @@ warning glyph and destructive action colors; no theme palette changes were made.
 
 PopupBase exposes opt-in chrome properties and PillButton exposes a font-family
 property with its previous default. Only ConfirmPopup changes those defaults.
-Handy's delete call now supplies semantic content and action colors rather than
-fixed height, oversized typography and spacing overrides. Handy itself is not
-restyled in this pass. System remains confirmation-free.
+System remains confirmation-free.
 
 Default Cancel selection, arrow/Tab choice, Enter/Space activation, Escape,
 backdrop dismissal, custom action labels and confirm/cancel signals remain.
@@ -67,10 +64,7 @@ node tests/quickshell-launcher/confirmation-view.mjs
 
 This isolated, inert-caller fixture checks actual QML geometry, long plain-text
 messages, both button labels, keyboard/mouse interactions and once-only signals.
-On the 2560×1440 external screen its long Wi-Fi example measured 424×238 and its
-Handy example 424×224, with both buttons and messages fitting. The rendered
-examples were visually inspected; other screens/scales remain unverified. No
-devices or recordings are changed by this fixture.
+On the 2560×1440 external screen, the long Wi-Fi example measured 424×238, with the message and both buttons fitting. The fixture uses inert callers.
 
 ## Entry points
 
@@ -83,7 +77,7 @@ Both routes use the same launcher object, backend and overlay surface. Switching
 routes while open changes the filter and clears the query. Repeating the current
 route closes it. The top-right selector still offers All, Applications and
 Commands. The Applications result selects that filter in place. Themes,
-wallpapers, clipboard, connections, Handy, shortcuts and system menus are
+wallpapers, clipboard, connections, shortcuts and system menus are
 discoverable in All and retain their existing implementations.
 
 The imported presentation uses the reference's centered 680×520 card, 20px

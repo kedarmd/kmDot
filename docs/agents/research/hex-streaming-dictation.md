@@ -1,5 +1,4 @@
 # Hex streaming dictation: internal decode vs. live text
-> Historical record: Handy and Hex have since been removed from kmDot. Any references to their setup or UI describe the earlier configuration.
 
 Checked 2026-11-01 against the installed Hex 3.0.0 and Hex's official Linux, CLI, and README documentation. The upstream `dev` docs are moving and may describe a newer build than the installed app.
 
@@ -18,8 +17,6 @@ No streaming toggle is documented in Hex's Linux or CLI guides. The Linux guide 
 - The local Hex process log contains prior `hex::gguf_session` streaming events. This is evidence that the internal streaming decode path has run; log transcript content was not inspected or copied into this note.
 
 ## What this means for kmDot
-
-The kmDot HUD currently gets activity state from `hex status` and displays Recording or Transcribing. It does not receive partial transcript text. Hex's documented `status` interface is an activity/status view, while its documented dictation controls return or paste a completed result; the docs do not describe an API that streams partial dictation text to an external HUD.
 
 So the likely distinction is:
 

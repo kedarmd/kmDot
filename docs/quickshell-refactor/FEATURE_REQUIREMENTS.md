@@ -13,7 +13,7 @@ The audit covered every file under `config/quickshell/`, Quickshell-specific Hyp
 - **Purpose / surface:** Desktop service; top bar entry on every connected screen.
 - **Status:** Implemented and functional.
 - **Entry points:** Starts from Hyprland autostart (`quickshell &`). Workspace pills are interactive; module clicks and wheels provide their documented actions. The bar is repeated over `Quickshell.screens`.
-- **Capabilities:** Displays kmDot menu entry, active workspaces, centered clock/calendar entry, and right-side modules for attention mode, server mode, OpenCode usage, Handy, display/brightness, audio, network, Bluetooth, battery, and notifications/DND. Some right-side entries are in a collapsible hidden tray. Bar module controls include hover/tooltips, activity states, busy feedback, and popup dispatch.
+- **Capabilities:** Displays kmDot menu entry, active workspaces, centered clock/calendar entry, and right-side modules for attention mode, server mode, OpenCode usage, display/brightness, audio, network, Bluetooth, battery, and notifications/DND. Some right-side entries are in a collapsible hidden tray. Bar module controls include hover/tooltips, activity states, busy feedback, and popup dispatch.
 - **State/data:** Hyprland workspace state; clock; module-specific live state; notification availability; tray expansion.
 - **Dependencies/integrations:** Quickshell, Hyprland, system services described below, `toggle.sh` socket protocol, `components/BarModule.qml` and module QML.
 - **Errors/edge cases:** One bar instance per screen; popups choose the source screen/anchor where supported. Tray stays expanded while selected long-lived panels are open. Bar restart is part of theme switching.

@@ -8,6 +8,10 @@ codex · fish · ghostty · herdr · herdr-app · hyprland · nvim · pi · star
 
 Codex CLI (`@openai/codex`) and Pi coding agent (`@mariozechner/pi-coding-agent`) install from their official npm packages. Their versions are pinned in the installer. No AUR packages or helpers are used.
 
+## Dictation
+
+Install Hex separately using its [official Linux instructions](https://github.com/anomalyco/hex/blob/dev/docs/linux.md#install-a-published-build). Hyprland binds **Alt+Space** to Hex dictation and **Super+H** to Hex’s History window. Hex handles recording feedback, models, and transcripts in its own app. Enable **Launch at login** in Hex if you want the shortcuts available when you sign in.
+
 ## Screenshots
 
 The screenshots below were captured on an empty Hyprland workspace with no application window behind the Quickshell interface. They document the current R1 redesign, including the shared launcher/popup shell, inline utility tray, responsive controls, and themed wallpaper surface.
