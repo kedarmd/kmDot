@@ -152,7 +152,7 @@ PKGS["theme-switcher"]=""
 PKGS["runtime"]="ttf-jetbrains-mono-nerd networkmanager network-manager-applet pipewire wireplumber pipewire-pulse bluez blueman wl-clipboard brightnessctl upower jq playerctl curl git ripgrep libnotify power-profiles-daemon lua gnome-keyring nautilus"
 # Apps installed from upstream releases/installers; no package helper or AUR.
 PKGS["opencode"]=""
-PKGS["zed"]=""
+PKGS["zed"]="rsync"
 PKGS["herdr-app"]="libxcb libxkbcommon"
 PKGS["codex"]=""
 PKGS["pi"]=""
@@ -498,7 +498,13 @@ for app in "${SELECTED[@]}"; do
     herdr-app) install_herdr_app; continue ;;
     codex) install_npm_agent "codex" "@openai/codex" "codex" "$CODEX_VERSION"; continue ;;
     pi) install_npm_agent "pi" "@mariozechner/pi-coding-agent" "pi" "$PI_VERSION"; continue ;;
-    zed) install_zed; continue ;;
+    zed)
+      for pkg in ${PKGS[zed]}; do
+        install_pkg "$pkg"
+      done
+      install_zed
+      continue
+      ;;
     herdr) install_herdr; continue ;;
   esac
 

@@ -22,6 +22,10 @@ Singleton {
   // Shared outline weight for major cards, panels, and popup surfaces.
   readonly property real surfaceBorderWidth: 1.5
 
+  readonly property int barGap: 6
+  readonly property int barIslandHeight: 32
+  readonly property int barHeight: barIslandHeight + barGap
+
   // ---- surfaces (tonal elevation) ----
   readonly property color surfaceContainerLowest: Colors.base
   readonly property color surfaceContainerLow: Colors.surface

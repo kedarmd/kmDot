@@ -202,8 +202,7 @@ PanelWindow {
       Behavior on opacity {
         NumberAnimation { duration: root.animatePresentation ? Tokens.motionStandard : 0; easing.type: Tokens.motionEasing }
       }
-      // Match tiled windows: 44px bar + Hyprland's 6px outer gap.
-      y: root.centerCard ? (parent.height - card.height) / 2 : 50
+      y: root.centerCard ? (parent.height - card.height) / 2 : Tokens.barHeight + Tokens.barGap
       x: root.centerCard
         ? (parent.width - card.width) / 2
         : root.anchorX >= 0

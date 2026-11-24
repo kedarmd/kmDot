@@ -17,7 +17,7 @@ Rectangle {
 
   radius: height / 2
   color: root.disabled ? "transparent" : root.active ? root.fill
-    : root.hovered || root.pressed ? Colors.surface_alt : "transparent"
+    : root.hovered || root.pressed ? Colors.border : "transparent"
 
   Behavior on color {
     ColorAnimation {

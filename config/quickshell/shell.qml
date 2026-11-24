@@ -418,8 +418,9 @@ PanelWindow {
           right: true
         }
 
-        color: Colors.surface
-        implicitHeight: 44
+        color: "transparent"
+        // Hyprland's outer gap supplies the spacing below the islands.
+        implicitHeight: Tokens.barHeight
         exclusionMode: ExclusionMode.Auto
 
       IpcHandler {
@@ -454,7 +455,8 @@ PanelWindow {
         anchors {
           left: parent.left
           leftMargin: 12
-          verticalCenter: parent.verticalCenter
+          top: parent.top
+          topMargin: Tokens.barGap
         }
         spacing: 12
 
@@ -462,17 +464,13 @@ PanelWindow {
         Workspaces {}
       }
 
-      Item {
-        id: centerGroup
-        width: calendarModule.width
-        height: 32
+      BarIsland {
         anchors {
           horizontalCenter: parent.horizontalCenter
-          verticalCenter: parent.verticalCenter
+          top: parent.top
+          topMargin: Tokens.barGap
         }
         Clock {
-          id: calendarModule
-          anchors.centerIn: parent
           popupRef: calendarPopup
         }
       }
@@ -482,34 +480,31 @@ PanelWindow {
         anchors {
           right: parent.right
           rightMargin: 12
-          verticalCenter: parent.verticalCenter
+          top: parent.top
+          topMargin: Tokens.barGap
         }
         spacing: 8
 
-        SystemStats { launcherRef: systemMonitorLauncher }
-        HiddenModules {
-          id: hiddenTray
-          stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened
-          AttentionMode {}
-          ServerMode {
-            popupRef: serverModeDropdown
-          }
-          OpenCodeUsage {
-            popupRef: openCodeUsagePopup
+        BarIsland {
+          visible: systemStats.visible
+          SystemStats {
+            id: systemStats
+            launcherRef: systemMonitorLauncher
           }
         }
-        Row {
-          spacing: 0
+        BarIsland {
+          HiddenModules {
+            stayOpen: serverModeDropdown.opened || openCodeUsagePopup.opened
+            AttentionMode {}
+            ServerMode { popupRef: serverModeDropdown }
+            OpenCodeUsage { popupRef: openCodeUsagePopup }
+          }
+        }
+        BarIsland {
           Display { popupRef: displayPopup }
           Audio { popupRef: volumePopup }
-        }
-        Row {
-          spacing: 0
           Network { popupRef: wifiDropdown }
           Bluetooth { popupRef: bluetoothDropdown }
-        }
-        Row {
-          spacing: 0
           Battery { popupRef: batteryPopup }
           Dnd {
             id: dndModule
