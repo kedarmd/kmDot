@@ -85,3 +85,5 @@ The smoke check covers the desktop session and configs, apps including Codex, Pi
 - Zen Browser is installed from the pinned, checksum-verified upstream tarball in `install.sh`; Firefox is not required. Zen's [official Linux guide](https://docs.zen-browser.app/guides/install-linux) also offers an AppImage, which was not the route tested.
 - The Arch base and some upstream applications are large downloads. Let downloads finish before interrupting an installer.
 - After installation, check Wi-Fi, Bluetooth, microphone input, audio output, display brightness, suspend, and resume on the laptop.
+
+For optional pre-upgrade recovery on the ext4 layout above, see [Timeshift setup](timeshift-recovery.md).

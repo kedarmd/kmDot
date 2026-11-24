@@ -14,7 +14,7 @@ LauncherBase {
   items: [
     {
       label: "Upgrade the whole system",
-      subtitle: "Pacman preflight · optional Snapper snapshot · official repositories",
+      subtitle: "Pacman preflight · optional recovery backup · official repositories",
       glyph: "\uf021"
     }
   ]
