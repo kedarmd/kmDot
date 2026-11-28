@@ -9,8 +9,8 @@ local mod = "SUPER"
 hl.bind(mod .. " + RETURN", hl.dsp.exec_cmd("/usr/bin/ghostty")) -- Launch ghostty
 hl.bind(
 	mod .. " + SHIFT + RETURN",
-	hl.dsp.exec_cmd("/usr/bin/ghostty -e bash -c 'herdr workspace create --focus 2>/dev/null; exec herdr'")
-) -- Launch ghostty with a new herdr workspace
+	hl.dsp.exec_cmd("herdr-app")
+) -- Launch the native Herdr App
 hl.bind(mod .. " + B", hl.dsp.exec_cmd('browser=$(xdg-settings get default-web-browser) && test -n "$browser" && gtk-launch "$browser"')) -- Open default browser
 hl.bind(mod .. " + F", hl.dsp.exec_cmd("/usr/bin/nautilus")) -- Open file manager
 hl.bind(mod .. " + SPACE", hl.dsp.exec_cmd("bash -c '$HOME/.config/kmdot/quickshell/scripts/toggle.sh kmdot-launcher'")) -- Applications (kmDot launcher)
