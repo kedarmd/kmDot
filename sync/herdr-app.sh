@@ -19,6 +19,10 @@ cp -r "$REPO_DIR/config/herdr-app" "$KMDOT_HERDR_APP_CONFIG_DIR"
 mkdir -p "$HERDR_APP_CONFIG_DIR"
 cp -r "$KMDOT_HERDR_APP_CONFIG_DIR/." "$HERDR_APP_CONFIG_DIR/"
 
+# Ctrl+B now enters the inline kmdot-status leader. Remove the former popup
+# implementation from older synced configs so it cannot be opened accidentally.
+rm -rf "$HERDR_APP_CONFIG_DIR/mods/tmux-prefix"
+
 # The active theme file is generated, not tracked: theme-switcher/hooks/herdr-app.sh
 # rewrites it on every switch. Seed it here too so a fresh sync (or a sync before
 # the first theme switch) leaves the app themed with the selected kmDot theme.

@@ -88,7 +88,8 @@ Themes: catppuccin, everforest, nord, tokyonight
 ## Herdr App
 
 - Official native desktop app (`herdr-app`) for the same `hc` terminals Herdr TUI drives; config: `config/herdr-app/`
-- Tracked (user-authored only): `settings.json`, `keys.json`, `layouts/kmdot.json`, and the `mods/kmdot-tab-titles/` and `mods/tmux-prefix/` mods
+- Tracked (user-authored only): `settings.json`, `keys.json`, `layouts/kmdot.json`, and the `mods/kmdot-tab-titles/`, `mods/kmdot-status/`, and `mods/kmdot-keybinds/` mods
+- `Ctrl+B` starts a tmux-style leader sequence in the bottom status bar; `?` opens the searchable keybind list (`Ctrl+Alt+K` opens it directly)
 - Theme sources: `themes/<theme>/herdr-app.json`; `theme-switcher/hooks/herdr-app.sh` copies the selected palette to the generated `~/.config/herdr-app/themes/kmdot-active.json` (the layout and settings reference that fixed name)
 - Not tracked (app-managed, generated, or runtime): shipped layouts/themes/mods, `themes/kmdot-active.json`, `shared.json`, `installed.json`, `seen.json`, `window.json`, `herdr-app.sock`, `data/`, `frame/`, and generated `*.d.ts`/`jsconfig.json`
 - `./sync/herdr-app.sh` copies into `~/.config/herdr-app` **in place** (never replaces the directory, since it doubles as the app's runtime home), seeds the active theme, and points the active layout at `kmdot`
